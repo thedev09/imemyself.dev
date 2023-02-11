@@ -235,13 +235,13 @@ body {
 /* Media Queries */
 @media screen and (max-height: 1000px) {
   .six .hat {
-    left: 40%;
+    left: 45%;
   }
 }
 
 @media screen and (max-height: 800px) {
   .six .hat {
-    left: 37%;
+    left: 7%;
   }
 }
 
@@ -281,7 +281,7 @@ body {
 
   .six .hat {
     width: 50px;
-    top: -20px;
+    top: -300px;
   }
 
   .wish-hbd {
