@@ -1,14 +1,24 @@
 // Global dependencies
 const { useState, useEffect } = React;
-const { motion, AnimatePresence } = window.framerMotion;
-const { icons } = lucide;
+const motion = { div: props => React.createElement('div', props) };
+const AnimatePresence = ({ children }) => children;
 
-// Create references to the icons we need
-const Github = icons.Github;
-const Twitter = icons.Twitter;
-const Facebook = icons.Facebook;
-const Instagram = icons.Instagram;
-const Mail = icons.Mail;
+// Get icons from Lucide global
+const icons = window.lucide.icons;
+const createIcon = (icon) => {
+    return (props) => React.createElement('span', {
+        ...props,
+        dangerouslySetInnerHTML: { __html: icon.toSvg() }
+    });
+};
+
+// Create icon components
+const Github = createIcon(icons.Github);
+const Twitter = createIcon(icons.Twitter);
+const Facebook = createIcon(icons.Facebook);
+const Instagram = createIcon(icons.Instagram);
+const Mail = createIcon(icons.Mail);
+
 
 // Matrix background component
 const Matrix = () => React.createElement('div', {
