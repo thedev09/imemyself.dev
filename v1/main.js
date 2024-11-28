@@ -1,6 +1,14 @@
+// Global dependencies
 const { useState, useEffect } = React;
 const { motion, AnimatePresence } = window.framerMotion;
-const { Github, Twitter, Facebook, Instagram, Mail } = window.lucide;
+const { icons } = lucide;
+
+// Create references to the icons we need
+const Github = icons.Github;
+const Twitter = icons.Twitter;
+const Facebook = icons.Facebook;
+const Instagram = icons.Instagram;
+const Mail = icons.Mail;
 
 // Matrix background component
 const Matrix = () => React.createElement('div', {
