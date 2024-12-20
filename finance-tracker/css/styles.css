@@ -1137,14 +1137,7 @@ body {
     color: #94a3b8;
 }
 
-/* Recent Transactions Styles */
-.recent-transactions {
-    background: rgba(30, 41, 59, 0.5);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 24px;
-}
+
 
 .transaction-item {
     display: flex;
