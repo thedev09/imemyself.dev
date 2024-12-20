@@ -1,4 +1,4 @@
-// Auth state and user management
+// Auth state observer
 let currentUser = null;
 
 // Show/hide loading overlay
@@ -23,32 +23,41 @@ function showToast(message, type = 'success') {
 }
 
 // Sign in with Google
-async function signInWithGoogle() {
+window.signInWithGoogle = async function() {
     toggleLoading(true);
     try {
+        // Make sure Firebase is initialized
+        if (!firebase.apps.length) {
+            throw new Error('Firebase is not initialized');
+        }
+
         const provider = new firebase.auth.GoogleAuthProvider();
         const result = await firebase.auth().signInWithPopup(provider);
         currentUser = result.user;
         
-        // Create or update user document
-        await FirebaseService.setDocument('users', currentUser.uid, {
-            email: currentUser.email,
-            lastLogin: new Date().toISOString()
-        });
-
+        // After successful sign-in
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
+        
+        // Create/update user document in Firestore
+        if (window.db) {
+            await window.db.collection('users').doc(currentUser.uid).set({
+                email: currentUser.email,
+                lastLogin: new Date().toISOString()
+            }, { merge: true });
+        }
+
         showToast('Successfully signed in!');
     } catch (error) {
         console.error("Error signing in:", error);
-        showToast('Error signing in. Please try again.', 'error');
+        showToast(error.message || 'Error signing in. Please try again.', 'error');
     } finally {
         toggleLoading(false);
     }
 }
 
 // Sign out
-async function signOut() {
+window.signOut = async function() {
     toggleLoading(true);
     try {
         await firebase.auth().signOut();
@@ -65,37 +74,18 @@ async function signOut() {
 }
 
 // Auth state change listener
-firebase.auth().onAuthStateChanged(async (user) => {
-    currentUser = user;
-    if (user) {
-        try {
-            // Update user's last login time
-            await FirebaseService.setDocument('users', user.uid, {
-                lastLogin: new Date().toISOString()
-            });
-
+document.addEventListener('DOMContentLoaded', function() {
+    firebase.auth().onAuthStateChanged((user) => {
+        currentUser = user;
+        if (user) {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
-            
-            // Load user data (function defined in app.js)
-            if (window.loadUserData) {
-                await window.loadUserData();
+            if (typeof loadUserData === 'function') {
+                loadUserData();
             }
-        } catch (error) {
-            console.error('Error in auth state change:', error);
-            showToast('Error loading user data', 'error');
+        } else {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
         }
-    } else {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('mainContent').style.display = 'none';
-    }
+    });
 });
-
-// Export auth functions and state
-window.auth = {
-    currentUser: () => currentUser,
-    signInWithGoogle,
-    signOut,
-    showToast,
-    toggleLoading
-};
