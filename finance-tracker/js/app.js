@@ -7,9 +7,113 @@ const state = {
     transactions: []
 };
 
+// Navigation function
+function switchView(view) {
+    console.log('Switching to view:', view);
+    state.currentView = view;
+    document.querySelectorAll('.view').forEach(el => {
+        el.style.display = el.id === `${view}-view` ? 'block' : 'none';
+    });
+    document.querySelectorAll('.nav-link').forEach(el => {
+        el.classList.toggle('active', el.dataset.view === view);
+    });
+}
+
+// Add event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded');
+
+    // Navigation buttons
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            console.log('Nav link clicked:', e.target.dataset.view);
+            switchView(e.target.dataset.view);
+        });
+    });
+
+    // Transaction type buttons
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            console.log('Transaction type button clicked');
+            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+            e.target.classList.add('selected');
+        });
+    });
+
+    // Account form
+    const accountForm = document.getElementById('account-form');
+    if (accountForm) {
+        accountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('Account form submitted');
+            const formData = new FormData(e.target);
+            const account = {
+                id: Date.now().toString(),
+                name: formData.get('name'),
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                balance: parseFloat(formData.get('balance'))
+            };
+            
+            try {
+                await saveAccount(account);
+                state.accounts.push(account);
+                renderAccounts();
+                e.target.reset();
+                console.log('Account saved successfully');
+            } catch (error) {
+                console.error('Error saving account:', error);
+                alert('Error saving account. Please try again.');
+            }
+        });
+    }
+
+    // Transaction form
+    const transactionForm = document.getElementById('transaction-form');
+    if (transactionForm) {
+        transactionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('Transaction form submitted');
+            const formData = new FormData(e.target);
+            const transaction = {
+                id: Date.now().toString(),
+                date: new Date().toISOString(),
+                type: document.querySelector('.type-btn.selected').dataset.type,
+                amount: parseFloat(formData.get('amount')),
+                accountId: formData.get('account'),
+                category: formData.get('category')
+            };
+
+            try {
+                // Update account balance
+                const account = state.accounts.find(a => a.id === transaction.accountId);
+                if (account) {
+                    account.balance += transaction.type === 'income' ? 
+                        transaction.amount : -transaction.amount;
+                    await saveAccount(account);
+                }
+
+                await saveTransaction(transaction);
+                state.transactions.push(transaction);
+                renderTransactions();
+                renderCharts();
+                e.target.reset();
+                console.log('Transaction saved successfully');
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                alert('Error saving transaction. Please try again.');
+            }
+        });
+    }
+
+    // Initial render
+    loadUserData();
+});
+
 // Data loading
 async function loadUserData() {
     if (!currentUser) return;
+    console.log('Loading user data for:', currentUser.uid);
 
     try {
         // Load accounts
@@ -22,6 +126,7 @@ async function loadUserData() {
             id: doc.id,
             ...doc.data()
         }));
+        console.log('Loaded accounts:', state.accounts);
 
         // Load transactions
         const transactionsSnapshot = await db.collection('users')
@@ -33,47 +138,16 @@ async function loadUserData() {
             id: doc.id,
             ...doc.data()
         }));
+        console.log('Loaded transactions:', state.transactions);
 
         renderAccounts();
         renderTransactions();
         renderCharts();
     } catch (error) {
-        console.error("Error loading data:", error);
+        console.error('Error loading data:', error);
         alert('Error loading data. Please refresh the page.');
     }
 }
-
-// Save functions
-async function saveAccount(account) {
-    if (!currentUser) return;
-
-    try {
-        await db.collection('users')
-            .doc(currentUser.uid)
-            .collection('accounts')
-            .doc(account.id)
-            .set(account);
-    } catch (error) {
-        console.error("Error saving account:", error);
-        alert('Error saving account. Please try again.');
-    }
-}
-
-async function saveTransaction(transaction) {
-    if (!currentUser) return;
-
-    try {
-        await db.collection('users')
-            .doc(currentUser.uid)
-            .collection('transactions')
-            .doc(transaction.id)
-            .set(transaction);
-    } catch (error) {
-        console.error("Error saving transaction:", error);
-        alert('Error saving transaction. Please try again.');
-    }
-}
-
 // UI Rendering Functions
 function renderAccounts() {
     const accountsGrid = document.getElementById('accounts-grid');

@@ -9,7 +9,6 @@ async function signInWithGoogle() {
         currentUser = result.user;
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
-        await loadUserData();
     } catch (error) {
         console.error("Error signing in:", error);
         alert('Error signing in. Please try again.');
@@ -25,6 +24,45 @@ async function signOut() {
         currentUser = null;
     } catch (error) {
         console.error("Error signing out:", error);
+    }
+}
+
+// Load user data function (moved from app.js)
+async function loadUserData() {
+    if (!currentUser) return;
+    console.log('Loading user data for:', currentUser.uid);
+
+    try {
+        // Load accounts
+        const accountsSnapshot = await db.collection('users')
+            .doc(currentUser.uid)
+            .collection('accounts')
+            .get();
+        
+        state.accounts = accountsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        console.log('Loaded accounts:', state.accounts);
+
+        // Load transactions
+        const transactionsSnapshot = await db.collection('users')
+            .doc(currentUser.uid)
+            .collection('transactions')
+            .get();
+        
+        state.transactions = transactionsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        console.log('Loaded transactions:', state.transactions);
+
+        renderAccounts();
+        renderTransactions();
+        renderCharts();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        alert('Error loading data. Please refresh the page.');
     }
 }
 
