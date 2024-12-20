@@ -50,7 +50,44 @@ function validateAccount(account) {
     return true;
 }
 
-// Firebase operations
+// Account Management Functions
+async function deleteAccount(accountId) {
+    if (!confirm('Are you sure you want to delete this account? The transactions will be preserved for record-keeping.')) {
+        return;
+    }
+
+    toggleLoading(true);
+    try {
+        const user = getCurrentUser();
+        if (!user) throw new Error('Please sign in to continue');
+
+        // Instead of checking for transactions, we'll mark the account as deleted
+        await db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(accountId)
+            .update({
+                isDeleted: true,
+                deletedAt: new Date().toISOString()
+            });
+
+        // Remove from state and update UI
+        state.accounts = state.accounts.filter(acc => acc.id !== accountId);
+        renderAccounts();
+        showToast('Account deleted successfully');
+
+        // Refresh transactions to update their display
+        if (typeof window.loadUserData === 'function') {
+            await window.loadUserData(true);
+        }
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        showToast(error.message || 'Error deleting account', 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
 async function saveAccount(account) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
@@ -65,7 +102,8 @@ async function saveAccount(account) {
         balance: parseFloat(account.balance) || 0,
         userId: user.uid,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        isDeleted: false
     };
     
     try {
@@ -90,6 +128,7 @@ async function saveAccount(account) {
     }
 }
 
+// Transaction Management
 async function saveTransaction(transaction) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
@@ -101,61 +140,56 @@ async function saveTransaction(transaction) {
         .collection('transactions')
         .doc(transaction.id || Date.now().toString());
         
+    // Find the account (even if it's deleted)
     const accountRef = db.collection('users')
         .doc(user.uid)
         .collection('accounts')
         .doc(transaction.accountId);
 
     try {
-        const result = await db.runTransaction(async (dbTransaction) => {
-            const accountDoc = await dbTransaction.get(accountRef);
-            if (!accountDoc.exists) {
-                throw new Error('Account not found');
-            }
+        const accountDoc = await accountRef.get();
+        const account = accountDoc.data();
 
-            const account = accountDoc.data();
-            const currentBalance = parseFloat(account.balance) || 0;
-            const amount = parseFloat(transaction.amount);
-            
+        // Store account info with transaction
+        const transactionData = {
+            id: transaction.id || Date.now().toString(),
+            date: transaction.date || new Date().toISOString(),
+            type: transaction.type,
+            amount: parseFloat(transaction.amount),
+            accountId: transaction.accountId,
+            accountName: account ? account.name : 'Deleted Account',
+            category: transaction.category,
+            currency: account ? account.currency : 'USD',
+            userId: user.uid,
+            createdAt: new Date().toISOString()
+        };
+        
+        await transactionRef.set(transactionData);
+
+        // Only update account balance if account still exists
+        if (account && !account.isDeleted) {
             const newBalance = transaction.type === 'income' 
-                ? currentBalance + amount 
-                : currentBalance - amount;
+                ? account.balance + parseFloat(transaction.amount)
+                : account.balance - parseFloat(transaction.amount);
 
-            const transactionData = {
-                id: transaction.id || Date.now().toString(),
-                date: transaction.date || new Date().toISOString(),
-                type: transaction.type,
-                amount: amount,
-                accountId: transaction.accountId,
-                category: transaction.category,
-                currency: account.currency,
-                userId: user.uid,
-                createdAt: new Date().toISOString(),
-                previousBalance: currentBalance,
-                newBalance: newBalance
-            };
-            
-            dbTransaction.set(transactionRef, transactionData);
-            dbTransaction.update(accountRef, { 
+            await accountRef.update({ 
                 balance: newBalance,
-                updatedAt: new Date().toISOString(),
-                lastTransactionId: transactionData.id
+                updatedAt: new Date().toISOString()
             });
 
-            return { transactionData, newBalance, accountId: account.id, currency: account.currency };
-        });
-
-        if (result) {
-            const accountIndex = state.accounts.findIndex(acc => acc.id === result.accountId);
+            // Update account in state
+            const accountIndex = state.accounts.findIndex(acc => acc.id === transaction.accountId);
             if (accountIndex !== -1) {
-                state.accounts[accountIndex].balance = result.newBalance;
-                state.accounts[accountIndex].updatedAt = result.transactionData.createdAt;
+                state.accounts[accountIndex].balance = newBalance;
+                state.accounts[accountIndex].updatedAt = transactionData.createdAt;
             }
-            
-            state.transactions.unshift(result.transactionData);
-            await renderAll();
         }
 
+        // Update state with new transaction
+        state.transactions.unshift(transactionData);
+        
+        // Render updates
+        renderAll();
         return true;
     } catch (error) {
         console.error('Error saving transaction:', error);
@@ -176,6 +210,7 @@ async function loadUserData(forceRefresh = false) {
         const accountsSnapshot = await db.collection('users')
             .doc(user.uid)
             .collection('accounts')
+            .where('isDeleted', '==', false)  // Only load active accounts
             .get();
         
         state.accounts = accountsSnapshot.docs.map(doc => ({
@@ -251,15 +286,15 @@ function formatDate(dateString) {
     }
 }
 
-function escapeHtml(unsafe) {
-    if (typeof unsafe !== 'string') return '';
-    return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+// Style for deleted accounts
+const style = document.createElement('style');
+style.textContent = `
+    .deleted-account {
+        text-decoration: line-through;
+        color: var(--gray-500);
+    }
+`;
+document.head.appendChild(style);
 
 // Initialize Firebase Auth listener
 document.addEventListener('DOMContentLoaded', () => {
@@ -277,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Make functions globally available
 window.saveAccount = saveAccount;
+window.deleteAccount = deleteAccount;
 window.saveTransaction = saveTransaction;
 window.loadUserData = loadUserData;
 window.formatCurrency = formatCurrency;
