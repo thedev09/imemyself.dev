@@ -38,79 +38,221 @@ function validateAccount(account) {
 }
 
 // Firebase operations
+// Account handling functions
 async function saveAccount(account) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
     
+    // Ensure account has an ID
+    if (!account.id) {
+        account.id = Date.now().toString();
+    }
+    
     validateAccount(account);
     
+    const accountData = {
+        ...account,
+        userId: user.uid,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        balance: parseFloat(account.balance) || 0 // Ensure balance is a number
+    };
+    
     try {
-        await db.collection('users')
+        // Save to Firestore
+        const accountRef = db.collection('users')
             .doc(user.uid)
             .collection('accounts')
-            .doc(account.id)
-            .set({
-                ...account,
-                userId: user.uid,
-                createdAt: new Date().toISOString()
-            });
-        return true;
+            .doc(account.id);
+            
+        await accountRef.set(accountData);
+            
+        // Update local state
+        const existingIndex = state.accounts.findIndex(a => a.id === account.id);
+        if (existingIndex !== -1) {
+            state.accounts[existingIndex] = accountData;
+        } else {
+            state.accounts.push(accountData);
+        }
+        
+        // Immediately render accounts to show the new account
+        renderAccounts();
+        return accountData;
     } catch (error) {
         console.error('Error saving account:', error);
+        showToast('Failed to save account. Please try again.', 'error');
         throw error;
     }
 }
 
+// Transaction handling function
 async function saveTransaction(transaction) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
 
+    // Ensure transaction has an ID
+    if (!transaction.id) {
+        transaction.id = Date.now().toString();
+    }
+
+    // Validate transaction
+    validateTransaction(transaction);
+
+    // Get references
     const transactionRef = db.collection('users')
         .doc(user.uid)
         .collection('transactions')
         .doc(transaction.id);
+        
+    const accountRef = db.collection('users')
+        .doc(user.uid)
+        .collection('accounts')
+        .doc(transaction.accountId);
 
     try {
-        await db.runTransaction(async (dbTransaction) => {
-            // Save the transaction
-            dbTransaction.set(transactionRef, {
-                ...transaction,
-                userId: user.uid,
-                createdAt: new Date().toISOString()
-            });
-
-            // Update account balance
-            const accountRef = db.collection('users')
-                .doc(user.uid)
-                .collection('accounts')
-                .doc(transaction.accountId);
-
+        const result = await db.runTransaction(async (dbTransaction) => {
+            // Get account data
             const accountDoc = await dbTransaction.get(accountRef);
             if (!accountDoc.exists) {
                 throw new Error('Account not found');
             }
 
-            const currentBalance = accountDoc.data().balance;
-            const newBalance = transaction.type === 'income'
-                ? currentBalance + transaction.amount
-                : currentBalance - transaction.amount;
+            const account = accountDoc.data();
+            const currentBalance = parseFloat(account.balance) || 0;
+            
+            // Calculate new balance based on transaction type
+            const amount = parseFloat(transaction.amount);
+            const newBalance = transaction.type === 'income' 
+                ? currentBalance + amount 
+                : currentBalance - amount;
 
-            dbTransaction.update(accountRef, { balance: newBalance });
+            // Prepare transaction data
+            const transactionData = {
+                ...transaction,
+                amount: amount, // Ensure amount is a number
+                userId: user.uid,
+                createdAt: new Date().toISOString(),
+                previousBalance: currentBalance,
+                newBalance: newBalance
+            };
+            
+            // Save transaction
+            dbTransaction.set(transactionRef, transactionData);
+
+            // Update account balance
+            dbTransaction.update(accountRef, { 
+                balance: newBalance,
+                updatedAt: new Date().toISOString(),
+                lastTransactionId: transaction.id
+            });
+
+            return { transactionData, newBalance, accountId: account.id };
         });
 
         // Update local state
-        state.transactions.unshift(transaction);
-        const accountIndex = state.accounts.findIndex(acc => acc.id === transaction.accountId);
-        if (accountIndex !== -1) {
-            state.accounts[accountIndex].balance = transaction.type === 'income'
-                ? state.accounts[accountIndex].balance + transaction.amount
-                : state.accounts[accountIndex].balance - transaction.amount;
+        if (result) {
+            // Update account in local state
+            const accountIndex = state.accounts.findIndex(acc => acc.id === result.accountId);
+            if (accountIndex !== -1) {
+                state.accounts[accountIndex].balance = result.newBalance;
+                state.accounts[accountIndex].updatedAt = result.transactionData.createdAt;
+            }
+            
+            // Add transaction to local state
+            state.transactions.unshift(result.transactionData);
+            
+            // Render updates
+            await renderAll();
         }
+
+        return true;
     } catch (error) {
         console.error('Error saving transaction:', error);
+        showToast('Failed to save transaction. Please try again.', 'error');
+        
+        // Refresh data from server on error
+        await loadUserData(true);
         throw error;
     }
 }
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // Account form handler
+    const accountForm = document.getElementById('account-form');
+    if (accountForm) {
+        accountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+
+            try {
+                const formData = new FormData(e.target);
+                const account = {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    type: formData.get('type'),
+                    currency: formData.get('currency'),
+                    balance: parseFloat(formData.get('balance')) || 0
+                };
+                
+                await saveAccount(account);
+                e.target.reset();
+                showToast('Account created successfully!');
+                
+                // Force refresh data
+                await loadUserData(true);
+            } catch (error) {
+                console.error('Error saving account:', error);
+                showToast(error.message || 'Error saving account', 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        });
+    }
+
+    // Transaction form handler
+    const transactionForm = document.getElementById('transaction-form');
+    if (transactionForm) {
+        transactionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+
+            try {
+                const formData = new FormData(e.target);
+                const selectedTypeBtn = document.querySelector('.type-btn.selected');
+                
+                if (!selectedTypeBtn) {
+                    throw new Error('Please select a transaction type');
+                }
+
+                const transaction = {
+                    id: Date.now().toString(),
+                    date: new Date().toISOString(),
+                    type: selectedTypeBtn.dataset.type,
+                    amount: parseFloat(formData.get('amount')),
+                    accountId: formData.get('account'),
+                    category: formData.get('category')
+                };
+
+                await saveTransaction(transaction);
+                
+                // Reset form
+                e.target.reset();
+                document.querySelectorAll('.type-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                document.querySelector('.type-btn.income').classList.add('selected');
+                
+                showToast('Transaction added successfully!');
+            } catch (error) {
+                console.error('Error adding transaction:', error);
+                showToast(error.message || 'Error adding transaction', 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        });
+    }
+});
 
 // View management
 function switchView(view) {
