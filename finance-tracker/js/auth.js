@@ -1,7 +1,6 @@
-// Auth state observer
+// auth.js
 let currentUser = null;
 
-// Show/hide loading overlay
 function toggleLoading(show) {
     const overlay = document.getElementById('loading-overlay');
     if (overlay) {
@@ -9,7 +8,6 @@ function toggleLoading(show) {
     }
 }
 
-// Show toast messages
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     if (toast) {
@@ -22,26 +20,19 @@ function showToast(message, type = 'success') {
     }
 }
 
-// Sign in with Google
-window.signInWithGoogle = async function() {
+// Make this a global function
+async function signInWithGoogle() {
     toggleLoading(true);
     try {
-        // Make sure Firebase is initialized
-        if (!firebase.apps.length) {
-            throw new Error('Firebase is not initialized');
-        }
-
         const provider = new firebase.auth.GoogleAuthProvider();
         const result = await firebase.auth().signInWithPopup(provider);
         currentUser = result.user;
         
-        // After successful sign-in
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
         
-        // Create/update user document in Firestore
-        if (window.db) {
-            await window.db.collection('users').doc(currentUser.uid).set({
+        if (db) {
+            await db.collection('users').doc(currentUser.uid).set({
                 email: currentUser.email,
                 lastLogin: new Date().toISOString()
             }, { merge: true });
@@ -56,8 +47,7 @@ window.signInWithGoogle = async function() {
     }
 }
 
-// Sign out
-window.signOut = async function() {
+async function signOut() {
     toggleLoading(true);
     try {
         await firebase.auth().signOut();
@@ -74,18 +64,22 @@ window.signOut = async function() {
 }
 
 // Auth state change listener
-document.addEventListener('DOMContentLoaded', function() {
-    firebase.auth().onAuthStateChanged((user) => {
-        currentUser = user;
-        if (user) {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            if (typeof loadUserData === 'function') {
-                loadUserData();
-            }
-        } else {
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('mainContent').style.display = 'none';
+firebase.auth().onAuthStateChanged((user) => {
+    currentUser = user;
+    if (user) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        if (typeof loadUserData === 'function') {
+            loadUserData();
         }
-    });
+    } else {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('mainContent').style.display = 'none';
+    }
 });
+
+// Make functions globally available
+window.signInWithGoogle = signInWithGoogle;
+window.signOut = signOut;
+window.showToast = showToast;
+window.toggleLoading = toggleLoading;

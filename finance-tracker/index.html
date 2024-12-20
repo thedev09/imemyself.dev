@@ -28,7 +28,7 @@
         <div class="login-card">
             <h2>Finance Manager</h2>
             <p>Please sign in to continue</p>
-            <button onclick="auth.signInWithGoogle()" class="google-btn" aria-label="Sign in with Google">
+            <button onclick="signInWithGoogle()" class="google-btn" aria-label="Sign in with Google">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
                      alt="Google logo" 
                      width="18" 
@@ -74,7 +74,7 @@
                         Settings
                     </button>
                 </div>
-                <button onclick="auth.signOut()" class="sign-out-btn" aria-label="Sign out">
+                <button onclick="signOut()" class="sign-out-btn" aria-label="Sign out">
                     Sign Out
                 </button>
             </div>
@@ -296,12 +296,34 @@
     </div>
 
     <!-- Scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/app.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+    <!-- Initialize Firebase -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyARjanzH8bylb2FsQdz60yI2hs8ud-yqwc",
+            authDomain: "budget-backend-09.firebaseapp.com",
+            projectId: "budget-backend-09",
+            storageBucket: "budget-backend-09.firebasestorage.app",
+            messagingSenderId: "499758129287",
+            appId: "1:499758129287:web:d8764dc451a1e1c6941822",
+            measurementId: "G-HBS9QEKQZ8"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Initialize Firestore
+        const db = firebase.firestore();
+        window.db = db;
+    </script>
+
+    <!-- Application Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 </body>
 </html>
