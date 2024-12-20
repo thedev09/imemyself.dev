@@ -370,47 +370,6 @@ function createCategoryChart(ctx, data) {
 }
 
 
-// Account Management Functions
-async function deleteAccount(accountId) {
-    if (!confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
-        return;
-    }
-
-    toggleLoading(true);
-    try {
-        const user = getCurrentUser();
-        if (!user) throw new Error('Please sign in to continue');
-
-        // Check if account has any transactions
-        const transactionsRef = await db.collection('users')
-            .doc(user.uid)
-            .collection('transactions')
-            .where('accountId', '==', accountId)
-            .limit(1)
-            .get();
-
-        if (!transactionsRef.empty) {
-            throw new Error('Cannot delete account with existing transactions');
-        }
-
-        // Delete the account
-        await db.collection('users')
-            .doc(user.uid)
-            .collection('accounts')
-            .doc(accountId)
-            .delete();
-
-        // Remove from state and update UI
-        state.accounts = state.accounts.filter(acc => acc.id !== accountId);
-        renderAccounts();
-        showToast('Account deleted successfully');
-    } catch (error) {
-        console.error('Error deleting account:', error);
-        showToast(error.message || 'Error deleting account', 'error');
-    } finally {
-        toggleLoading(false);
-    }
-}
 
 async function editAccount(account) {
     const modal = document.createElement('div');
@@ -555,5 +514,7 @@ function renderAccounts() {
 }
 
 // Make UI functions globally available
+// Make UI functions globally available
 window.switchView = switchView;
 window.renderAll = renderAll;
+window.editAccount = editAccount;
