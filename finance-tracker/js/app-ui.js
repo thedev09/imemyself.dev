@@ -369,6 +369,191 @@ function createCategoryChart(ctx, data) {
     });
 }
 
+
+// Account Management Functions
+async function deleteAccount(accountId) {
+    if (!confirm('Are you sure you want to delete this account? This action cannot be undone.')) {
+        return;
+    }
+
+    toggleLoading(true);
+    try {
+        const user = getCurrentUser();
+        if (!user) throw new Error('Please sign in to continue');
+
+        // Check if account has any transactions
+        const transactionsRef = await db.collection('users')
+            .doc(user.uid)
+            .collection('transactions')
+            .where('accountId', '==', accountId)
+            .limit(1)
+            .get();
+
+        if (!transactionsRef.empty) {
+            throw new Error('Cannot delete account with existing transactions');
+        }
+
+        // Delete the account
+        await db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(accountId)
+            .delete();
+
+        // Remove from state and update UI
+        state.accounts = state.accounts.filter(acc => acc.id !== accountId);
+        renderAccounts();
+        showToast('Account deleted successfully');
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        showToast(error.message || 'Error deleting account', 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+async function editAccount(account) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+            <h2 class="card-title">Edit Account</h2>
+            <form id="edit-account-form" class="form-grid">
+                <div class="form-group">
+                    <label for="editAccountName" class="form-label">Account Name</label>
+                    <input type="text" 
+                           id="editAccountName"
+                           class="form-input" 
+                           name="name" 
+                           value="${escapeHtml(account.name)}"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="editAccountType" class="form-label">Account Type</label>
+                    <select id="editAccountType"
+                            class="form-select" 
+                            name="type"
+                            required>
+                        <option value="bank" ${account.type === 'bank' ? 'selected' : ''}>Bank Account</option>
+                        <option value="crypto" ${account.type === 'crypto' ? 'selected' : ''}>Crypto Wallet</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editCurrency" class="form-label">Currency</label>
+                    <select id="editCurrency"
+                            class="form-select" 
+                            name="currency"
+                            required>
+                        <option value="USD" ${account.currency === 'USD' ? 'selected' : ''}>USD</option>
+                        <option value="INR" ${account.currency === 'INR' ? 'selected' : ''}>INR</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const form = document.getElementById('edit-account-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
+
+        try {
+            const formData = new FormData(e.target);
+            const updatedAccount = {
+                ...account,
+                name: formData.get('name'),
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                updatedAt: new Date().toISOString()
+            };
+
+            await db.collection('users')
+                .doc(getCurrentUser().uid)
+                .collection('accounts')
+                .doc(account.id)
+                .update(updatedAccount);
+
+            // Update state and UI
+            const index = state.accounts.findIndex(acc => acc.id === account.id);
+            if (index !== -1) {
+                state.accounts[index] = updatedAccount;
+            }
+            renderAccounts();
+            modal.remove();
+            showToast('Account updated successfully');
+        } catch (error) {
+            console.error('Error updating account:', error);
+            showToast(error.message || 'Error updating account', 'error');
+        } finally {
+            toggleLoading(false);
+        }
+    });
+}
+
+function renderAccounts() {
+    const accountsGrid = document.getElementById('accounts-grid');
+    const accountSelects = document.querySelectorAll('select[name="account"]');
+    
+    if (!accountsGrid) return;
+
+    const accountCards = state.accounts.map(account => `
+        <div class="account-card">
+            <div class="account-actions">
+                <button onclick="editAccount(${JSON.stringify(account)})" 
+                        class="action-btn edit" 
+                        title="Edit Account">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button onclick="deleteAccount('${account.id}')" 
+                        class="action-btn delete" 
+                        title="Delete Account">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="account-header">
+                <span class="account-name">${escapeHtml(account.name)}</span>
+                <span class="account-type">${escapeHtml(account.type)}</span>
+            </div>
+            <div class="account-balance">
+                ${formatCurrency(account.balance, account.currency)}
+            </div>
+            <div class="account-updated">
+                Last updated: ${formatDate(account.updatedAt)}
+            </div>
+        </div>
+    `).join('');
+
+    accountsGrid.innerHTML = accountCards + `
+        <button onclick="switchView('settings')" class="account-card add-account-card">
+            <span class="add-account-icon">+</span>
+            <span class="add-account-text">Add New Account</span>
+        </button>
+    `;
+
+    // Update account select dropdowns
+    accountSelects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = `
+            <option value="">Select an account</option>
+            ${state.accounts.map(account => `
+                <option value="${account.id}" ${currentValue === account.id ? 'selected' : ''}>
+                    ${escapeHtml(account.name)} (${account.currency})
+                </option>
+            `).join('')}
+        `;
+    });
+}
+
 // Make UI functions globally available
 window.switchView = switchView;
 window.renderAll = renderAll;
