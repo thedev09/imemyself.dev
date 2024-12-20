@@ -371,7 +371,12 @@ function createCategoryChart(ctx, data) {
 
 
 
-async function editAccount(account) {
+async function editAccount(accountId) {
+    const account = state.accounts.find(acc => acc.id === accountId);
+    if (!account) {
+        showToast('Account not found', 'error');
+        return;
+    }
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
@@ -462,7 +467,7 @@ function renderAccounts() {
     const accountCards = state.accounts.map(account => `
         <div class="account-card">
             <div class="account-actions">
-                <button onclick="editAccount(${JSON.stringify(account)})" 
+                <button onclick="editAccount('${account.id}')" 
                         class="action-btn edit" 
                         title="Edit Account">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
