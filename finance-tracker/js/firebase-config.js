@@ -1,6 +1,5 @@
-// Wait for Firebase SDK to load
+// firebase-config.js
 document.addEventListener('DOMContentLoaded', function() {
-  // Initialize Firebase only if it hasn't been initialized yet
   if (!firebase.apps.length) {
       const firebaseConfig = {
           apiKey: "AIzaSyARjanzH8bylb2FsQdz60yI2hs8ud-yqwc",
@@ -15,10 +14,19 @@ document.addEventListener('DOMContentLoaded', function() {
       // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
       
-      // Initialize Firestore
+      // Initialize Firestore with settings
       const db = firebase.firestore();
       
-      // Make db available globally
+      // Enable offline persistence
+      db.enablePersistence()
+          .catch((err) => {
+              if (err.code == 'failed-precondition') {
+                  console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+              } else if (err.code == 'unimplemented') {
+                  console.warn('The current browser does not support persistence.');
+              }
+          });
+
       window.db = db;
   }
 });

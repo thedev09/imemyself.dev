@@ -307,35 +307,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Account form
     const accountForm = document.getElementById('account-form');
-    if (accountForm) {
-        accountForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            auth.toggleLoading(true);
+if (accountForm) {
+    accountForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
 
-            try {
-                const formData = new FormData(e.target);
-                const account = {
-                    id: Date.now().toString(),
-                    name: formData.get('name'),
-                    type: formData.get('type'),
-                    currency: formData.get('currency'),
-                    balance: parseFloat(formData.get('balance'))
-                };
-                
-                await saveAccount(account);
-                state.accounts.push(account);
-                renderAccounts();
-                e.target.reset();
-                auth.showToast('Account created successfully!');
-            } catch (error) {
-                console.error('Error saving account:', error);
-                auth.showToast(error.message || 'Error saving account', 'error');
-            } finally {
-                auth.toggleLoading(false);
+        try {
+            const user = getCurrentUser();
+            if (!user) {
+                throw new Error('Please sign in to continue');
             }
-        });
-    }
 
+            const formData = new FormData(e.target);
+            const account = {
+                id: Date.now().toString(),
+                name: formData.get('name'),
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                balance: parseFloat(formData.get('balance')),
+                userId: user.uid,
+                createdAt: new Date().toISOString()
+            };
+            
+            await db.collection('users')
+                .doc(user.uid)
+                .collection('accounts')
+                .doc(account.id)
+                .set(account);
+
+            state.accounts.push(account);
+            renderAccounts();
+            e.target.reset();
+            showToast('Account created successfully!');
+        } catch (error) {
+            console.error('Error saving account:', error);
+            showToast(error.message || 'Error saving account', 'error');
+        } finally {
+            toggleLoading(false);
+        }
+    });
+}
     // Transaction form
     const transactionForm = document.getElementById('transaction-form');
     if (transactionForm) {
