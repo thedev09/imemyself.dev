@@ -458,14 +458,27 @@ async function editAccount(accountId) {
     });
 }
 
+
 function renderAccounts() {
     const accountsGrid = document.getElementById('accounts-grid');
     const accountSelects = document.querySelectorAll('select[name="account"]');
     
     if (!accountsGrid) return;
 
+    if (!state.accounts.length) {
+        accountsGrid.innerHTML = `
+            <div class="account-card">
+                <div class="no-data">No accounts found</div>
+                <button onclick="switchView('settings')" class="btn btn-primary">
+                    + Add Account
+                </button>
+            </div>
+        `;
+        return;
+    }
+
     const accountCards = state.accounts.map(account => `
-        <div class="account-card">
+        <div class="account-card ${account.type.toLowerCase()}">
             <div class="account-actions">
                 <button onclick="editAccount('${account.id}')" 
                         class="action-btn edit" 
@@ -484,10 +497,8 @@ function renderAccounts() {
                     </svg>
                 </button>
             </div>
-            <div class="account-header">
-                <span class="account-name">${escapeHtml(account.name)}</span>
-                <span class="account-type">${escapeHtml(account.type)}</span>
-            </div>
+            <span class="account-type ${account.type.toLowerCase()}">${account.type}</span>
+            <h3 class="account-name">${escapeHtml(account.name)}</h3>
             <div class="account-balance">
                 ${formatCurrency(account.balance, account.currency)}
             </div>
@@ -498,10 +509,12 @@ function renderAccounts() {
     `).join('');
 
     accountsGrid.innerHTML = accountCards + `
-        <button onclick="switchView('settings')" class="account-card add-account-card">
-            <span class="add-account-icon">+</span>
-            <span class="add-account-text">Add New Account</span>
-        </button>
+        <div class="account-card add-account" onclick="switchView('settings')">
+            <div class="add-account-content">
+                <span class="add-icon">+</span>
+                <span class="add-text">Add New Account</span>
+            </div>
+        </div>
     `;
 
     // Update account select dropdowns
