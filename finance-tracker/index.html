@@ -3,17 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal Finance Manager - Track your income, expenses, and manage your accounts">
+    <meta name="theme-color" content="#3b82f6">
     <title>Finance Manager</title>
+    
+    <!-- Preload important assets -->
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Toast Messages -->
+    <div id="toast" class="toast" style="display: none"></div>
+
     <!-- Login Section -->
     <div id="loginSection" class="login-section">
         <div class="login-card">
             <h2>Finance Manager</h2>
             <p>Please sign in to continue</p>
-            <button onclick="signInWithGoogle()" class="google-btn">
+            <button onclick="auth.signInWithGoogle()" class="google-btn" aria-label="Sign in with Google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
+                     alt="Google logo" 
+                     width="18" 
+                     height="18">
                 Sign in with Google
             </button>
         </div>
@@ -22,46 +41,102 @@
     <!-- Main Content (hidden until login) -->
     <div id="mainContent" class="main-content" style="display: none;">
         <!-- Navigation -->
-        <nav class="nav">
+        <nav class="nav" role="navigation">
             <div class="nav-content">
                 <h1 class="nav-title">Finance Manager</h1>
-                <div class="nav-links">
-                    <button class="nav-link active" data-view="dashboard">Dashboard</button>
-                    <button class="nav-link" data-view="transactions">Transactions</button>
-                    <button class="nav-link" data-view="analytics">Analytics</button>
-                    <button class="nav-link" data-view="settings">Settings</button>
+                <div class="nav-links" role="tablist">
+                    <button class="nav-link active" 
+                            data-view="dashboard" 
+                            role="tab" 
+                            aria-selected="true" 
+                            aria-controls="dashboard-view">
+                        Dashboard
+                    </button>
+                    <button class="nav-link" 
+                            data-view="transactions" 
+                            role="tab" 
+                            aria-selected="false" 
+                            aria-controls="transactions-view">
+                        Transactions
+                    </button>
+                    <button class="nav-link" 
+                            data-view="analytics" 
+                            role="tab" 
+                            aria-selected="false" 
+                            aria-controls="analytics-view">
+                        Analytics
+                    </button>
+                    <button class="nav-link" 
+                            data-view="settings" 
+                            role="tab" 
+                            aria-selected="false" 
+                            aria-controls="settings-view">
+                        Settings
+                    </button>
                 </div>
-                <button onclick="signOut()" class="sign-out-btn">Sign Out</button>
+                <button onclick="auth.signOut()" class="sign-out-btn" aria-label="Sign out">
+                    Sign Out
+                </button>
             </div>
         </nav>
 
         <div class="container">
             <!-- Dashboard View -->
-            <div id="dashboard-view" class="view">
-                <div class="accounts-grid" id="accounts-grid"></div>
+            <div id="dashboard-view" class="view" role="tabpanel" aria-labelledby="dashboard-tab">
+                <div class="accounts-grid" id="accounts-grid" role="list"></div>
 
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Quick Add Transaction</h2>
                     </div>
                     <div class="card-content">
-                        <form id="transaction-form">
-                            <div class="transaction-type">
-                                <button type="button" class="type-btn income selected" data-type="income">Income</button>
-                                <button type="button" class="type-btn expense" data-type="expense">Expense</button>
+                        <form id="transaction-form" novalidate>
+                            <div class="transaction-type" role="radiogroup" aria-label="Transaction type">
+                                <button type="button" 
+                                        class="type-btn income selected" 
+                                        data-type="income" 
+                                        aria-pressed="true">
+                                    Income
+                                </button>
+                                <button type="button" 
+                                        class="type-btn expense" 
+                                        data-type="expense" 
+                                        aria-pressed="false">
+                                    Expense
+                                </button>
                             </div>
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label class="form-label">Amount</label>
-                                    <input type="number" class="form-input" name="amount" required step="0.01">
+                                    <label for="amount" class="form-label">Amount</label>
+                                    <input type="number" 
+                                           id="amount"
+                                           class="form-input" 
+                                           name="amount" 
+                                           required 
+                                           step="0.01" 
+                                           min="0"
+                                           aria-required="true">
+                                    <div class="form-error" aria-live="polite"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Account</label>
-                                    <select class="form-select" name="account" required></select>
+                                    <label for="account" class="form-label">Account</label>
+                                    <select id="account"
+                                            class="form-select" 
+                                            name="account" 
+                                            required
+                                            aria-required="true">
+                                        <option value="">Select an account</option>
+                                    </select>
+                                    <div class="form-error" aria-live="polite"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Category</label>
-                                    <select class="form-select" name="category">
+                                    <label for="category" class="form-label">Category</label>
+                                    <select id="category"
+                                            class="form-select" 
+                                            name="category"
+                                            required
+                                            aria-required="true">
+                                        <option value="">Select a category</option>
                                         <option value="Salary">Salary</option>
                                         <option value="Investments">Investments</option>
                                         <option value="Food">Food</option>
@@ -73,6 +148,7 @@
                                         <option value="Healthcare">Healthcare</option>
                                         <option value="Other">Other</option>
                                     </select>
+                                    <div class="form-error" aria-live="polite"></div>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary">Add Transaction</button>
@@ -85,36 +161,46 @@
                         <h2 class="card-title">Recent Transactions</h2>
                     </div>
                     <div class="card-content">
-                        <div id="recent-transactions"></div>
+                        <div id="recent-transactions" role="list"></div>
                     </div>
                 </div>
             </div>
 
             <!-- Transactions View -->
-            <div id="transactions-view" class="view" style="display: none;">
+            <div id="transactions-view" 
+                 class="view" 
+                 style="display: none" 
+                 role="tabpanel" 
+                 aria-labelledby="transactions-tab">
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">All Transactions</h2>
                     </div>
                     <div class="card-content">
-                        <table class="transactions-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Account</th>
-                                    <th>Category</th>
-                                </tr>
-                            </thead>
-                            <tbody id="all-transactions"></tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="transactions-table" role="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Account</th>
+                                        <th scope="col">Category</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="all-transactions"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Analytics View -->
-            <div id="analytics-view" class="view" style="display: none;">
+            <div id="analytics-view" 
+                 class="view" 
+                 style="display: none" 
+                 role="tabpanel" 
+                 aria-labelledby="analytics-tab">
                 <div class="charts-grid">
                     <div class="card">
                         <div class="card-header">
@@ -122,7 +208,7 @@
                         </div>
                         <div class="card-content">
                             <div class="chart-container">
-                                <canvas id="monthly-chart"></canvas>
+                                <canvas id="monthly-chart" role="img" aria-label="Monthly financial overview chart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -132,7 +218,7 @@
                         </div>
                         <div class="card-content">
                             <div class="chart-container">
-                                <canvas id="category-chart"></canvas>
+                                <canvas id="category-chart" role="img" aria-label="Expense categories distribution chart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -140,35 +226,65 @@
             </div>
 
             <!-- Settings View -->
-            <div id="settings-view" class="view" style="display: none;">
+            <div id="settings-view" 
+                 class="view" 
+                 style="display: none" 
+                 role="tabpanel" 
+                 aria-labelledby="settings-tab">
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Add New Account</h2>
                     </div>
                     <div class="card-content">
-                        <form id="account-form">
+                        <form id="account-form" novalidate>
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label class="form-label">Account Name</label>
-                                    <input type="text" class="form-input" name="name" required>
+                                    <label for="accountName" class="form-label">Account Name</label>
+                                    <input type="text" 
+                                           id="accountName"
+                                           class="form-input" 
+                                           name="name" 
+                                           required
+                                           aria-required="true">
+                                    <div class="form-error" aria-live="polite"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Account Type</label>
-                                    <select class="form-select" name="type">
+                                    <label for="accountType" class="form-label">Account Type</label>
+                                    <select id="accountType"
+                                            class="form-select" 
+                                            name="type"
+                                            required
+                                            aria-required="true">
+                                        <option value="">Select account type</option>
                                         <option value="bank">Bank Account</option>
                                         <option value="crypto">Crypto Wallet</option>
                                     </select>
+                                    <div class="form-error" aria-live="polite"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Currency</label>
-                                    <select class="form-select" name="currency">
+                                    <label for="currency" class="form-label">Currency</label>
+                                    <select id="currency"
+                                            class="form-select" 
+                                            name="currency"
+                                            required
+                                            aria-required="true">
+                                        <option value="">Select currency</option>
                                         <option value="INR">INR</option>
                                         <option value="USDT">USDT</option>
                                     </select>
+                                    <div class="form-error" aria-live="polite"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Initial Balance</label>
-                                    <input type="number" class="form-input" name="balance" required step="0.01">
+                                    <label for="balance" class="form-label">Initial Balance</label>
+                                    <input type="number" 
+                                           id="balance"
+                                           class="form-input" 
+                                           name="balance" 
+                                           required 
+                                           step="0.01"
+                                           min="0"
+                                           aria-required="true">
+                                    <div class="form-error" aria-live="polite"></div>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary">Add Account</button>
@@ -180,12 +296,12 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" defer></script>
+    <script src="js/firebase-config.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/app.js" defer></script>
 </body>
 </html>

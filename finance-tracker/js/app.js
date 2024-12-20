@@ -1,119 +1,93 @@
-// Initialize Firestore
-const db = firebase.firestore();
-
 // State management
 const state = {
     accounts: [],
-    transactions: []
+    transactions: [],
+    currentView: 'dashboard',
+    isLoading: false,
+    lastTransactionDate: null
 };
 
-// Navigation function
+// Validation functions
+function validateTransaction(transaction) {
+    if (!transaction.amount || isNaN(transaction.amount) || transaction.amount <= 0) {
+        throw new Error('Please enter a valid amount greater than 0');
+    }
+    if (!transaction.accountId || !state.accounts.find(a => a.id === transaction.accountId)) {
+        throw new Error('Please select a valid account');
+    }
+    if (!transaction.category) {
+        throw new Error('Please select a category');
+    }
+    return true;
+}
+
+function validateAccount(account) {
+    if (!account.name || account.name.trim().length === 0) {
+        throw new Error('Account name is required');
+    }
+    if (!account.balance || isNaN(account.balance)) {
+        throw new Error('Please enter a valid initial balance');
+    }
+    return true;
+}
+
+// Firebase operations
+async function saveAccount(account) {
+    if (!currentUser) throw new Error('Please sign in to continue');
+    validateAccount(account);
+    
+    return FirebaseService.setDocument(
+        `users/${currentUser.uid}/accounts`,
+        account.id,
+        account
+    );
+}
+
+async function saveTransaction(transaction) {
+    if (!currentUser) throw new Error('Please sign in to continue');
+    validateTransaction(transaction);
+    
+    return FirebaseService.setDocument(
+        `users/${currentUser.uid}/transactions`,
+        transaction.id,
+        transaction
+    );
+}
+
+// View management
 function switchView(view) {
     console.log('Switching to view:', view);
     state.currentView = view;
+    
+    // Show loading state
     document.querySelectorAll('.view').forEach(el => {
-        el.style.display = el.id === `${view}-view` ? 'block' : 'none';
+        if (el.id === `${view}-view`) {
+            el.style.display = 'block';
+            el.classList.add('loading');
+        } else {
+            el.style.display = 'none';
+        }
     });
+    
+    // Update navigation
     document.querySelectorAll('.nav-link').forEach(el => {
         el.classList.toggle('active', el.dataset.view === view);
     });
+
+    // Remove loading state after content update
+    setTimeout(() => {
+        document.querySelectorAll('.view').forEach(el => {
+            el.classList.remove('loading');
+        });
+    }, 300);
 }
 
-// Add event listeners
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded');
-
-    // Navigation buttons
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', (e) => {
-            console.log('Nav link clicked:', e.target.dataset.view);
-            switchView(e.target.dataset.view);
-        });
-    });
-
-    // Transaction type buttons
-    document.querySelectorAll('.type-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            console.log('Transaction type button clicked');
-            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
-            e.target.classList.add('selected');
-        });
-    });
-
-    // Account form
-    const accountForm = document.getElementById('account-form');
-    if (accountForm) {
-        accountForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log('Account form submitted');
-            const formData = new FormData(e.target);
-            const account = {
-                id: Date.now().toString(),
-                name: formData.get('name'),
-                type: formData.get('type'),
-                currency: formData.get('currency'),
-                balance: parseFloat(formData.get('balance'))
-            };
-            
-            try {
-                await saveAccount(account);
-                state.accounts.push(account);
-                renderAccounts();
-                e.target.reset();
-                console.log('Account saved successfully');
-            } catch (error) {
-                console.error('Error saving account:', error);
-                alert('Error saving account. Please try again.');
-            }
-        });
-    }
-
-    // Transaction form
-    const transactionForm = document.getElementById('transaction-form');
-    if (transactionForm) {
-        transactionForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            console.log('Transaction form submitted');
-            const formData = new FormData(e.target);
-            const transaction = {
-                id: Date.now().toString(),
-                date: new Date().toISOString(),
-                type: document.querySelector('.type-btn.selected').dataset.type,
-                amount: parseFloat(formData.get('amount')),
-                accountId: formData.get('account'),
-                category: formData.get('category')
-            };
-
-            try {
-                // Update account balance
-                const account = state.accounts.find(a => a.id === transaction.accountId);
-                if (account) {
-                    account.balance += transaction.type === 'income' ? 
-                        transaction.amount : -transaction.amount;
-                    await saveAccount(account);
-                }
-
-                await saveTransaction(transaction);
-                state.transactions.push(transaction);
-                renderTransactions();
-                renderCharts();
-                e.target.reset();
-                console.log('Transaction saved successfully');
-            } catch (error) {
-                console.error('Error saving transaction:', error);
-                alert('Error saving transaction. Please try again.');
-            }
-        });
-    }
-
-    // Initial render
-    loadUserData();
-});
-
 // Data loading
-async function loadUserData() {
+async function loadUserData(forceRefresh = false) {
     if (!currentUser) return;
-    console.log('Loading user data for:', currentUser.uid);
+    
+    state.isLoading = true;
+    auth.toggleLoading(true);
 
     try {
         // Load accounts
@@ -126,29 +100,53 @@ async function loadUserData() {
             id: doc.id,
             ...doc.data()
         }));
-        console.log('Loaded accounts:', state.accounts);
 
-        // Load transactions
-        const transactionsSnapshot = await db.collection('users')
+        // Load transactions with pagination
+        const transactionsQuery = db.collection('users')
             .doc(currentUser.uid)
             .collection('transactions')
-            .get();
+            .orderBy('date', 'desc')
+            .limit(20);
+
+        if (state.lastTransactionDate && !forceRefresh) {
+            transactionsQuery = transactionsQuery.startAfter(state.lastTransactionDate);
+        }
+
+        const transactionsSnapshot = await transactionsQuery.get();
         
-        state.transactions = transactionsSnapshot.docs.map(doc => ({
+        const newTransactions = transactionsSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
-        console.log('Loaded transactions:', state.transactions);
 
-        renderAccounts();
-        renderTransactions();
-        renderCharts();
+        if (forceRefresh) {
+            state.transactions = newTransactions;
+        } else {
+            state.transactions = [...state.transactions, ...newTransactions];
+        }
+
+        if (newTransactions.length > 0) {
+            state.lastTransactionDate = newTransactions[newTransactions.length - 1].date;
+        }
+
+        await renderAll();
+        
     } catch (error) {
         console.error('Error loading data:', error);
-        alert('Error loading data. Please refresh the page.');
+        auth.showToast('Error loading data. Please refresh the page.', 'error');
+    } finally {
+        state.isLoading = false;
+        auth.toggleLoading(false);
     }
 }
-// UI Rendering Functions
+
+// Rendering functions
+async function renderAll() {
+    renderAccounts();
+    renderTransactions();
+    await renderCharts();
+}
+
 function renderAccounts() {
     const accountsGrid = document.getElementById('accounts-grid');
     const accountSelects = document.querySelectorAll('select[name="account"]');
@@ -158,11 +156,11 @@ function renderAccounts() {
     accountsGrid.innerHTML = state.accounts.map(account => `
         <div class="account-card">
             <div class="account-header">
-                <span>${account.name}</span>
+                <span class="account-name">${escapeHtml(account.name)}</span>
                 <span class="account-type">${account.type}</span>
             </div>
             <div class="account-balance">
-                ${account.balance.toFixed(2)} ${account.currency}
+                ${formatCurrency(account.balance, account.currency)}
             </div>
         </div>
     `).join('') + `
@@ -171,10 +169,17 @@ function renderAccounts() {
         </button>
     `;
 
+    // Update account selects
     accountSelects.forEach(select => {
-        select.innerHTML = state.accounts.map(account => `
-            <option value="${account.id}">${account.name} (${account.currency})</option>
-        `).join('');
+        const currentValue = select.value;
+        select.innerHTML = `
+            <option value="">Select an account</option>
+            ${state.accounts.map(account => `
+                <option value="${account.id}" ${currentValue === account.id ? 'selected' : ''}>
+                    ${escapeHtml(account.name)} (${account.currency})
+                </option>
+            `).join('')}
+        `;
     });
 }
 
@@ -182,6 +187,14 @@ function renderTransactions() {
     const recentTransactions = document.getElementById('recent-transactions');
     const allTransactions = document.getElementById('all-transactions');
     
+    const noDataMessage = '<div class="text-center p-4">No transactions found</div>';
+    
+    if (!state.transactions.length) {
+        if (recentTransactions) recentTransactions.innerHTML = noDataMessage;
+        if (allTransactions) allTransactions.innerHTML = noDataMessage;
+        return;
+    }
+
     const sortedTransactions = [...state.transactions].sort((a, b) => 
         new Date(b.date) - new Date(a.date)
     );
@@ -194,11 +207,11 @@ function renderTransactions() {
                 return `
                     <div class="transaction-item">
                         <div class="transaction-info">
-                            <div class="transaction-category">${transaction.category}</div>
-                            <div class="transaction-date">${new Date(transaction.date).toLocaleDateString()}</div>
+                            <div class="transaction-category">${escapeHtml(transaction.category)}</div>
+                            <div class="transaction-date">${formatDate(transaction.date)}</div>
                         </div>
                         <div class="amount-${transaction.type}">
-                            ${transaction.type === 'income' ? '+' : '-'}${transaction.amount} ${account?.currency}
+                            ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account?.currency)}
                         </div>
                     </div>
                 `;
@@ -212,17 +225,17 @@ function renderTransactions() {
                 const account = state.accounts.find(a => a.id === transaction.accountId);
                 return `
                     <tr>
-                        <td>${new Date(transaction.date).toLocaleDateString()}</td>
+                        <td>${formatDate(transaction.date)}</td>
                         <td>
                             <span class="badge-${transaction.type}">
                                 ${transaction.type}
                             </span>
                         </td>
                         <td class="amount-${transaction.type}">
-                            ${transaction.type === 'income' ? '+' : '-'}${transaction.amount} ${account?.currency}
+                            ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account?.currency)}
                         </td>
-                        <td>${account?.name}</td>
-                        <td>${transaction.category}</td>
+                        <td>${escapeHtml(account?.name || '')}</td>
+                        <td>${escapeHtml(transaction.category)}</td>
                     </tr>
                 `;
             })
@@ -230,51 +243,156 @@ function renderTransactions() {
     }
 }
 
+async function renderCharts() {
+    if (state.currentView !== 'analytics') return;
+
+    const monthlyCtx = document.getElementById('monthly-chart')?.getContext('2d');
+    const categoryCtx = document.getElementById('category-chart')?.getContext('2d');
+
+    if (!monthlyCtx || !categoryCtx) return;
+
+    // Prepare monthly data
+    const monthlyData = processMonthlyData(state.transactions);
+    
+    // Prepare category data
+    const categoryData = processCategoryData(state.transactions);
+
+    // Create/update charts
+    createMonthlyChart(monthlyCtx, monthlyData);
+    createCategoryChart(categoryCtx, categoryData);
+}
+
+// Helper functions
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return '';
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatCurrency(amount, currency = 'USD') {
+    return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: currency
+    }).format(amount);
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-    // Account form submission
-    document.getElementById('account-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const account = {
-            id: Date.now().toString(),
-            name: formData.get('name'),
-            type: formData.get('type'),
-            currency: formData.get('currency'),
-            balance: parseFloat(formData.get('balance'))
-        };
-        
-        await saveAccount(account);
-        state.accounts.push(account);
-        renderAccounts();
-        e.target.reset();
+    // Navigation
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            switchView(e.target.dataset.view);
+        });
     });
 
-    // Transaction form submission
-    document.getElementById('transaction-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const transaction = {
-            id: Date.now().toString(),
-            date: new Date().toISOString(),
-            type: document.querySelector('.type-btn.selected').dataset.type,
-            amount: parseFloat(formData.get('amount')),
-            accountId: formData.get('account'),
-            category: formData.get('category')
-        };
-
-        // Update account balance
-        const account = state.accounts.find(a => a.id === transaction.accountId);
-        if (account) {
-            account.balance += transaction.type === 'income' ? 
-                transaction.amount : -transaction.amount;
-            await saveAccount(account);
-        }
-
-        await saveTransaction(transaction);
-        state.transactions.push(transaction);
-        renderTransactions();
-        renderCharts();
-        e.target.reset();
+    // Transaction type buttons
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+            e.target.classList.add('selected');
+        });
     });
+
+    // Account form
+    const accountForm = document.getElementById('account-form');
+    if (accountForm) {
+        accountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            auth.toggleLoading(true);
+
+            try {
+                const formData = new FormData(e.target);
+                const account = {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    type: formData.get('type'),
+                    currency: formData.get('currency'),
+                    balance: parseFloat(formData.get('balance'))
+                };
+                
+                await saveAccount(account);
+                state.accounts.push(account);
+                renderAccounts();
+                e.target.reset();
+                auth.showToast('Account created successfully!');
+            } catch (error) {
+                console.error('Error saving account:', error);
+                auth.showToast(error.message || 'Error saving account', 'error');
+            } finally {
+                auth.toggleLoading(false);
+            }
+        });
+    }
+
+    // Transaction form
+    const transactionForm = document.getElementById('transaction-form');
+    if (transactionForm) {
+        transactionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            auth.toggleLoading(true);
+
+            try {
+                const formData = new FormData(e.target);
+                const transaction = {
+                    id: Date.now().toString(),
+                    date: new Date().toISOString(),
+                    type: document.querySelector('.type-btn.selected').dataset.type,
+                    amount: parseFloat(formData.get('amount')),
+                    accountId: formData.get('account'),
+                    category: formData.get('category')
+                };
+
+                // Update account balance
+                const account = state.accounts.find(a => a.id === transaction.accountId);
+                if (account) {
+                    account.balance += transaction.type === 'income' ? 
+                        transaction.amount : -transaction.amount;
+                    await saveAccount(account);
+                }
+
+                await saveTransaction(transaction);
+                state.transactions.unshift(transaction);
+                await renderAll();
+                e.target.reset();
+                auth.showToast('Transaction added successfully!');
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                auth.showToast(error.message || 'Error saving transaction', 'error');
+            } finally {
+                auth.toggleLoading(false);
+            }
+        });
+    }
+
+    // Infinite scroll for transactions
+    const transactionsView = document.getElementById('transactions-view');
+    if (transactionsView) {
+        transactionsView.addEventListener('scroll', async () => {
+            if (state.isLoading) return;
+            
+            const threshold = 100;
+            const bottomReached = 
+                transactionsView.scrollHeight - transactionsView.scrollTop - transactionsView.clientHeight < threshold;
+                
+            if (bottomReached) {
+                await loadUserData();
+            }
+        });
+    }
 });
+
+// Make functions available globally
+window.loadUserData = loadUserData;
+window.switchView = switchView;
