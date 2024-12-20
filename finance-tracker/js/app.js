@@ -12,8 +12,8 @@ function validateTransaction(transaction) {
     if (!transaction.amount || isNaN(transaction.amount) || transaction.amount <= 0) {
         throw new Error('Please enter a valid amount greater than 0');
     }
-    if (!transaction.accountId || !state.accounts.find(a => a.id === transaction.accountId)) {
-        throw new Error('Please select a valid account');
+    if (!transaction.accountId) {
+        throw new Error('Please select an account');
     }
     if (!transaction.category) {
         throw new Error('Please select a category');
@@ -25,6 +25,12 @@ function validateAccount(account) {
     if (!account.name || account.name.trim().length === 0) {
         throw new Error('Account name is required');
     }
+    if (!account.type) {
+        throw new Error('Please select an account type');
+    }
+    if (!account.currency) {
+        throw new Error('Please select a currency');
+    }
     if (!account.balance || isNaN(account.balance)) {
         throw new Error('Please enter a valid initial balance');
     }
@@ -33,30 +39,81 @@ function validateAccount(account) {
 
 // Firebase operations
 async function saveAccount(account) {
-    if (!currentUser) throw new Error('Please sign in to continue');
+    const user = getCurrentUser();
+    if (!user) throw new Error('Please sign in to continue');
+    
     validateAccount(account);
     
-    return FirebaseService.setDocument(
-        `users/${currentUser.uid}/accounts`,
-        account.id,
-        account
-    );
+    try {
+        await db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(account.id)
+            .set({
+                ...account,
+                userId: user.uid,
+                createdAt: new Date().toISOString()
+            });
+        return true;
+    } catch (error) {
+        console.error('Error saving account:', error);
+        throw error;
+    }
 }
 
 async function saveTransaction(transaction) {
-    if (!currentUser) throw new Error('Please sign in to continue');
-    validateTransaction(transaction);
-    
-    return FirebaseService.setDocument(
-        `users/${currentUser.uid}/transactions`,
-        transaction.id,
-        transaction
-    );
+    const user = getCurrentUser();
+    if (!user) throw new Error('Please sign in to continue');
+
+    const transactionRef = db.collection('users')
+        .doc(user.uid)
+        .collection('transactions')
+        .doc(transaction.id);
+
+    try {
+        await db.runTransaction(async (dbTransaction) => {
+            // Save the transaction
+            dbTransaction.set(transactionRef, {
+                ...transaction,
+                userId: user.uid,
+                createdAt: new Date().toISOString()
+            });
+
+            // Update account balance
+            const accountRef = db.collection('users')
+                .doc(user.uid)
+                .collection('accounts')
+                .doc(transaction.accountId);
+
+            const accountDoc = await dbTransaction.get(accountRef);
+            if (!accountDoc.exists) {
+                throw new Error('Account not found');
+            }
+
+            const currentBalance = accountDoc.data().balance;
+            const newBalance = transaction.type === 'income'
+                ? currentBalance + transaction.amount
+                : currentBalance - transaction.amount;
+
+            dbTransaction.update(accountRef, { balance: newBalance });
+        });
+
+        // Update local state
+        state.transactions.unshift(transaction);
+        const accountIndex = state.accounts.findIndex(acc => acc.id === transaction.accountId);
+        if (accountIndex !== -1) {
+            state.accounts[accountIndex].balance = transaction.type === 'income'
+                ? state.accounts[accountIndex].balance + transaction.amount
+                : state.accounts[accountIndex].balance - transaction.amount;
+        }
+    } catch (error) {
+        console.error('Error saving transaction:', error);
+        throw error;
+    }
 }
 
 // View management
 function switchView(view) {
-    console.log('Switching to view:', view);
     state.currentView = view;
     
     // Show loading state
@@ -72,6 +129,7 @@ function switchView(view) {
     // Update navigation
     document.querySelectorAll('.nav-link').forEach(el => {
         el.classList.toggle('active', el.dataset.view === view);
+        el.setAttribute('aria-selected', el.dataset.view === view);
     });
 
     // Remove loading state after content update
@@ -84,15 +142,16 @@ function switchView(view) {
 
 // Data loading
 async function loadUserData(forceRefresh = false) {
-    if (!currentUser) return;
+    const user = getCurrentUser();
+    if (!user) return;
     
     state.isLoading = true;
-    auth.toggleLoading(true);
+    toggleLoading(true);
 
     try {
         // Load accounts
         const accountsSnapshot = await db.collection('users')
-            .doc(currentUser.uid)
+            .doc(user.uid)
             .collection('accounts')
             .get();
         
@@ -102,8 +161,8 @@ async function loadUserData(forceRefresh = false) {
         }));
 
         // Load transactions with pagination
-        const transactionsQuery = db.collection('users')
-            .doc(currentUser.uid)
+        let transactionsQuery = db.collection('users')
+            .doc(user.uid)
             .collection('transactions')
             .orderBy('date', 'desc')
             .limit(20);
@@ -133,10 +192,10 @@ async function loadUserData(forceRefresh = false) {
         
     } catch (error) {
         console.error('Error loading data:', error);
-        auth.showToast('Error loading data. Please refresh the page.', 'error');
+        showToast('Error loading data. Please refresh the page.', 'error');
     } finally {
         state.isLoading = false;
-        auth.toggleLoading(false);
+        toggleLoading(false);
     }
 }
 
@@ -153,6 +212,7 @@ function renderAccounts() {
     
     if (!accountsGrid) return;
 
+    // Render accounts grid
     accountsGrid.innerHTML = state.accounts.map(account => `
         <div class="account-card">
             <div class="account-header">
@@ -187,9 +247,8 @@ function renderTransactions() {
     const recentTransactions = document.getElementById('recent-transactions');
     const allTransactions = document.getElementById('all-transactions');
     
-    const noDataMessage = '<div class="text-center p-4">No transactions found</div>';
-    
     if (!state.transactions.length) {
+        const noDataMessage = '<div class="no-data">No transactions found</div>';
         if (recentTransactions) recentTransactions.innerHTML = noDataMessage;
         if (allTransactions) allTransactions.innerHTML = noDataMessage;
         return;
@@ -249,12 +308,12 @@ async function renderCharts() {
     const monthlyCtx = document.getElementById('monthly-chart')?.getContext('2d');
     const categoryCtx = document.getElementById('category-chart')?.getContext('2d');
 
-    if (!monthlyCtx || !categoryCtx) return;
+    if (!monthlyCtx || !categoryCtx || !state.transactions.length) return;
 
-    // Prepare monthly data
+    // Process monthly data
     const monthlyData = processMonthlyData(state.transactions);
     
-    // Prepare category data
+    // Process category data
     const categoryData = processCategoryData(state.transactions);
 
     // Create/update charts
@@ -263,6 +322,101 @@ async function renderCharts() {
 }
 
 // Helper functions
+function processMonthlyData(transactions) {
+    const monthlyData = {};
+    transactions.forEach(transaction => {
+        const date = new Date(transaction.date);
+        const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        
+        if (!monthlyData[monthYear]) {
+            monthlyData[monthYear] = { income: 0, expense: 0 };
+        }
+        
+        if (transaction.type === 'income') {
+            monthlyData[monthYear].income += transaction.amount;
+        } else {
+            monthlyData[monthYear].expense += transaction.amount;
+        }
+    });
+    
+    return monthlyData;
+}
+
+function processCategoryData(transactions) {
+    const categoryData = {};
+    transactions.forEach(transaction => {
+        if (!categoryData[transaction.category]) {
+            categoryData[transaction.category] = 0;
+        }
+        if (transaction.type === 'expense') {
+            categoryData[transaction.category] += transaction.amount;
+        }
+    });
+    
+    return categoryData;
+}
+
+function createMonthlyChart(ctx, data) {
+    const labels = Object.keys(data).sort();
+    const incomeData = labels.map(month => data[month].income);
+    const expenseData = labels.map(month => data[month].expense);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Income',
+                    data: incomeData,
+                    backgroundColor: '#22c55e'
+                },
+                {
+                    label: 'Expense',
+                    data: expenseData,
+                    backgroundColor: '#ef4444'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function createCategoryChart(ctx, data) {
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: [
+                    '#3b82f6',
+                    '#ef4444',
+                    '#22c55e',
+                    '#f59e0b',
+                    '#8b5cf6',
+                    '#ec4899'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
 function escapeHtml(unsafe) {
     if (typeof unsafe !== 'string') return '';
     return unsafe
@@ -300,89 +454,84 @@ document.addEventListener('DOMContentLoaded', () => {
     // Transaction type buttons
     document.querySelectorAll('.type-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+            document.querySelectorAll('.type-btn').forEach(b => {
+                b.classList.remove('selected');
+                b.setAttribute('aria-pressed', 'false');
+            });
             e.target.classList.add('selected');
+            e.target.setAttribute('aria-pressed', 'true');
         });
     });
 
     // Account form
     const accountForm = document.getElementById('account-form');
-if (accountForm) {
-    accountForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        toggleLoading(true);
+    if (accountForm) {
+        accountForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
 
-        try {
-            const user = getCurrentUser();
-            if (!user) {
-                throw new Error('Please sign in to continue');
+            try {
+                const formData = new FormData(e.target);
+                const account = {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    type: formData.get('type'),
+                    currency: formData.get('currency'),
+                    balance: parseFloat(formData.get('balance'))
+                };
+                
+                await saveAccount(account);
+                state.accounts.push(account);
+                renderAccounts();
+                e.target.reset();
+                showToast('Account created successfully!');
+            } catch (error) {
+                console.error('Error saving account:', error);
+                showToast(error.message || 'Error saving account', 'error');
+            } finally {
+                toggleLoading(false);
             }
+        });
+    }
 
-            const formData = new FormData(e.target);
-            const account = {
-                id: Date.now().toString(),
-                name: formData.get('name'),
-                type: formData.get('type'),
-                currency: formData.get('currency'),
-                balance: parseFloat(formData.get('balance')),
-                userId: user.uid,
-                createdAt: new Date().toISOString()
-            };
-            
-            await db.collection('users')
-                .doc(user.uid)
-                .collection('accounts')
-                .doc(account.id)
-                .set(account);
-
-            state.accounts.push(account);
-            renderAccounts();
-            e.target.reset();
-            showToast('Account created successfully!');
-        } catch (error) {
-            console.error('Error saving account:', error);
-            showToast(error.message || 'Error saving account', 'error');
-        } finally {
-            toggleLoading(false);
-        }
-    });
-}
     // Transaction form
     const transactionForm = document.getElementById('transaction-form');
     if (transactionForm) {
         transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            auth.toggleLoading(true);
+            toggleLoading(true);
 
             try {
                 const formData = new FormData(e.target);
+                const selectedTypeBtn = document.querySelector('.type-btn.selected');
+                
+                if (!selectedTypeBtn) {
+                    throw new Error('Please select a transaction type');
+                }
+
                 const transaction = {
                     id: Date.now().toString(),
                     date: new Date().toISOString(),
-                    type: document.querySelector('.type-btn.selected').dataset.type,
+                    type: selectedTypeBtn.dataset.type,
                     amount: parseFloat(formData.get('amount')),
                     accountId: formData.get('account'),
                     category: formData.get('category')
                 };
 
-                // Update account balance
-                const account = state.accounts.find(a => a.id === transaction.accountId);
-                if (account) {
-                    account.balance += transaction.type === 'income' ? 
-                        transaction.amount : -transaction.amount;
-                    await saveAccount(account);
-                }
-
+                validateTransaction(transaction);
                 await saveTransaction(transaction);
-                state.transactions.unshift(transaction);
-                await renderAll();
+                
                 e.target.reset();
-                auth.showToast('Transaction added successfully!');
+                document.querySelector('.type-btn.income').classList.add('selected');
+                document.querySelector('.type-btn.expense').classList.remove('selected');
+                
+                await renderAll();
+                showToast('Transaction added successfully!');
             } catch (error) {
-                console.error('Error saving transaction:', error);
-                auth.showToast(error.message || 'Error saving transaction', 'error');
+                console.error('Error adding transaction:', error);
+                showToast(error.message || 'Error adding transaction', 'error');
             } finally {
-                auth.toggleLoading(false);
+                toggleLoading(false);
             }
         });
     }
@@ -404,6 +553,10 @@ if (accountForm) {
     }
 });
 
-// Make functions available globally
+// Make functions globally available
 window.loadUserData = loadUserData;
 window.switchView = switchView;
+window.renderAll = renderAll;
+window.getCurrentUser = getCurrentUser;
+window.showToast = showToast;
+window.toggleLoading = toggleLoading;
