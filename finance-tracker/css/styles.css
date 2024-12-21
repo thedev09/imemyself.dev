@@ -2218,32 +2218,12 @@ body, .bg-gradient-dark {
 
 
 
-
-
-/* Portfolio Summary Styling */
-.portfolio-summary {
-    background: rgba(30, 41, 59, 0.5);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-}
-
 .currency-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 16px;
 }
 
-.balance-card {
-    background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 20px;
-    transition: transform 0.3s ease;
-}
 
 .balance-card:hover {
     transform: translateY(-2px);
@@ -2282,4 +2262,71 @@ body, .bg-gradient-dark {
     font-size: 12px;
     color: #94a3b8;
     display: inline-block;
+}
+
+.currency-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+
+.balance-header {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.balance-amount {
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.account-pills {
+    display: flex;
+    gap: 8px;
+}
+
+.account-pill {
+    background: rgba(15, 23, 42, 0.3);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.exchange-rate {
+    background: rgba(15, 23, 42, 0.3);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+    display: inline-block;
+}
+
+/* Portfolio Summary Styling */
+.portfolio-summary {
+    background: #1e1e1e;  /* Same as account cards */
+    backdrop-filter: blur(12px);
+    border: 2px solid #2a2a2a;  /* Same thicker border as account cards */
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.currency-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.balance-card {
+    background: #1e1e1e;  /* Same as account cards */
+    backdrop-filter: blur(8px);
+    border: 2px solid #2a2a2a;  /* Same thicker border as account cards */
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.3s ease;
 }

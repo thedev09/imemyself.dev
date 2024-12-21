@@ -827,12 +827,6 @@ window.renderAccounts = function() {
 
 
 // Update the renderAll function to include the new dashboard render
-const originalRenderAll = window.renderAll;
-window.renderAll = async function() {
-    await originalRenderAll();
-    renderDashboard();
-};
-
     // Transaction form handler
     const transactionForm = document.getElementById('transaction-form');
     if (transactionForm) {
