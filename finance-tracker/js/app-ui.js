@@ -782,14 +782,14 @@ function renderPortfolioSummary() {
         <div class="portfolio-summary">
             <h2>Portfolio Summary</h2>
             <div class="currency-section">
-                <div class="balance-card">
+                <div class="balance-card clickable" data-currency="INR" style="cursor: pointer;">
                     <div class="balance-header">INR Balance</div>
                     <div class="balance-amount">₹${totals.inr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
                     <div class="account-pills">
                         <div class="account-pill">${totals.inrBanks} Bank Accounts</div>
                     </div>
                 </div>
-                <div class="balance-card">
+                <div class="balance-card clickable" data-currency="USD" style="cursor: pointer;">
                     <div class="balance-header">USD Balance</div>
                     <div class="balance-amount">$${totals.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
                     <div class="account-pills">
@@ -806,7 +806,7 @@ function renderPortfolioSummary() {
     `;
 }
 
-// Update the renderAccounts function to include the summary
+// Update the renderAccounts function
 const originalRenderAccounts = window.renderAccounts;
 window.renderAccounts = function() {
     const accountsGrid = document.getElementById('accounts-grid');
@@ -821,9 +821,66 @@ window.renderAccounts = function() {
     // Insert summary before the accounts grid
     accountsGrid.insertAdjacentHTML('beforebegin', renderPortfolioSummary());
     
+    // Add click handlers to the balance cards
+    document.querySelectorAll('.balance-card.clickable').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const currency = e.currentTarget.dataset.currency;
+            if (currency) {
+                showFilteredAccounts(currency);
+            }
+        });
+    });
+    
     // Call original render function
     originalRenderAccounts();
 };
+
+function showFilteredAccounts(currency) {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal-overlay';
+    
+    const filteredAccounts = state.accounts.filter(acc => acc.currency === currency);
+    const totalBalance = filteredAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+    
+    modalDiv.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h2>${currency} Accounts</h2>
+                    <div class="total-balance">
+                        Total: ${formatCurrency(totalBalance, currency)}
+                    </div>
+                </div>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="filtered-accounts-grid">
+                    ${filteredAccounts.map(account => `
+                        <div class="account-card ${account.type}" onclick="showAccountDetails('${account.id}')">
+                            <span class="account-type ${account.type}">${account.type}</span>
+                            <h3 class="account-name">${escapeHtml(account.name)}</h3>
+                            <div class="account-balance">
+                                ${formatCurrency(account.balance, account.currency)}
+                            </div>
+                            <div class="account-updated">
+                                Last updated: ${formatDate(account.updatedAt)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalDiv);
+
+    // Close when clicking outside
+    modalDiv.addEventListener('click', (e) => {
+        if (e.target === modalDiv) {
+            modalDiv.remove();
+        }
+    });
+}
 
 
 // Update the renderAll function to include the new dashboard render
@@ -1087,3 +1144,4 @@ if (accountSelect) {
 window.switchView = switchView;
 window.renderAll = renderAll;
 window.updateCategoryOptions = updateCategoryOptions;
+window.showFilteredAccounts = showFilteredAccounts;
