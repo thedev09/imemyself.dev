@@ -106,6 +106,62 @@ function updateCategoryOptions(transactionType) {
     `;
 }
 
+// Add this function to app-ui.js
+async function editAccount(accountId) {
+    const account = state.accounts.find(acc => acc.id === accountId);
+    if (!account) {
+        showToast('Account not found', 'error');
+        return;
+    }
+
+    // Switch to settings view
+    switchView('settings');
+
+    // Get the form elements
+    const form = document.getElementById('account-form');
+    if (!form) return;
+
+    // Populate form with account data
+    form.querySelector('#accountName').value = account.name;
+    form.querySelector('#accountType').value = account.type;
+    form.querySelector('#currency').value = account.currency;
+    form.querySelector('#balance').value = account.balance;
+
+    // Update form submit handler for editing
+    const originalSubmitHandler = form.onsubmit;
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
+
+        try {
+            const formData = new FormData(e.target);
+            const updatedAccount = {
+                id: accountId, // Keep the original ID
+                name: formData.get('name'),
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                balance: parseFloat(formData.get('balance')) || 0
+            };
+            
+            await saveAccount(updatedAccount);
+            form.reset();
+            showToast('Account updated successfully!');
+            await loadUserData(true);
+            
+            // Restore original submit handler
+            form.onsubmit = originalSubmitHandler;
+        } catch (error) {
+            console.error('Error updating account:', error);
+            showToast(error.message || 'Error updating account', 'error');
+        } finally {
+            toggleLoading(false);
+        }
+    };
+}
+
+// Make the function globally available
+window.editAccount = editAccount;
+
 // Rendering functions
 async function renderAll() {
     try {
@@ -191,6 +247,36 @@ function renderAccounts() {
         `;
     });
 }
+function renderTransactionItem(transaction, account) {
+    return `
+        <div class="transaction-item">
+            <div class="transaction-main">
+                <div class="transaction-primary">
+                    <span class="transaction-title">${escapeHtml(transaction.category)}</span>
+                    <span class="transaction-tag ${transaction.type.toLowerCase()}">${transaction.type.toUpperCase()}</span>
+                </div>
+                <div class="transaction-details">
+                    <span class="transaction-time">${formatDate(transaction.date)}</span>
+                    <span class="transaction-separator">•</span>
+                    <span class="transaction-account">${escapeHtml(account?.name || '')}</span>
+                    ${transaction.paymentMode ? `
+                        <span class="transaction-separator">•</span>
+                        <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
+                    ` : ''}
+                    ${transaction.notes ? `
+                        <span class="transaction-separator">•</span>
+                        <span class="transaction-notes">${escapeHtml(transaction.notes)}</span>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="transaction-amount ${transaction.type.toLowerCase()}">
+                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account?.currency)}
+            </div>
+        </div>
+    `;
+}
+
+// Update the renderTransactions function to use the new template
 function renderTransactions() {
     const recentTransactions = document.getElementById('recent-transactions');
     const allTransactions = document.getElementById('all-transactions');
@@ -212,46 +298,28 @@ function renderTransactions() {
             .slice(0, 5)
             .map(transaction => {
                 const account = state.accounts.find(a => a.id === transaction.accountId);
+                return renderTransactionItem(transaction, account);
+            })
+            .join('');
+    }
+
+    // Render All Transactions Table (keeping the existing table format)
+    if (allTransactions) {
+        allTransactions.innerHTML = sortedTransactions
+            .map(transaction => {
+                const account = state.accounts.find(a => a.id === transaction.accountId);
                 return `
-                    <div class="transaction-item">
-                        <div class="transaction-info">
-                            <div class="transaction-header">
-                                <span class="transaction-category">${escapeHtml(transaction.category)}</span>
-                                <span class="badge-${transaction.type} transaction-type">
-                                    ${transaction.type}
-                                </span>
-                            </div>
-                            <div class="transaction-subinfo">
-                                <div class="transaction-date">${formatDate(transaction.date)}</div>
-                                <div class="transaction-account">${escapeHtml(account?.name || '')}</div>
-                            </div>
-                            ${transaction.paymentMode ? 
-                                `<div class="transaction-payment-mode">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                                    </svg>
-                                    ${escapeHtml(transaction.paymentMode)}
-                                </div>` : 
-                                ''
-                            }
-                            ${transaction.notes ? 
-                                `<div class="transaction-notes">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <line x1="21" y1="10" x2="3" y2="10"></line>
-                                        <line x1="21" y1="6" x2="3" y2="6"></line>
-                                        <line x1="21" y1="14" x2="3" y2="14"></line>
-                                        <line x1="21" y1="18" x2="3" y2="18"></line>
-                                    </svg>
-                                    ${escapeHtml(transaction.notes)}
-                                </div>` : 
-                                ''
-                            }
-                        </div>
-                        <div class="amount-${transaction.type}">
+                    <tr>
+                        <td>${formatDate(transaction.date)}</td>
+                        <td><span class="badge-${transaction.type}">${transaction.type}</span></td>
+                        <td class="amount-${transaction.type}">
                             ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account?.currency)}
-                        </div>
-                    </div>
+                        </td>
+                        <td>${transaction.paymentMode ? `<span class="payment-mode-badge">${escapeHtml(transaction.paymentMode)}</span>` : ''}</td>
+                        <td>${escapeHtml(account?.name || '')}</td>
+                        <td>${escapeHtml(transaction.category)}</td>
+                        <td>${transaction.notes ? `<span class="transaction-notes-text">${escapeHtml(transaction.notes)}</span>` : ''}</td>
+                    </tr>
                 `;
             })
             .join('');

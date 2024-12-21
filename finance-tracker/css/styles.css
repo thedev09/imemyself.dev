@@ -1769,3 +1769,91 @@ body, .bg-gradient-dark {
     background: rgba(239, 68, 68, 0.2);
     border-color: #f87171;  /* Red border when selected */
 }
+
+.logo-link {
+    text-decoration: none;
+    color: inherit; /* Inherit the color from the parent element */
+  }
+  
+  /* Hover/focus styles, if desired */
+  .logo-link:hover,
+  .logo-link:focus {
+    text-decoration: underline;
+  }
+  
+
+  .transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transaction-main {
+    flex: 1;
+    min-width: 0; /* Prevents flex item from overflowing */
+}
+
+.transaction-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.transaction-title {
+    font-weight: 500;
+    color: #fff;
+}
+
+.transaction-tag {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.transaction-tag.income {
+    background: rgba(34, 197, 94, 0.1);
+    color: #4ade80;
+}
+
+.transaction-tag.expense {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+}
+
+.transaction-details {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    flex-wrap: wrap;
+}
+
+.transaction-separator {
+    color: #4b5563;
+}
+
+.transaction-amount {
+    font-weight: 600;
+    font-size: 1rem;
+    text-align: right;
+}
+
+.transaction-amount.income {
+    color: #4ade80;
+}
+
+.transaction-amount.expense {
+    color: #f87171;
+}
+
+/* No transactions message */
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: #94a3b8;
+}
