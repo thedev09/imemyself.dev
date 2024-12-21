@@ -21,6 +21,9 @@ function validateTransaction(transaction) {
     if (!transaction.category) {
         errors.push('Please select a category');
     }
+    if (!transaction.paymentMode) {
+        errors.push('Please select a payment mode');
+    }
     
     if (errors.length > 0) {
         throw new Error(errors.join('\n'));
@@ -61,7 +64,6 @@ async function deleteAccount(accountId) {
         const user = getCurrentUser();
         if (!user) throw new Error('Please sign in to continue');
 
-        // Instead of checking for transactions, we'll mark the account as deleted
         await db.collection('users')
             .doc(user.uid)
             .collection('accounts')
@@ -71,12 +73,10 @@ async function deleteAccount(accountId) {
                 deletedAt: new Date().toISOString()
             });
 
-        // Remove from state and update UI
         state.accounts = state.accounts.filter(acc => acc.id !== accountId);
         renderAccounts();
         showToast('Account deleted successfully');
 
-        // Refresh transactions to update their display
         if (typeof window.loadUserData === 'function') {
             await window.loadUserData(true);
         }
@@ -140,17 +140,15 @@ async function saveTransaction(transaction) {
         .collection('transactions')
         .doc(transaction.id || Date.now().toString());
         
-    // Find the account (even if it's deleted)
-    const accountRef = db.collection('users')
-        .doc(user.uid)
-        .collection('accounts')
-        .doc(transaction.accountId);
-
     try {
+        const accountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(transaction.accountId);
+            
         const accountDoc = await accountRef.get();
         const account = accountDoc.data();
 
-        // Store account info with transaction
         const transactionData = {
             id: transaction.id || Date.now().toString(),
             date: transaction.date || new Date().toISOString(),
@@ -159,6 +157,8 @@ async function saveTransaction(transaction) {
             accountId: transaction.accountId,
             accountName: account ? account.name : 'Deleted Account',
             category: transaction.category,
+            notes: transaction.notes || '',
+            paymentMode: transaction.paymentMode, // Add this line
             currency: account ? account.currency : 'USD',
             userId: user.uid,
             createdAt: new Date().toISOString()
@@ -166,7 +166,6 @@ async function saveTransaction(transaction) {
         
         await transactionRef.set(transactionData);
 
-        // Only update account balance if account still exists
         if (account && !account.isDeleted) {
             const newBalance = transaction.type === 'income' 
                 ? account.balance + parseFloat(transaction.amount)
@@ -177,7 +176,6 @@ async function saveTransaction(transaction) {
                 updatedAt: new Date().toISOString()
             });
 
-            // Update account in state
             const accountIndex = state.accounts.findIndex(acc => acc.id === transaction.accountId);
             if (accountIndex !== -1) {
                 state.accounts[accountIndex].balance = newBalance;
@@ -185,10 +183,8 @@ async function saveTransaction(transaction) {
             }
         }
 
-        // Update state with new transaction
         state.transactions.unshift(transactionData);
         
-        // Render updates
         renderAll();
         return true;
     } catch (error) {
@@ -210,7 +206,7 @@ async function loadUserData(forceRefresh = false) {
         const accountsSnapshot = await db.collection('users')
             .doc(user.uid)
             .collection('accounts')
-            .where('isDeleted', '==', false)  // Only load active accounts
+            .where('isDeleted', '==', false)
             .get();
         
         state.accounts = accountsSnapshot.docs.map(doc => ({
@@ -272,13 +268,18 @@ function formatCurrency(amount, currency = 'USD') {
     }
 }
 
+// Updated formatDate function to include time in IST
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
     try {
-        return new Date(dateString).toLocaleDateString('en-US', {
+        return new Date(dateString).toLocaleString('en-US', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'Asia/Kolkata'
         });
     } catch (error) {
         console.error('Error formatting date:', error);
