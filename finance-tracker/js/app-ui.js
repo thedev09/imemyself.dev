@@ -384,10 +384,23 @@ window.editAccount = editAccount;
 // Rendering functions
 async function renderAll() {
     try {
-        renderAccounts();
-        renderTransactions();
+        // Check if elements exist before rendering
+        const accountsGrid = document.getElementById('accounts-grid');
+        if (accountsGrid) {
+            renderAccounts();
+        }
+        
+        const transactionsElement = document.getElementById('recent-transactions');
+        if (transactionsElement) {
+            renderTransactions();
+        }
+        
         if (state.currentView === 'analytics') {
-            await renderCharts();
+            const monthlyChart = document.getElementById('monthly-chart');
+            const categoryChart = document.getElementById('category-chart');
+            if (monthlyChart && categoryChart) {
+                await renderCharts();
+            }
         }
     } catch (error) {
         console.error('Error rendering data:', error);
@@ -743,36 +756,82 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize with income categories
     updateCategoryOptions('income');
+// Add this function to app-ui.js
 
-    // Account form handler
-    const accountForm = document.getElementById('account-form');
-    if (accountForm) {
-        accountForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            toggleLoading(true);
+function renderPortfolioSummary() {
+    const USD_TO_INR = 84;
 
-            try {
-                const formData = new FormData(e.target);
-                const account = {
-                    id: Date.now().toString(),
-                    name: formData.get('name'),
-                    type: formData.get('type'),
-                    currency: formData.get('currency'),
-                    balance: parseFloat(formData.get('balance')) || 0
-                };
-                
-                await saveAccount(account);
-                e.target.reset();
-                showToast('Account created successfully!');
-                await loadUserData(true);
-            } catch (error) {
-                console.error('Error saving account:', error);
-                showToast(error.message || 'Error saving account', 'error');
-            } finally {
-                toggleLoading(false);
-            }
-        });
+    const totals = state.accounts.reduce((acc, account) => {
+        const amount = parseFloat(account.balance) || 0;
+        
+        if (account.currency === 'INR') {
+            acc.inr += amount;
+            if (account.type === 'bank') acc.inrBanks++;
+        } else if (account.currency === 'USD') {
+            acc.usd += amount;
+            if (account.type === 'crypto') acc.usdCrypto++;
+        }
+        
+        return acc;
+    }, { inr: 0, usd: 0, inrBanks: 0, usdCrypto: 0 });
+
+    const usdInInr = totals.usd * USD_TO_INR;
+    const totalInInr = totals.inr + usdInInr;
+
+    return `
+        <div class="portfolio-summary">
+            <h2>Portfolio Summary</h2>
+            <div class="currency-section">
+                <div class="balance-card">
+                    <div class="balance-header">INR Balance</div>
+                    <div class="balance-amount">₹${totals.inr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                    <div class="account-pills">
+                        <div class="account-pill">${totals.inrBanks} Bank Accounts</div>
+                    </div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-header">USD Balance</div>
+                    <div class="balance-amount">$${totals.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                    <div class="account-pills">
+                        <div class="account-pill">${totals.usdCrypto} Crypto Wallets</div>
+                    </div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-header">Total Portfolio (INR)</div>
+                    <div class="balance-amount">₹${totalInInr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                    <div class="exchange-rate">1 USD = ₹${USD_TO_INR}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Update the renderAccounts function to include the summary
+const originalRenderAccounts = window.renderAccounts;
+window.renderAccounts = function() {
+    const accountsGrid = document.getElementById('accounts-grid');
+    if (!accountsGrid) return;
+
+    // Remove existing summary if any
+    const existingSummary = document.querySelector('.portfolio-summary');
+    if (existingSummary) {
+        existingSummary.remove();
     }
+
+    // Insert summary before the accounts grid
+    accountsGrid.insertAdjacentHTML('beforebegin', renderPortfolioSummary());
+    
+    // Call original render function
+    originalRenderAccounts();
+};
+
+
+// Update the renderAll function to include the new dashboard render
+const originalRenderAll = window.renderAll;
+window.renderAll = async function() {
+    await originalRenderAll();
+    renderDashboard();
+};
 
     // Transaction form handler
     const transactionForm = document.getElementById('transaction-form');
