@@ -88,31 +88,77 @@ async function deleteAccount(accountId) {
     }
 }
 
+// Add this to saveAccount function to track changes
+// In app-core.js
 async function saveAccount(account) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
     
     validateAccount(account);
     
+    // Get the existing account to compare changes
+    const existingAccount = state.accounts.find(a => a.id === account.id);
+    
     const accountData = {
-        id: account.id || Date.now().toString(),
-        name: account.name.trim(),
-        type: account.type,
-        currency: account.currency,
-        balance: parseFloat(account.balance) || 0,
+        ...account,
         userId: user.uid,
-        createdAt: new Date().toISOString(),
+        createdAt: account.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         isDeleted: false
     };
+
+    // If this is an update (not a new account), track the changes
+    if (existingAccount) {
+        const changes = [];
+        if (existingAccount.name !== account.name) {
+            changes.push(`Name changed from "${existingAccount.name}" to "${account.name}"`);
+        }
+        if (existingAccount.type !== account.type) {
+            changes.push(`Type changed from "${existingAccount.type}" to "${account.type}"`);
+        }
+        if (existingAccount.currency !== account.currency) {
+            changes.push(`Currency changed from "${existingAccount.currency}" to "${account.currency}"`);
+        }
+        if (existingAccount.balance !== account.balance) {
+            changes.push(`Balance updated from "${formatCurrency(existingAccount.balance, existingAccount.currency)}" to "${formatCurrency(account.balance, account.currency)}"`);
+        }
+
+        if (changes.length > 0) {
+            const historyEntry = {
+                id: Date.now().toString(),
+                accountId: account.id,
+                timestamp: new Date().toISOString(),
+                changes: changes,
+                userId: user.uid
+            };
+
+            // Add history to the account data
+            accountData.history = [...(existingAccount.history || []), historyEntry];
+        } else {
+            accountData.history = existingAccount.history || [];
+        }
+    } else {
+        // Initialize history array for new accounts
+        accountData.history = [{
+            id: Date.now().toString(),
+            accountId: accountData.id,
+            timestamp: accountData.createdAt,
+            changes: ['Account Created'],
+            userId: user.uid
+        }];
+    }
+
+    console.log('Saving account data:', accountData); // Debug log
     
     try {
+        // Save the account first
         await db.collection('users')
             .doc(user.uid)
             .collection('accounts')
             .doc(accountData.id)
             .set(accountData);
-            
+        
+        // Update local state
         const existingIndex = state.accounts.findIndex(a => a.id === accountData.id);
         if (existingIndex !== -1) {
             state.accounts[existingIndex] = accountData;
@@ -120,14 +166,64 @@ async function saveAccount(account) {
             state.accounts.push(accountData);
         }
         
-        renderAccounts();
         return accountData;
     } catch (error) {
-        console.error('Error saving account:', error);
+        console.error('Detailed error:', error); // Debug log
         throw new Error('Failed to save account. Please try again.');
     }
 }
 
+// Update renderAccountActivity to show detailed history
+function renderAccountActivity(account) {
+    const activities = [];
+
+    // Add account creation
+    activities.push({
+        type: 'creation',
+        date: account.createdAt,
+        details: 'Account Created',
+        icon: '📅'
+    });
+
+    // Add all history entries
+    if (account.history) {
+        account.history.forEach(entry => {
+            if (entry.changes) {
+                entry.changes.forEach(change => {
+                    activities.push({
+                        type: 'update',
+                        date: entry.timestamp,
+                        details: change,
+                        icon: '🔄'
+                    });
+                });
+            }
+        });
+    }
+
+    // Sort activities by date, most recent first
+    const sortedActivities = activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (sortedActivities.length === 0) {
+        return '<div class="no-activity">No activity found for this account</div>';
+    }
+
+    return `
+        <div class="activity-list">
+            ${sortedActivities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        ${activity.icon}
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">${escapeHtml(activity.details)}</div>
+                        <div class="activity-date">${formatDate(activity.date)}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
 // Transaction Management
 async function saveTransaction(transaction) {
     const user = getCurrentUser();

@@ -127,8 +127,14 @@ async function editAccount(accountId) {
     form.querySelector('#currency').value = account.currency;
     form.querySelector('#balance').value = account.balance;
 
-    // Update form submit handler for editing
+    // Store the original submit handler
     const originalSubmitHandler = form.onsubmit;
+    
+    // Add a flag to the form to indicate we're in edit mode
+    form.dataset.editMode = 'true';
+    form.dataset.editAccountId = accountId;
+
+    // Update form submit handler for editing
     form.onsubmit = async (e) => {
         e.preventDefault();
         toggleLoading(true);
@@ -136,17 +142,23 @@ async function editAccount(accountId) {
         try {
             const formData = new FormData(e.target);
             const updatedAccount = {
-                id: accountId, // Keep the original ID
+                ...account, // Keep all original properties
+                id: accountId, // Ensure we keep the original ID
                 name: formData.get('name'),
                 type: formData.get('type'),
                 currency: formData.get('currency'),
-                balance: parseFloat(formData.get('balance')) || 0
+                balance: parseFloat(formData.get('balance')) || 0,
+                updatedAt: new Date().toISOString()
             };
             
             await saveAccount(updatedAccount);
             form.reset();
             showToast('Account updated successfully!');
             await loadUserData(true);
+            
+            // Clean up edit mode
+            form.dataset.editMode = 'false';
+            delete form.dataset.editAccountId;
             
             // Restore original submit handler
             form.onsubmit = originalSubmitHandler;
@@ -158,6 +170,213 @@ async function editAccount(accountId) {
         }
     };
 }
+
+// Also update the account form's default submit handler to check for edit mode
+document.addEventListener('DOMContentLoaded', () => {
+    const accountForm = document.getElementById('account-form');
+    if (accountForm) {
+        accountForm.addEventListener('submit', async (e) => {
+            // If we're in edit mode, don't handle the submit here
+            if (accountForm.dataset.editMode === 'true') return;
+
+            e.preventDefault();
+            toggleLoading(true);
+
+            try {
+                const formData = new FormData(e.target);
+                const account = {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    type: formData.get('type'),
+                    currency: formData.get('currency'),
+                    balance: parseFloat(formData.get('balance')) || 0,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                await saveAccount(account);
+                e.target.reset();
+                showToast('Account created successfully!');
+                await loadUserData(true);
+            } catch (error) {
+                console.error('Error saving account:', error);
+                showToast(error.message || 'Error saving account', 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        });
+    }
+});
+
+// In app-ui.js
+function createEditAccountModal(account) {
+    const modalHTML = `
+        <div class="modal-overlay" id="edit-account-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>Edit Account</h2>
+                    </div>
+                    <button class="modal-close" onclick="closeEditAccountModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-account-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="editAccountName" class="form-label">Account Name</label>
+                                <input type="text" 
+                                       id="editAccountName"
+                                       class="form-input" 
+                                       name="name" 
+                                       value="${escapeHtml(account.name)}"
+                                       required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editAccountType" class="form-label">Account Type</label>
+                                <select id="editAccountType"
+                                        class="form-select" 
+                                        name="type"
+                                        required>
+                                    <option value="bank" ${account.type === 'bank' ? 'selected' : ''}>Bank Account</option>
+                                    <option value="crypto" ${account.type === 'crypto' ? 'selected' : ''}>Crypto Wallet</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCurrency" class="form-label">Currency</label>
+                                <select id="editCurrency"
+                                        class="form-select" 
+                                        name="currency"
+                                        required>
+                                    <option value="USD" ${account.currency === 'USD' ? 'selected' : ''}>USD</option>
+                                    <option value="INR" ${account.currency === 'INR' ? 'selected' : ''}>INR</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editBalance" class="form-label">Balance</label>
+                                <input type="number" 
+                                       id="editBalance"
+                                       class="form-input" 
+                                       name="balance" 
+                                       value="${account.balance}"
+                                       required 
+                                       step="0.01"
+                                       min="0">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Update Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to the document
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Get the modal and form elements
+    const modal = document.getElementById('edit-account-modal');
+    const form = document.getElementById('edit-account-form');
+
+    // Handle form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
+
+        try {
+            const formData = new FormData(e.target);
+            const updatedAccount = {
+                ...account, // Keep original properties
+                id: account.id, // Ensure we keep the original ID
+                name: formData.get('name'),
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                balance: parseFloat(formData.get('balance')) || 0,
+                updatedAt: new Date().toISOString()
+            };
+
+            console.log('Updating account:', updatedAccount); // Debug log
+            
+            await saveAccount(updatedAccount);
+            closeEditAccountModal();
+            showToast('Account updated successfully!');
+            await loadUserData(true);
+        } catch (error) {
+            console.error('Error updating account:', error);
+            showToast(error.message || 'Error updating account', 'error');
+        } finally {
+            toggleLoading(false);
+        }
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeEditAccountModal();
+        }
+    });
+
+    // Close on escape key
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeEditAccountModal();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+
+function closeEditAccountModal() {
+    const modal = document.getElementById('edit-account-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Simplified edit account function
+async function editAccount(accountId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    const account = state.accounts.find(acc => acc.id === accountId);
+    if (!account) {
+        showToast('Account not found', 'error');
+        return;
+    }
+
+    createEditAccountModal(account);
+}
+
+window.editAccount = editAccount;
+window.closeEditAccountModal = closeEditAccountModal;
+
+function closeEditAccountModal() {
+    const modal = document.getElementById('edit-account-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Replace the existing editAccount function with this new version
+async function editAccount(accountId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    const account = state.accounts.find(acc => acc.id === accountId);
+    if (!account) {
+        showToast('Account not found', 'error');
+        return;
+    }
+
+    createEditAccountModal(account);
+}
+
+// Make functions globally available
+window.editAccount = editAccount;
+window.closeEditAccountModal = closeEditAccountModal;
 
 // Make the function globally available
 window.editAccount = editAccount;
@@ -195,9 +414,9 @@ function renderAccounts() {
     }
 
     const accountCards = state.accounts.map(account => `
-        <div class="account-card ${account.type.toLowerCase()}">
+        <div class="account-card ${account.type.toLowerCase()}" onclick="showAccountDetails('${account.id}')">
             <div class="account-actions">
-                <button onclick="editAccount('${account.id}')" 
+                <button onclick="event.stopPropagation(); editAccount('${account.id}')" 
                         class="action-btn edit" 
                         title="Edit Account">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -205,7 +424,7 @@ function renderAccounts() {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                 </button>
-                <button onclick="deleteAccount('${account.id}')" 
+                <button onclick="event.stopPropagation(); deleteAccount('${account.id}')" 
                         class="action-btn delete" 
                         title="Delete Account">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -247,6 +466,7 @@ function renderAccounts() {
         `;
     });
 }
+
 function renderTransactionItem(transaction, account) {
     return `
         <div class="transaction-item">
@@ -616,6 +836,191 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// Add to app-ui.js
+
+// First, make sure closeAccountModal is globally available
+window.closeAccountModal = closeAccountModal;
+
+function closeAccountModal() {
+    const modal = document.getElementById('account-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function renderAccountActivity(account) {
+    const activities = [];
+
+    // Add all history entries
+    if (account.history) {
+        account.history.forEach(entry => {
+            if (entry.changes) {
+                entry.changes.forEach(change => {
+                    activities.push({
+                        type: 'update',
+                        date: entry.timestamp,
+                        details: change,
+                        icon: '🔄'
+                    });
+                });
+            }
+        });
+    }
+
+    // Sort activities by date, most recent first
+    const sortedActivities = activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (sortedActivities.length === 0) {
+        return '<div class="no-activity">No activity found for this account</div>';
+    }
+
+    return `
+        <div class="activity-list">
+            ${sortedActivities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        ${activity.icon}
+                    </div>
+                    <div class="activity-info">
+                        <div class="activity-title">${escapeHtml(activity.details)}</div>
+                        <div class="activity-date">${formatDate(activity.date)}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function createAccountDetailsModal(account) {
+    // Create modal HTML
+    const modalHTML = `
+        <div class="modal-overlay" id="account-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>${escapeHtml(account.name)}</h2>
+                        <span class="account-type ${account.type.toLowerCase()}">${account.type}</span>
+                        <div class="account-balance">
+                            ${formatCurrency(account.balance, account.currency)}
+                        </div>
+                    </div>
+                    <button class="modal-close" onclick="closeAccountModal()">×</button>
+                </div>
+                
+                <div class="modal-tabs">
+                    <button class="modal-tab active" data-tab="transactions">
+                        Transactions
+                    </button>
+                    <button class="modal-tab" data-tab="activity">
+                        Account Activity
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="tab-content active" id="transactions-tab">
+                        ${renderAccountTransactions(account)}
+                    </div>
+                    <div class="tab-content" id="activity-tab">
+                        ${renderAccountActivity(account)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to the document
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add event listeners for tabs
+    const modal = document.getElementById('account-modal');
+    modal.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Update active tab
+            modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            // Update visible content
+            modal.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            modal.querySelector(`#${tab.dataset.tab}-tab`).classList.add('active');
+        });
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeAccountModal();
+        }
+    });
+
+    // Close on escape key
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeAccountModal();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+
+
+// Add this to app-ui.js
+
+
+function renderAccountTransactions(account) {
+    const transactions = state.transactions
+        .filter(t => t.accountId === account.id)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (transactions.length === 0) {
+        return '<div class="no-transactions">No transactions found for this account</div>';
+    }
+
+    return `
+        <div class="transactions-list">
+            ${transactions.map(transaction => `
+                <div class="modal-transaction-item">
+                    <div class="transaction-icon ${transaction.type}">
+                        ${transaction.type === 'income' ? '↑' : '↓'}
+                    </div>
+                    <div class="transaction-info">
+                        <div class="transaction-primary">
+                            <span class="transaction-category">${escapeHtml(transaction.category)}</span>
+                            <span class="transaction-amount ${transaction.type}">
+                                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account.currency)}
+                            </span>
+                        </div>
+                        <div class="transaction-secondary">
+                            <span class="transaction-date">${formatDate(transaction.date)}</span>
+                            ${transaction.paymentMode ? `
+                                <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
+                            ` : ''}
+                            ${transaction.notes ? `
+                                <span class="transaction-note">${escapeHtml(transaction.notes)}</span>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+
+
+// Update showAccountDetails function
+function showAccountDetails(accountId) {
+    const account = state.accounts.find(acc => acc.id === accountId);
+    if (!account) return;
+    createAccountDetailsModal(account);
+}
+
+// Make functions globally available
+window.showAccountDetails = showAccountDetails;
+window.closeAccountModal = closeAccountModal;
 
 // Add account change listener to update payment modes
 const accountSelect = document.getElementById('account');
