@@ -206,35 +206,90 @@
             </div>
 
             <!-- Transactions View -->
-            <div id="transactions-view" 
-                 class="view" 
-                 style="display: none" 
-                 role="tabpanel" 
-                 aria-labelledby="transactions-tab">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">All Transactions</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="table-responsive">
-                            <table class="transactions-table" role="table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Date</th>
-                                        <th scope="col">Type</th>
-                                        <th scope="col">Amount</th>
-                                        <th scope="col">Payment Mode</th>
-                                        <th scope="col">Account</th>
-                                        <th scope="col">Category</th>
-                                        <th scope="col">Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="all-transactions"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+            <!-- Replace the existing transactions-view content with this -->
+<div id="transactions-view" class="view" style="display: none" role="tabpanel" aria-labelledby="transactions-tab">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Transactions</div>
+            <div id="stat-total" class="stat-value">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Income</div>
+            <div id="stat-income" class="stat-value income">₹0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Expenses</div>
+            <div id="stat-expense" class="stat-value expense">₹0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Average Transaction</div>
+            <div id="stat-average" class="stat-value">₹0</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-card">
+        <div class="filters-header">
+            <h3>Filters</h3>
+            <button id="export-csv" class="btn-export">
+                Export CSV
+            </button>
+        </div>
+        <div class="filters-grid">
+            <select id="filter-date" class="filter-select">
+                <option value="all">All Time</option>
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+                <option value="year">Last Year</option>
+                <option value="custom">Custom Range</option>
+            </select>
+            
+            <div id="custom-date-inputs" class="custom-date" style="display: none;">
+                <input type="date" id="filter-start-date" class="filter-input">
+                <input type="date" id="filter-end-date" class="filter-input">
             </div>
+
+            <select id="filter-type" class="filter-select">
+                <option value="all">All Types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+
+            <select id="filter-account" class="filter-select">
+                <option value="all">All Accounts</option>
+            </select>
+
+            <select id="filter-category" class="filter-select">
+                <option value="all">All Categories</option>
+            </select>
+
+            <select id="filter-payment" class="filter-select">
+                <option value="all">All Payment Modes</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="transactions-table" role="table">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="date">Date</th>
+                        <th class="sortable" data-sort="type">Type</th>
+                        <th class="sortable" data-sort="amount">Amount</th>
+                        <th class="sortable" data-sort="paymentMode">Payment Mode</th>
+                        <th class="sortable" data-sort="account">Account</th>
+                        <th class="sortable" data-sort="category">Category</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="transactions-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
             <!-- Analytics View -->
             <div id="analytics-view" 

@@ -225,6 +225,10 @@ function renderAccountActivity(account) {
     `;
 }
 // Transaction Management
+// Add this constant at the top of app-core.js
+const USD_TO_INR = 84;
+
+// Update the saveTransaction function
 async function saveTransaction(transaction) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
@@ -245,27 +249,35 @@ async function saveTransaction(transaction) {
         const accountDoc = await accountRef.get();
         const account = accountDoc.data();
 
+        // Calculate amounts based on currency
+        const originalAmount = parseFloat(transaction.amount);
+        const currency = account ? account.currency : 'INR';
+        const amountInINR = currency === 'USD' ? originalAmount * USD_TO_INR : originalAmount;
+        
         const transactionData = {
             id: transaction.id || Date.now().toString(),
             date: transaction.date || new Date().toISOString(),
             type: transaction.type,
-            amount: parseFloat(transaction.amount),
+            amount: originalAmount,
+            currency: currency,
+            amountInINR: amountInINR,
+            exchangeRate: currency === 'USD' ? USD_TO_INR : 1,
             accountId: transaction.accountId,
             accountName: account ? account.name : 'Deleted Account',
             category: transaction.category,
             notes: transaction.notes || '',
-            paymentMode: transaction.paymentMode, // Add this line
-            currency: account ? account.currency : 'USD',
+            paymentMode: transaction.paymentMode,
             userId: user.uid,
             createdAt: new Date().toISOString()
         };
         
         await transactionRef.set(transactionData);
 
+        // Update account balance in its native currency
         if (account && !account.isDeleted) {
             const newBalance = transaction.type === 'income' 
-                ? account.balance + parseFloat(transaction.amount)
-                : account.balance - parseFloat(transaction.amount);
+                ? account.balance + originalAmount
+                : account.balance - originalAmount;
 
             await accountRef.update({ 
                 balance: newBalance,
@@ -346,21 +358,25 @@ async function loadUserData(forceRefresh = false) {
     }
 }
 
-// Helper functions
-function formatCurrency(amount, currency = 'USD') {
+// Update the formatCurrency function
+function formatCurrency(amount, currency = 'INR', showBoth = false) {
     if (typeof amount !== 'number') {
         amount = parseFloat(amount) || 0;
     }
     
     try {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency
-        }).format(amount);
+        if (currency === 'USD' && showBoth) {
+            const inr = amount * USD_TO_INR;
+            return `$${amount.toFixed(2)} (₹${inr.toFixed(2)})`;
+        }
+        
+        return currency === 'USD' 
+            ? `$${amount.toFixed(2)}`
+            : `₹${amount.toFixed(2)}`;
     } catch (error) {
-        return currency === 'INR' 
-            ? `₹${amount.toFixed(2)}`
-            : `$${amount.toFixed(2)}`;
+        return currency === 'USD' 
+            ? `$${amount.toFixed(2)}`
+            : `₹${amount.toFixed(2)}`;
     }
 }
 
@@ -382,6 +398,56 @@ function formatDate(dateString) {
         return 'Invalid Date';
     }
 }
+
+// Add to app-core.js
+function filterTransactions(transactions, filters) {
+    return transactions.filter(transaction => {
+        if (filters.type !== 'all' && transaction.type !== filters.type) return false;
+        if (filters.account !== 'all' && transaction.accountId !== filters.account) return false;
+        if (filters.category !== 'all' && transaction.category !== filters.category) return false;
+        if (filters.paymentMode !== 'all' && transaction.paymentMode !== filters.paymentMode) return false;
+        
+        const txDate = new Date(transaction.date);
+        const now = new Date();
+        
+        switch (filters.dateRange) {
+            case 'week':
+                const weekAgo = new Date(now.setDate(now.getDate() - 7));
+                return txDate >= weekAgo;
+            case 'month':
+                const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+                return txDate >= monthAgo;
+            case 'year':
+                const yearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
+                return txDate >= yearAgo;
+            case 'custom':
+                const start = filters.startDate ? new Date(filters.startDate) : null;
+                const end = filters.endDate ? new Date(filters.endDate) : null;
+                if (start && end) {
+                    return txDate >= start && txDate <= end;
+                }
+                return true;
+            default:
+                return true;
+        }
+    });
+}
+
+function calculateTransactionStats(transactions) {
+    return {
+        total: transactions.length,
+        income: transactions.reduce((sum, tx) => 
+            tx.type === 'income' ? sum + tx.amount : sum, 0),
+        expense: transactions.reduce((sum, tx) => 
+            tx.type === 'expense' ? sum + tx.amount : sum, 0),
+        avgTransaction: transactions.reduce((sum, tx) => 
+            sum + tx.amount, 0) / transactions.length || 0
+    };
+}
+
+// Make functions globally available
+window.filterTransactions = filterTransactions;
+window.calculateTransactionStats = calculateTransactionStats;
 
 // Style for deleted accounts
 const style = document.createElement('style');
