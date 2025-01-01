@@ -1453,6 +1453,33 @@ function renderAccountTransactions(account) {
     `;
 }
 
+function renderFilteredTransactions(transactions) {
+    const tbody = document.getElementById('transactions-tbody');
+    if (!tbody) return;
+
+    if (!transactions.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="no-data">No transactions found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = transactions.map(tx => {
+        const account = state.accounts.find(a => a.id === tx.accountId);
+        return `
+            <tr>
+                <td>${formatDate(tx.date)}</td>
+                <td><span class="badge-${tx.type}">${tx.type}</span></td>
+                <td class="amount-${tx.type}">
+                    ${tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount, tx.currency)}
+                </td>
+                <td>${tx.paymentMode || ''}</td>
+                <td>${escapeHtml(account?.name || '')}</td>
+                <td>${escapeHtml(tx.category)}</td>
+                <td>${escapeHtml(tx.notes || '')}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
 // Add to app-ui.js
 const transactionFilters = {
     dateRange: 'all',
@@ -1607,29 +1634,6 @@ function updateTransactionView() {
 
     // Render transactions
     renderFilteredTransactions(sortedTransactions);
-}
-
-// Render filtered transactions
-// Update the renderFilteredTransactions function
-function renderFilteredTransactions(transactions) {
-    const tbody = document.getElementById('transactions-tbody');
-    if (!tbody) return;
-
-    tbody.innerHTML = transactions.map(tx => `
-        <tr class="transaction-row">
-            <td>${window.formatDate(tx.date)}</td>
-            <td>
-                <span class="badge-${tx.type}">${tx.type}</span>
-            </td>
-            <td class="amount-${tx.type}">
-                ${tx.type === 'income' ? '+' : '-'}${window.formatCurrency(tx.amount, tx.currency, true)}
-            </td>
-            <td>${tx.paymentMode ? `<span class="payment-mode-badge">${escapeHtml(tx.paymentMode)}</span>` : ''}</td>
-            <td>${escapeHtml(tx.accountName || '')}</td>
-            <td>${escapeHtml(tx.category)}</td>
-            <td>${tx.notes ? `<span class="transaction-notes-text">${escapeHtml(tx.notes)}</span>` : ''}</td>
-        </tr>
-    `).join('');
 }
 
 // Update the calculateTransactionStats function

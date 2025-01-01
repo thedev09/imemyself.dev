@@ -458,6 +458,7 @@ async function loadUserData(forceRefresh = false) {
     toggleLoading(true);
 
     try {
+        // Load accounts
         const accountsSnapshot = await db.collection('users')
             .doc(user.uid)
             .collection('accounts')
@@ -469,10 +470,11 @@ async function loadUserData(forceRefresh = false) {
             ...doc.data()
         }));
 
+        // Load transactions
         let transactionsQuery = db.collection('users')
             .doc(user.uid)
             .collection('transactions')
-            .orderBy('createdAt', 'desc')
+            .orderBy('date', 'desc')
             .limit(state.pageSize);
 
         if (state.lastTransactionDate && !forceRefresh) {
@@ -480,25 +482,33 @@ async function loadUserData(forceRefresh = false) {
         }
 
         const transactionsSnapshot = await transactionsQuery.get();
-        const newTransactions = transactionsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        console.log('Loaded transactions:', transactionsSnapshot.size);
 
-        if (forceRefresh) {
-            state.transactions = newTransactions;
-        } else {
-            state.transactions = [...state.transactions, ...newTransactions];
-        }
+        if (!transactionsSnapshot.empty) {
+            const newTransactions = transactionsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            console.log('Processed transactions:', newTransactions);
 
-        if (newTransactions.length > 0) {
-            state.lastTransactionDate = newTransactions[newTransactions.length - 1].createdAt;
+            if (forceRefresh) {
+                state.transactions = newTransactions;
+            } else {
+                state.transactions = [...state.transactions, ...newTransactions];
+            }
+
+            if (newTransactions.length > 0) {
+                state.lastTransactionDate = newTransactions[newTransactions.length - 1].date;
+            }
         }
 
         await renderAll();
+        initializeTransactionView();
+        updateTransactionView();
+
     } catch (error) {
         console.error('Error loading data:', error);
-        showToast('Error loading data. Please try again.', 'error');
+        showToast('Error loading transactions: ' + error.message, 'error');
     } finally {
         state.isLoading = false;
         toggleLoading(false);
@@ -547,33 +557,36 @@ function formatDate(dateString) {
 }
 
 // Add to app-core.js
+// In app-core.js
 function filterTransactions(transactions, filters) {
-    return transactions.filter(transaction => {
-        if (filters.type !== 'all' && transaction.type !== filters.type) return false;
-        if (filters.account !== 'all' && transaction.accountId !== filters.account) return false;
-        if (filters.category !== 'all' && transaction.category !== filters.category) return false;
-        if (filters.paymentMode !== 'all' && transaction.paymentMode !== filters.paymentMode) return false;
+    return transactions.filter(tx => {
+        // Type filter
+        if (filters.type !== 'all' && tx.type !== filters.type) return false;
         
-        const txDate = new Date(transaction.date);
+        // Account filter
+        if (filters.account !== 'all' && tx.accountId !== filters.account) return false;
+        
+        // Category filter
+        if (filters.category !== 'all' && tx.category !== filters.category) return false;
+        
+        // Payment mode filter
+        if (filters.paymentMode !== 'all' && tx.paymentMode !== filters.paymentMode) return false;
+        
+        // Date filter
+        const txDate = new Date(tx.date);
         const now = new Date();
         
         switch (filters.dateRange) {
             case 'week':
-                const weekAgo = new Date(now.setDate(now.getDate() - 7));
-                return txDate >= weekAgo;
+                return txDate >= new Date(now - 7 * 24 * 60 * 60 * 1000);
             case 'month':
-                const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
-                return txDate >= monthAgo;
+                return txDate >= new Date(now.setMonth(now.getMonth() - 1));
             case 'year':
-                const yearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
-                return txDate >= yearAgo;
+                return txDate >= new Date(now.setFullYear(now.getFullYear() - 1));
             case 'custom':
                 const start = filters.startDate ? new Date(filters.startDate) : null;
                 const end = filters.endDate ? new Date(filters.endDate) : null;
-                if (start && end) {
-                    return txDate >= start && txDate <= end;
-                }
-                return true;
+                return (!start || txDate >= start) && (!end || txDate <= end);
             default:
                 return true;
         }
