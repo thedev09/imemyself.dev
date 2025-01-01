@@ -2652,3 +2652,63 @@ body, .bg-gradient-dark {
     font-weight: 500;
     transition: background-color 0.2s;
 }
+
+/* Add to styles.css */
+
+/* Navigation Improvements */
+@media (max-width: 768px) {
+    .nav-content {
+      padding: 0.75rem;
+    }
+    
+    .nav-links {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 0.5rem;
+    }
+    
+    .nav-link {
+      white-space: nowrap;
+      padding: 0.5rem 0.75rem;
+    }
+  
+    /* Account Cards Grid */
+    .accounts-grid {
+      grid-template-columns: 1fr;
+      padding: 1rem;
+    }
+  
+    /* Transaction Form */
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    /* Stats Grid */
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    
+    /* Portfolio Summary */
+    .currency-section {
+      grid-template-columns: 1fr;
+    }
+  
+    /* Modal Adjustments */
+    .modal-content {
+      width: 95%;
+      margin: 1rem;
+      max-height: 90vh;
+    }
+  }
+  
+  /* Small phones */
+  @media (max-width: 380px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .balance-amount {
+      font-size: 1.5rem;
+    }
+  }
