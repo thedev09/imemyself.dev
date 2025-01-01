@@ -2473,3 +2473,99 @@ body, .bg-gradient-dark {
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
 }
+
+.analysis-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.analysis-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.stat-value {
+    font-size: 1.875rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    height: 400px;
+}
+
+#timeframe-select,
+#year-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    min-width: 150px;
+}
+/* Analysis Controls */
+.analysis-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.analysis-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Self Transfer Styles */
+.self-transfer {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.self-transfer:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.self-transfer .transaction-title {
+    color: #3b82f6;
+}
+
+/* Converted Amount Group */
+#convertedAmountGroup {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#convertedAmountGroup.visible {
+    opacity: 1;
+}
+
+/* Chart Container */
+.chart-container {
+    height: 400px;
+    position: relative;
+}
+
+/* Year Select Visibility */
+#year-select {
+    transition: all 0.3s ease;
+}
+
+#year-select.hidden {
+    opacity: 0;
+    pointer-events: none;
+}

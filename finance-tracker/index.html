@@ -194,7 +194,59 @@
                         </form>
                     </div>
                 </div>
-
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Self Transfer</h2>
+                    </div>
+                    <div class="card-content">
+                        <form id="transfer-form" novalidate>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="fromAccount" class="form-label">From Account</label>
+                                    <select id="fromAccount"
+                                            class="form-select" 
+                                            name="fromAccount" 
+                                            required>
+                                        <option value="">Select source account</option>
+                                    </select>
+                                    <div class="form-error" aria-live="polite"></div>
+                                </div>
+                
+                                <div class="form-group">
+                                    <label for="toAccount" class="form-label">To Account</label>
+                                    <select id="toAccount"
+                                            class="form-select" 
+                                            name="toAccount" 
+                                            required>
+                                        <option value="">Select destination account</option>
+                                    </select>
+                                    <div class="form-error" aria-live="polite"></div>
+                                </div>
+                
+                                <div class="form-group">
+                                    <label for="transferAmount" class="form-label">Amount</label>
+                                    <input type="number" 
+                                           id="transferAmount"
+                                           class="form-input" 
+                                           name="amount" 
+                                           required 
+                                           step="0.01" 
+                                           min="0">
+                                    <div class="form-error" aria-live="polite"></div>
+                                </div>
+                
+                                <div class="form-group" id="convertedAmountGroup" style="display: none;">
+                                    <label for="convertedAmount" class="form-label">Converted Amount</label>
+                                    <input type="text" 
+                                           id="convertedAmount"
+                                           class="form-input" 
+                                           disabled>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Transfer Funds</button>
+                        </form>
+                    </div>
+                </div>
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">Recent Transactions</h2>
@@ -297,6 +349,42 @@
                  style="display: none" 
                  role="tabpanel" 
                  aria-labelledby="analytics-tab">
+                 <!-- Add this inside the analytics-view div -->
+<div class="charts-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Income & Expense Analysis</h2>
+            <div class="analysis-controls">
+                <select id="timeframe-select" class="form-select">
+                    <option value="monthly">Monthly View</option>
+                    <option value="yearly">Yearly View</option>
+                </select>
+                <select id="year-select" class="form-select">
+                    <!-- Will be populated dynamically -->
+                </select>
+            </div>
+        </div>
+        <div class="card-content">
+            <div class="analysis-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Total Income</div>
+                    <div id="analysis-income" class="stat-value income">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Expenses</div>
+                    <div id="analysis-expense" class="stat-value expense">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Net Savings</div>
+                    <div id="analysis-savings" class="stat-value">₹0</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="analysis-chart" role="img" aria-label="Income and expense analysis chart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
                 <div class="charts-grid">
                     <div class="card">
                         <div class="card-header">

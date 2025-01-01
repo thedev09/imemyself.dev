@@ -1,3 +1,20 @@
+const chartInstances = {
+    analysisChart: null,
+    monthlyChart: null,
+    categoryChart: null
+};
+
+function cleanupCharts() {
+    Object.values(chartInstances).forEach(chart => {
+        if (chart) {
+            chart.destroy();
+        }
+    });
+    Object.keys(chartInstances).forEach(key => {
+        chartInstances[key] = null;
+    });
+}
+
 // Transaction Categories
 const TRANSACTION_CATEGORIES = {
     income: [
@@ -62,9 +79,107 @@ const PAYMENT_MODES = {
     ]
 };
 
+function renderPortfolioSummary() {
+    const USD_TO_INR = 84;
+
+    const totals = state.accounts.reduce((acc, account) => {
+        const amount = parseFloat(account.balance) || 0;
+        
+        if (account.currency === 'INR') {
+            acc.inr += amount;
+            if (account.type === 'bank') acc.inrBanks++;
+        } else if (account.currency === 'USD') {
+            acc.usd += amount;
+            if (account.type === 'crypto') acc.usdCrypto++;
+        }
+        
+        return acc;
+    }, { inr: 0, usd: 0, inrBanks: 0, usdCrypto: 0 });
+
+    const usdInInr = totals.usd * USD_TO_INR;
+    const totalInInr = totals.inr + usdInInr;
+
+    return `
+        <div class="portfolio-summary">
+            <h2>Portfolio Summary</h2>
+            <div class="currency-section">
+                <div class="balance-card clickable" data-currency="INR" style="cursor: pointer;">
+                    <div class="balance-header">INR Balance</div>
+                    <div class="balance-amount">₹${totals.inr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                    <div class="account-pills">
+                        <div class="account-pill">${totals.inrBanks} Bank Accounts</div>
+                    </div>
+                </div>
+                <div class="balance-card clickable" data-currency="USD" style="cursor: pointer;">
+                    <div class="balance-header">USD Balance</div>
+                    <div class="balance-amount">$${totals.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                    <div class="account-pills">
+                        <div class="account-pill">${totals.usdCrypto} Crypto Wallets</div>
+                    </div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-header">Total Portfolio (INR)</div>
+                    <div class="balance-amount">₹${totalInInr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                    <div class="exchange-rate">1 USD = ₹${USD_TO_INR}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+
+function showFilteredAccounts(currency) {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal-overlay';
+    
+    const filteredAccounts = state.accounts.filter(acc => acc.currency === currency);
+    const totalBalance = filteredAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+    
+    modalDiv.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h2>${currency} Accounts</h2>
+                    <div class="total-balance">
+                        Total: ${formatCurrency(totalBalance, currency)}
+                    </div>
+                </div>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="filtered-accounts-grid">
+                    ${filteredAccounts.map(account => `
+                        <div class="account-card ${account.type}" onclick="showAccountDetails('${account.id}')">
+                            <span class="account-type ${account.type}">${account.type}</span>
+                            <h3 class="account-name">${escapeHtml(account.name)}</h3>
+                            <div class="account-balance">
+                                ${formatCurrency(account.balance, account.currency)}
+                            </div>
+                            <div class="account-updated">
+                                Last updated: ${formatDate(account.updatedAt)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalDiv);
+
+    modalDiv.addEventListener('click', (e) => {
+        if (e.target === modalDiv) {
+            modalDiv.remove();
+        }
+    });
+}
 // UI Functions
+// Update switchView function in app-ui.js
 function switchView(view) {
     state.currentView = view;
+    
+    // Clean up any existing charts before switching views
+    cleanupCharts();
     
     document.querySelectorAll('.view').forEach(el => {
         if (el.id === `${view}-view`) {
@@ -80,17 +195,95 @@ function switchView(view) {
         el.setAttribute('aria-selected', el.dataset.view === view);
     });
 
+    // Initialize appropriate view after DOM updates
     setTimeout(() => {
         document.querySelectorAll('.view').forEach(el => {
             el.classList.remove('loading');
         });
-    }, 300);
 
-    if (view === 'analytics') {
-        renderCharts();
-    }
+        if (view === 'dashboard') {
+            initializeSelfTransfer();
+            renderAccounts();
+            renderTransactions();
+        } else if (view === 'analytics') {
+            initializeAnalytics();
+        }
+    }, 300);
 }
 
+function initializeSelfTransfer() {
+    const fromSelect = document.getElementById('fromAccount');
+    const toSelect = document.getElementById('toAccount');
+    const amountInput = document.getElementById('transferAmount');
+    const convertedAmountGroup = document.getElementById('convertedAmountGroup');
+    const convertedAmountInput = document.getElementById('convertedAmount');
+    const form = document.getElementById('transfer-form');
+
+    // Update account options
+    if (fromSelect && toSelect && state.accounts) {
+        const options = state.accounts.map(acc => `
+            <option value="${acc.id}">
+                ${escapeHtml(acc.name)} (${acc.currency} ${formatCurrency(acc.balance, acc.currency)})
+            </option>
+        `).join('');
+
+        fromSelect.innerHTML = '<option value="">Select source account</option>' + options;
+        toSelect.innerHTML = '<option value="">Select destination account</option>' + options;
+    }
+
+    // Handle amount changes
+    function updateConvertedAmount() {
+        if (!fromSelect || !toSelect || !amountInput || !convertedAmountGroup || !convertedAmountInput) return;
+
+        const amount = parseFloat(amountInput.value) || 0;
+        const fromAccountId = fromSelect.value;
+        const toAccountId = toSelect.value;
+
+        if (fromAccountId && toAccountId && amount > 0) {
+            const converted = calculateConvertedAmount(amount, fromAccountId, toAccountId);
+            const toAccount = state.accounts.find(acc => acc.id === toAccountId);
+            
+            if (fromAccountId !== toAccountId) {
+                convertedAmountGroup.style.display = 'block';
+                convertedAmountInput.value = formatCurrency(converted, toAccount?.currency || 'INR');
+            } else {
+                convertedAmountGroup.style.display = 'none';
+            }
+        } else {
+            convertedAmountGroup.style.display = 'none';
+        }
+    }
+
+    // Add event listeners
+    if (fromSelect) fromSelect.addEventListener('change', updateConvertedAmount);
+    if (toSelect) toSelect.addEventListener('change', updateConvertedAmount);
+    if (amountInput) amountInput.addEventListener('input', updateConvertedAmount);
+
+    // Handle form submission
+    if (form) {
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            toggleLoading(true);
+
+            try {
+                await handleSelfTransfer(
+                    fromSelect.value,
+                    toSelect.value,
+                    amountInput.value
+                );
+
+                showToast('Transfer completed successfully');
+                form.reset();
+                convertedAmountGroup.style.display = 'none';
+                await loadUserData(true);
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                toggleLoading(false);
+            }
+        };
+    }
+}
 // Function to update category options based on transaction type
 function updateCategoryOptions(transactionType) {
     const categorySelect = document.getElementById('category');
@@ -414,6 +607,25 @@ function renderAccounts() {
     
     if (!accountsGrid) return;
 
+    // Remove existing summary if any
+    const existingSummary = document.querySelector('.portfolio-summary');
+    if (existingSummary) {
+        existingSummary.remove();
+    }
+
+    // Add portfolio summary
+    accountsGrid.insertAdjacentHTML('beforebegin', renderPortfolioSummary());
+    
+    // Add click handlers to the balance cards
+    document.querySelectorAll('.balance-card.clickable').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const currency = e.currentTarget.dataset.currency;
+            if (currency) {
+                showFilteredAccounts(currency);
+            }
+        });
+    });
+
     if (!state.accounts.length) {
         accountsGrid.innerHTML = `
             <div class="account-card">
@@ -466,27 +678,193 @@ function renderAccounts() {
         </div>
     `;
 
-    // Update account select dropdowns
+    // Update all account select dropdowns
     accountSelects.forEach(select => {
         const currentValue = select.value;
         select.innerHTML = `
             <option value="">Select an account</option>
             ${state.accounts.map(account => `
                 <option value="${account.id}" ${currentValue === account.id ? 'selected' : ''}>
-                    ${escapeHtml(account.name)} (${account.currency})
+                    ${escapeHtml(account.name)} (${account.currency} ${formatCurrency(account.balance, account.currency)})
                 </option>
             `).join('')}
         `;
     });
 }
 
+// Make functions globally available
+window.renderAccounts = renderAccounts;
+window.renderPortfolioSummary = renderPortfolioSummary;
+
+
+function initializeAnalytics() {
+    const timeframeSelect = document.getElementById('timeframe-select');
+    const yearSelect = document.getElementById('year-select');
+    
+    // Clear any existing charts
+    cleanupCharts();
+
+    // Populate year select
+    function updateYearOptions() {
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+        yearSelect.innerHTML = years.map(year => `
+            <option value="${year}" ${year === currentYear ? 'selected' : ''}>
+                ${year}
+            </option>
+        `).join('');
+    }
+
+    // Toggle year select visibility based on timeframe
+    timeframeSelect.addEventListener('change', () => {
+        yearSelect.style.display = timeframeSelect.value === 'monthly' ? 'block' : 'none';
+        updateAnalytics();
+    });
+
+    yearSelect.addEventListener('change', updateAnalytics);
+
+    function updateAnalytics() {
+        const timeframe = timeframeSelect.value;
+        const selectedYear = parseInt(yearSelect.value);
+        const data = getAnalyticsData(timeframe, selectedYear);
+
+        // Update stats
+        const totals = data.reduce((acc, curr) => ({
+            income: acc.income + curr.income,
+            expense: acc.expense + curr.expense
+        }), { income: 0, expense: 0 });
+
+        document.getElementById('analysis-income').textContent = formatCurrency(totals.income);
+        document.getElementById('analysis-expense').textContent = formatCurrency(totals.expense);
+        const savings = totals.income - totals.expense;
+        document.getElementById('analysis-savings').textContent = formatCurrency(Math.abs(savings));
+        document.getElementById('analysis-savings').style.color = savings >= 0 ? '#4ade80' : '#f87171';
+
+        // Clear existing chart
+        const analysisCtx = document.getElementById('analysis-chart')?.getContext('2d');
+        if (analysisCtx) {
+            if (chartInstances.analysisChart) {
+                chartInstances.analysisChart.destroy();
+            }
+            chartInstances.analysisChart = createAnalysisChart(analysisCtx, data, timeframe);
+        }
+    }
+
+    // Initial setup
+    updateYearOptions();
+    yearSelect.style.display = timeframeSelect.value === 'monthly' ? 'block' : 'none';
+    updateAnalytics();
+}
+
+function createAnalysisChart(ctx, data, timeframe) {
+    const labels = timeframe === 'yearly' ? 
+        data.map(d => d.year.toString()) :
+        data.map(d => d.month);
+        
+    const incomeData = data.map(d => d.income);
+    const expenseData = data.map(d => d.expense);
+    const savingsData = data.map(d => d.income - d.expense);
+
+    return new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Income',
+                    data: incomeData,
+                    backgroundColor: 'rgba(74, 222, 128, 0.8)',
+                    borderColor: '#22c55e',
+                    borderWidth: 1,
+                    order: 2
+                },
+                {
+                    label: 'Expenses',
+                    data: expenseData,
+                    backgroundColor: 'rgba(248, 113, 113, 0.8)',
+                    borderColor: '#ef4444',
+                    borderWidth: 1,
+                    order: 2
+                },
+                {
+                    label: 'Net Savings',
+                    data: savingsData,
+                    type: 'line',
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    order: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        },
+                        color: '#94a3b8'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#94a3b8'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ₹' + 
+                                   context.raw.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Make it globally available
+window.initializeAnalytics = initializeAnalytics;
+
+
+// Update transaction render to style self transfers differently
 function renderTransactionItem(transaction, account) {
+    const isSelfTransfer = transaction.category === 'Self Transfer';
+    
     return `
-        <div class="transaction-item">
+        <div class="transaction-item ${isSelfTransfer ? 'self-transfer' : ''}">
             <div class="transaction-main">
                 <div class="transaction-primary">
-                    <span class="transaction-title">${escapeHtml(transaction.category)}</span>
-                    <span class="transaction-tag ${transaction.type.toLowerCase()}">${transaction.type.toUpperCase()}</span>
+                    <span class="transaction-title">
+                        ${isSelfTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
+                    </span>
+                    <span class="transaction-tag ${transaction.type.toLowerCase()}">
+                        ${transaction.type.toUpperCase()}
+                    </span>
                 </div>
                 <div class="transaction-details">
                     <span class="transaction-time">${formatDate(transaction.date)}</span>
@@ -508,6 +886,10 @@ function renderTransactionItem(transaction, account) {
         </div>
     `;
 }
+
+// Make functions globally available
+window.initializeSelfTransfer = initializeSelfTransfer;
+window.initializeAnalytics = initializeAnalytics;
 
 // Update the renderTransactions function to use the new template
 function renderTransactions() {
@@ -834,53 +1216,6 @@ window.renderAccounts = function() {
     // Call original render function
     originalRenderAccounts();
 };
-
-function showFilteredAccounts(currency) {
-    const modalDiv = document.createElement('div');
-    modalDiv.className = 'modal-overlay';
-    
-    const filteredAccounts = state.accounts.filter(acc => acc.currency === currency);
-    const totalBalance = filteredAccounts.reduce((sum, acc) => sum + acc.balance, 0);
-    
-    modalDiv.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h2>${currency} Accounts</h2>
-                    <div class="total-balance">
-                        Total: ${formatCurrency(totalBalance, currency)}
-                    </div>
-                </div>
-                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="filtered-accounts-grid">
-                    ${filteredAccounts.map(account => `
-                        <div class="account-card ${account.type}" onclick="showAccountDetails('${account.id}')">
-                            <span class="account-type ${account.type}">${account.type}</span>
-                            <h3 class="account-name">${escapeHtml(account.name)}</h3>
-                            <div class="account-balance">
-                                ${formatCurrency(account.balance, account.currency)}
-                            </div>
-                            <div class="account-updated">
-                                Last updated: ${formatDate(account.updatedAt)}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modalDiv);
-
-    // Close when clicking outside
-    modalDiv.addEventListener('click', (e) => {
-        if (e.target === modalDiv) {
-            modalDiv.remove();
-        }
-    });
-}
 
 
 // Update the renderAll function to include the new dashboard render
@@ -1340,16 +1675,6 @@ function exportTransactionsToCSV() {
     window.URL.revokeObjectURL(url);
 }
 
-// Update the switchView function to initialize transaction view
-const originalSwitchView = window.switchView;
-window.switchView = function(view) {
-    originalSwitchView(view);
-    if (view === 'transactions') {
-        initializeTransactionView();
-        updateTransactionView();
-    }
-};
-
 // Make functions globally available
 window.updateTransactionView = updateTransactionView;
 window.initializeTransactionView = initializeTransactionView;
@@ -1372,9 +1697,74 @@ if (accountSelect) {
         updatePaymentModes(e.target.value);
     });
 }
+// Single switchView function
+function switchView(view) {
+    state.currentView = view;
+    
+    document.querySelectorAll('.view').forEach(el => {
+        if (el.id === `${view}-view`) {
+            el.style.display = 'block';
+            el.classList.add('loading');
+        } else {
+            el.style.display = 'none';
+        }
+    });
+    
+    document.querySelectorAll('.nav-link').forEach(el => {
+        el.classList.toggle('active', el.dataset.view === view);
+        el.setAttribute('aria-selected', el.dataset.view === view);
+    });
 
-// Make functions globally available
+    setTimeout(() => {
+        document.querySelectorAll('.view').forEach(el => {
+            el.classList.remove('loading');
+        });
+    }, 300);
+
+    // Initialize appropriate view
+    if (view === 'dashboard') {
+        initializeSelfTransfer();
+    } else if (view === 'analytics') {
+        // Clear existing chart if any
+        const chartCanvas = document.getElementById('analysis-chart');
+        if (chartCanvas) {
+            const ctx = chartCanvas.getContext('2d');
+            const existingChart = Chart.getChart(chartCanvas);
+            if (existingChart) {
+                existingChart.destroy();
+            }
+        }
+        initializeAnalytics();
+    }
+}
+
+
+
+
+document.addEventListener('DOMContentLoaded', async () => {
+    firebase.auth().onAuthStateChanged(async (user) => {
+        if (user) {
+            try {
+                await loadUserData(true);
+                // Initialize based on current view
+                if (state.currentView === 'dashboard') {
+                    initializeSelfTransfer();
+                } else if (state.currentView === 'analytics') {
+                    initializeAnalytics();
+                }
+            } catch (error) {
+                console.error('Error in initial load:', error);
+                showToast('Error loading data. Please refresh the page.', 'error');
+            }
+        }
+    });
+
+    // Other event listeners...
+});
+
+// Make it globally available
 window.switchView = switchView;
+// Make functions globally available
 window.renderAll = renderAll;
 window.updateCategoryOptions = updateCategoryOptions;
 window.showFilteredAccounts = showFilteredAccounts;

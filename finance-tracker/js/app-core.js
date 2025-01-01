@@ -30,7 +30,154 @@ function validateTransaction(transaction) {
     }
     return true;
 }
+// Add these functions to app-core.js
 
+async function handleSelfTransfer(fromAccountId, toAccountId, amount) {
+    const user = getCurrentUser();
+    if (!user) throw new Error('Please sign in to continue');
+
+    const fromAccount = state.accounts.find(acc => acc.id === fromAccountId);
+    const toAccount = state.accounts.find(acc => acc.id === toAccountId);
+
+    if (!fromAccount || !toAccount) {
+        throw new Error('Invalid accounts selected');
+    }
+
+    if (fromAccount.id === toAccount.id) {
+        throw new Error('Cannot transfer to the same account');
+    }
+
+    if (parseFloat(amount) <= 0) {
+        throw new Error('Amount must be greater than 0');
+    }
+
+    if (parseFloat(amount) > fromAccount.balance) {
+        throw new Error('Insufficient balance');
+    }
+
+    // Calculate converted amount if currencies are different
+    let convertedAmount = amount;
+    if (fromAccount.currency !== toAccount.currency) {
+        if (fromAccount.currency === 'USD' && toAccount.currency === 'INR') {
+            convertedAmount = amount * USD_TO_INR;
+        } else if (fromAccount.currency === 'INR' && toAccount.currency === 'USD') {
+            convertedAmount = amount / USD_TO_INR;
+        }
+    }
+
+    // Create withdrawal transaction
+    const withdrawal = {
+        id: Date.now().toString(),
+        type: 'expense',
+        amount: parseFloat(amount),
+        accountId: fromAccountId,
+        category: 'Self Transfer',
+        notes: `Transfer to ${toAccount.name}`,
+        paymentMode: 'Account Transfer',
+        date: new Date().toISOString()
+    };
+
+    // Create deposit transaction
+    const deposit = {
+        id: (Date.now() + 1).toString(),
+        type: 'income',
+        amount: parseFloat(convertedAmount),
+        accountId: toAccountId,
+        category: 'Self Transfer',
+        notes: `Transfer from ${fromAccount.name}`,
+        paymentMode: 'Account Transfer',
+        date: new Date().toISOString()
+    };
+
+    // Save both transactions
+    await saveTransaction(withdrawal);
+    await saveTransaction(deposit);
+
+    return { fromAccount, toAccount, amount, convertedAmount };
+}
+
+function calculateConvertedAmount(amount, fromAccountId, toAccountId) {
+    const fromAccount = state.accounts.find(acc => acc.id === fromAccountId);
+    const toAccount = state.accounts.find(acc => acc.id === toAccountId);
+    
+    if (!fromAccount || !toAccount) return amount;
+
+    // If same currency, no conversion needed
+    if (fromAccount.currency === toAccount.currency) return amount;
+
+    // USD to INR conversion
+    if (fromAccount.currency === 'USD' && toAccount.currency === 'INR') {
+        return amount * USD_TO_INR;
+    }
+
+    // INR to USD conversion
+    if (fromAccount.currency === 'INR' && toAccount.currency === 'USD') {
+        return amount / USD_TO_INR;
+    }
+
+    return amount;
+}
+
+function getAnalyticsData(timeframe = 'monthly', selectedYear = new Date().getFullYear()) {
+    // Filter out self transfers from calculations
+    const transactions = (state.transactions || []).filter(tx => tx.category !== 'Self Transfer');
+    
+    if (timeframe === 'yearly') {
+        const yearlyStats = {};
+        
+        transactions.forEach(tx => {
+            const year = new Date(tx.date).getFullYear();
+            if (!yearlyStats[year]) {
+                yearlyStats[year] = { year, income: 0, expense: 0 };
+            }
+            
+            const amount = tx.amountInINR || tx.amount;
+            if (tx.type === 'income') {
+                yearlyStats[year].income += amount;
+            } else {
+                yearlyStats[year].expense += amount;
+            }
+        });
+
+        return Object.values(yearlyStats).sort((a, b) => a.year - b.year);
+    } else {
+        const monthlyStats = {};
+        const months = [
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        
+        // Initialize all months with zero values
+        months.forEach((month, index) => {
+            monthlyStats[month] = { 
+                month,
+                monthIndex: index, 
+                income: 0, 
+                expense: 0 
+            };
+        });
+
+        transactions
+            .filter(tx => new Date(tx.date).getFullYear() === selectedYear)
+            .forEach(tx => {
+                const month = months[new Date(tx.date).getMonth()];
+                const amount = tx.amountInINR || tx.amount;
+                
+                if (tx.type === 'income') {
+                    monthlyStats[month].income += amount;
+                } else {
+                    monthlyStats[month].expense += amount;
+                }
+            });
+
+        return Object.values(monthlyStats).sort((a, b) => a.monthIndex - b.monthIndex);
+    }
+}
+
+// Make functions globally available
+window.handleSelfTransfer = handleSelfTransfer;
+window.calculateConvertedAmount = calculateConvertedAmount;
+window.getAnalyticsData = getAnalyticsData;
 function validateAccount(account) {
     const errors = [];
     
