@@ -2594,3 +2594,61 @@ body, .bg-gradient-dark {
 #edit-transaction-modal .transaction-type {
     margin-bottom: 1rem;
 }
+
+.filters-card {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.filters-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.date-filter-group {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.custom-date {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.filter-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.filter-select,
+.filter-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.875rem;
+}
+
+.btn-export {
+    background: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
