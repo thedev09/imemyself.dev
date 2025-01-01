@@ -230,7 +230,6 @@ function initializeSelfTransfer() {
         fromSelect.innerHTML = '<option value="">Select source account</option>' + options;
         toSelect.innerHTML = '<option value="">Select destination account</option>' + options;
     }
-
     // Handle amount changes
     function updateConvertedAmount() {
         if (!fromSelect || !toSelect || !amountInput || !convertedAmountGroup || !convertedAmountInput) return;
@@ -1704,7 +1703,6 @@ function switchView(view) {
     document.querySelectorAll('.view').forEach(el => {
         if (el.id === `${view}-view`) {
             el.style.display = 'block';
-            el.classList.add('loading');
         } else {
             el.style.display = 'none';
         }
@@ -1715,25 +1713,12 @@ function switchView(view) {
         el.setAttribute('aria-selected', el.dataset.view === view);
     });
 
-    setTimeout(() => {
-        document.querySelectorAll('.view').forEach(el => {
-            el.classList.remove('loading');
-        });
-    }, 300);
-
-    // Initialize appropriate view
     if (view === 'dashboard') {
+        // Initialize immediately
         initializeSelfTransfer();
+        renderAccounts();
+        renderTransactions();
     } else if (view === 'analytics') {
-        // Clear existing chart if any
-        const chartCanvas = document.getElementById('analysis-chart');
-        if (chartCanvas) {
-            const ctx = chartCanvas.getContext('2d');
-            const existingChart = Chart.getChart(chartCanvas);
-            if (existingChart) {
-                existingChart.destroy();
-            }
-        }
         initializeAnalytics();
     }
 }
@@ -1771,11 +1756,12 @@ function createEditTransactionModal(transaction) {
                             <div class="form-group">
                                 <label for="editAmount" class="form-label">Amount</label>
                                 <input type="number" 
-                                       id="editAmount"
-                                       class="form-input" 
-                                       name="amount" 
-                                       value="${transaction.amount}"
-                                       required>
+       id="editAmount"
+       class="form-input" 
+       name="amount" 
+       value="${transaction.amount}"
+       step="0.01"
+       required>
                             </div>
                             <div class="form-group">
                                 <label for="editAccount" class="form-label">Account</label>
