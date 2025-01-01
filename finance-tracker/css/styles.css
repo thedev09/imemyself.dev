@@ -2569,3 +2569,28 @@ body, .bg-gradient-dark {
     opacity: 0;
     pointer-events: none;
 }
+.transaction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.transaction-actions {
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.transaction-item:hover .transaction-actions {
+    opacity: 1;
+}
+
+#edit-transaction-modal .modal-content {
+    max-width: 600px;
+}
+
+#edit-transaction-modal .transaction-type {
+    margin-bottom: 1rem;
+}

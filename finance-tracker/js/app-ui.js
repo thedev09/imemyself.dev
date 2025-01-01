@@ -1738,7 +1738,332 @@ function switchView(view) {
     }
 }
 
+// Add this function to handle transaction editing
+function createEditTransactionModal(transaction) {
+    const account = state.accounts.find(acc => acc.id === transaction.accountId);
+    
+    const modalHTML = `
+        <div class="modal-overlay" id="edit-transaction-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>Edit Transaction</h2>
+                    </div>
+                    <button class="modal-close" onclick="closeEditTransactionModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-transaction-form">
+                        <div class="transaction-type">
+                            <button type="button" 
+                                    class="type-btn income ${transaction.type === 'income' ? 'selected' : ''}" 
+                                    data-type="income" 
+                                    onclick="updateTransactionType(this)">
+                                Income
+                            </button>
+                            <button type="button" 
+                                    class="type-btn expense ${transaction.type === 'expense' ? 'selected' : ''}" 
+                                    data-type="expense"
+                                    onclick="updateTransactionType(this)">
+                                Expense
+                            </button>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="editAmount" class="form-label">Amount</label>
+                                <input type="number" 
+                                       id="editAmount"
+                                       class="form-input" 
+                                       name="amount" 
+                                       value="${transaction.amount}"
+                                       required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editAccount" class="form-label">Account</label>
+                                <select id="editAccount"
+                                        class="form-select" 
+                                        name="account"
+                                        required>
+                                    <option value="">Select an account</option>
+                                    ${state.accounts.map(acc => `
+                                        <option value="${acc.id}" ${acc.id === transaction.accountId ? 'selected' : ''}>
+                                            ${escapeHtml(acc.name)} (${acc.currency})
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCategory" class="form-label">Category</label>
+                                <select id="editCategory"
+                                        class="form-select" 
+                                        name="category"
+                                        required>
+                                    <option value="">Select a category</option>
+                                    ${TRANSACTION_CATEGORIES[transaction.type].map(category => `
+                                        <option value="${category}" ${category === transaction.category ? 'selected' : ''}>
+                                            ${category}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editPaymentMode" class="form-label">Payment Mode</label>
+                                <select id="editPaymentMode"
+                                        class="form-select" 
+                                        name="paymentMode"
+                                        required>
+                                    <option value="">Select payment mode</option>
+                                    ${PAYMENT_MODES[account?.type?.toLowerCase() || 'bank'].map(mode => `
+                                        <option value="${mode}" ${mode === transaction.paymentMode ? 'selected' : ''}>
+                                            ${mode}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editNotes" class="form-label">Notes (Optional)</label>
+                                <input type="text" 
+                                       id="editNotes"
+                                       class="form-input" 
+                                       name="notes" 
+                                       value="${escapeHtml(transaction.notes || '')}"
+                                       placeholder="Add any additional details">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Update Transaction</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
 
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    const modal = document.getElementById('edit-transaction-modal');
+    const form = document.getElementById('edit-transaction-form');
+
+    // Handle account change to update payment modes
+    const accountSelect = document.getElementById('editAccount');
+    accountSelect.addEventListener('change', (e) => {
+        const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
+        updateEditPaymentModes(selectedAccount?.type?.toLowerCase() || 'bank', transaction.paymentMode);
+    });
+
+    // Handle form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
+
+        try {
+            const formData = new FormData(e.target);
+            const selectedType = document.querySelector('.type-btn.selected').dataset.type;
+            
+            const updatedTransaction = {
+                ...transaction,
+                type: selectedType,
+                amount: parseFloat(formData.get('amount')),
+                accountId: formData.get('account'),
+                category: formData.get('category'),
+                notes: formData.get('notes') || '',
+                paymentMode: formData.get('paymentMode')
+            };
+
+            await updateTransaction(updatedTransaction);
+            closeEditTransactionModal();
+            showToast('Transaction updated successfully!');
+            await loadUserData(true);
+        } catch (error) {
+            console.error('Error updating transaction:', error);
+            showToast(error.message || 'Error updating transaction', 'error');
+        } finally {
+            toggleLoading(false);
+        }
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeEditTransactionModal();
+        }
+    });
+
+    // Close on escape key
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeEditTransactionModal();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+
+function updateEditPaymentModes(accountType, currentMode) {
+    const paymentModeSelect = document.getElementById('editPaymentMode');
+    const modes = PAYMENT_MODES[accountType] || [];
+    
+    paymentModeSelect.innerHTML = `
+        <option value="">Select payment mode</option>
+        ${modes.map(mode => `
+            <option value="${mode}" ${mode === currentMode ? 'selected' : ''}>
+                ${mode}
+            </option>
+        `).join('')}
+    `;
+}
+
+function updateTransactionType(button) {
+    // Update button states
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    button.classList.add('selected');
+
+    // Update category options based on new type
+    const categorySelect = document.getElementById('editCategory');
+    const type = button.dataset.type;
+    const categories = TRANSACTION_CATEGORIES[type] || [];
+    
+    categorySelect.innerHTML = `
+        <option value="">Select a category</option>
+        ${categories.map(category => `
+            <option value="${category}">${category}</option>
+        `).join('')}
+    `;
+}
+
+function closeEditTransactionModal() {
+    const modal = document.getElementById('edit-transaction-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function updateTransaction(transaction) {
+    const user = getCurrentUser();
+    if (!user) throw new Error('Please sign in to continue');
+
+    const account = state.accounts.find(acc => acc.id === transaction.accountId);
+    if (!account) throw new Error('Account not found');
+
+    // Calculate amounts based on currency
+    const originalAmount = parseFloat(transaction.amount);
+    const currency = account.currency;
+    const amountInINR = currency === 'USD' ? originalAmount * USD_TO_INR : originalAmount;
+
+    const oldTransaction = state.transactions.find(tx => tx.id === transaction.id);
+    if (!oldTransaction) throw new Error('Transaction not found');
+
+    // Calculate balance adjustment
+    const oldAmount = oldTransaction.type === 'income' ? oldTransaction.amount : -oldTransaction.amount;
+    const newAmount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+    const balanceAdjustment = newAmount - oldAmount;
+
+    const transactionData = {
+        ...transaction,
+        currency,
+        amountInINR,
+        exchangeRate: currency === 'USD' ? USD_TO_INR : 1,
+        accountName: account.name,
+        userId: user.uid,
+        updatedAt: new Date().toISOString()
+    };
+
+    const batch = db.batch();
+    
+    // Update transaction
+    const transactionRef = db.collection('users')
+        .doc(user.uid)
+        .collection('transactions')
+        .doc(transaction.id);
+    batch.set(transactionRef, transactionData);
+
+    // Update account balance
+    const accountRef = db.collection('users')
+        .doc(user.uid)
+        .collection('accounts')
+        .doc(account.id);
+    batch.update(accountRef, { 
+        balance: account.balance + balanceAdjustment,
+        updatedAt: new Date().toISOString()
+    });
+
+    await batch.commit();
+
+    // Update local state
+    const transactionIndex = state.transactions.findIndex(tx => tx.id === transaction.id);
+    if (transactionIndex !== -1) {
+        state.transactions[transactionIndex] = transactionData;
+    }
+
+    const accountIndex = state.accounts.findIndex(acc => acc.id === account.id);
+    if (accountIndex !== -1) {
+        state.accounts[accountIndex].balance += balanceAdjustment;
+        state.accounts[accountIndex].updatedAt = transactionData.updatedAt;
+    }
+}
+
+// Add edit button to transaction item template
+function renderTransactionItem(transaction, account) {
+    const isSelfTransfer = transaction.category === 'Self Transfer';
+    
+    return `
+        <div class="transaction-item ${isSelfTransfer ? 'self-transfer' : ''}">
+            <div class="transaction-main">
+                <div class="transaction-primary">
+                    <div class="transaction-header">
+                        <span class="transaction-title">
+                            ${isSelfTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
+                        </span>
+                        <div class="transaction-actions">
+                            <button onclick="event.stopPropagation(); editTransaction('${transaction.id}')" 
+                                    class="action-btn edit" 
+                                    title="Edit Transaction">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <span class="transaction-tag ${transaction.type.toLowerCase()}">
+                        ${transaction.type.toUpperCase()}
+                    </span>
+                </div>
+                <div class="transaction-details">
+                    <span class="transaction-time">${formatDate(transaction.date)}</span>
+                    <span class="transaction-separator">•</span>
+                    <span class="transaction-account">${escapeHtml(account?.name || '')}</span>
+                    ${transaction.paymentMode ? `
+                        <span class="transaction-separator">•</span>
+                        <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
+                    ` : ''}
+                    ${transaction.notes ? `
+                        <span class="transaction-separator">•</span>
+                        <span class="transaction-notes">${escapeHtml(transaction.notes)}</span>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="transaction-amount ${transaction.type.toLowerCase()}">
+                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account?.currency)}
+            </div>
+        </div>
+    `;
+}
+
+// Function to handle edit transaction click
+function editTransaction(transactionId) {
+    const transaction = state.transactions.find(tx => tx.id === transactionId);
+    if (!transaction) {
+        showToast('Transaction not found', 'error');
+        return;
+    }
+    createEditTransactionModal(transaction);
+}
+
+// Make functions globally available
+window.editTransaction = editTransaction;
+window.updateTransactionType = updateTransactionType;
+window.closeEditTransactionModal = closeEditTransactionModal;
 
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1768,3 +2093,6 @@ window.switchView = switchView;
 window.renderAll = renderAll;
 window.updateCategoryOptions = updateCategoryOptions;
 window.showFilteredAccounts = showFilteredAccounts;
+window.editTransaction = editTransaction;
+window.updateTransactionType = updateTransactionType;
+window.closeEditTransactionModal = closeEditTransactionModal;
