@@ -2712,3 +2712,48 @@ body, .bg-gradient-dark {
       font-size: 1.5rem;
     }
   }
+
+  .animated-elements {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+  
+  .floating-icon {
+    position: absolute;
+    font-size: 2rem;
+    color: rgba(59, 130, 246, 0.3);
+    animation: float 6s infinite ease-in-out;
+  }
+  
+  .money { top: 20%; left: 15%; }
+  .chart { top: 40%; right: 20%; animation-delay: -2s; }
+  .wallet { bottom: 30%; left: 25%; animation-delay: -4s; }
+  
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+    padding: 2rem;
+  }
+  
+  .feature {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+    transition: transform 0.3s;
+  }
+  
+  .feature:hover {
+    transform: translateY(-5px);
+  }
+  
+  .feature i {
+    font-size: 2rem;
+    color: #3b82f6;
+    margin-bottom: 1rem;
+  }

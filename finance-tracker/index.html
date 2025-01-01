@@ -14,6 +14,8 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/finance-tracker/css/styles.css">
     <link rel="stylesheet" href="./css/styles.css">
+    <!-- Add to head -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <!-- Loading Overlay -->
@@ -27,9 +29,13 @@
     <!-- Login Section -->
     <div id="loginSection" class="login-section">
         <div class="shapes">
-            <div class="shape shape1"></div>
-            <div class="shape shape2"></div>
-            <div class="shape shape3"></div>
+            <!-- Existing shapes here -->
+        </div>
+        
+        <div class="animated-elements">
+            <div class="floating-icon money"><i class="fas fa-dollar-sign"></i></div>
+            <div class="floating-icon chart"><i class="fas fa-chart-line"></i></div>
+            <div class="floating-icon wallet"><i class="fas fa-wallet"></i></div>
         </div>
     
         <div class="container">
@@ -37,7 +43,7 @@
                 <h1>Finance Manager</h1>
                 <p>Experience a new way to manage your money with our modern, intuitive financial tracking solution.</p>
             </div>
-    
+        
             <div class="login-card">
                 <h2>Welcome Back</h2>
                 <p>Sign in to continue your financial journey</p>
@@ -46,8 +52,29 @@
                     Sign in with Google
                 </button>
             </div>
+    
+            <div class="features-grid">
+                <div class="feature">
+                    <i class="fas fa-globe"></i>
+                    <h3>Multi-Currency</h3>
+                    <p>Manage accounts in USD & INR</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-chart-pie"></i>
+                    <h3>Analytics</h3>
+                    <p>Track spending patterns</p>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-exchange-alt"></i>
+                    <h3>Easy Transfers</h3>
+                    <p>Move money between accounts</p>
+                </div>
+            </div>
         </div>
     </div>
+
+
+
 
     <!-- Main Content (hidden until login) -->
     <div id="mainContent" class="main-content bg-gradient-dark" style="display: none;">
