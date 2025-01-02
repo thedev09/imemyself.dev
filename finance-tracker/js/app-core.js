@@ -120,7 +120,7 @@ function calculateConvertedAmount(amount, fromAccountId, toAccountId) {
 
 function getAnalyticsData(timeframe = 'monthly', selectedYear = new Date().getFullYear()) {
     // Filter out self transfers from calculations
-    const transactions = (state.transactions || []).filter(tx => tx.category !== 'Self Transfer');
+    const transactions = state.transactions.filter(tx => tx.category !== 'Self Transfer');
     
     if (timeframe === 'yearly') {
         const yearlyStats = {};
@@ -594,14 +594,17 @@ function filterTransactions(transactions, filters) {
 }
 
 function calculateTransactionStats(transactions) {
+    // Filter out self transfers
+    const nonTransferTransactions = transactions.filter(tx => tx.category !== 'Self Transfer');
+    
     return {
-        total: transactions.length,
-        income: transactions.reduce((sum, tx) => 
-            tx.type === 'income' ? sum + tx.amount : sum, 0),
-        expense: transactions.reduce((sum, tx) => 
-            tx.type === 'expense' ? sum + tx.amount : sum, 0),
-        avgTransaction: transactions.reduce((sum, tx) => 
-            sum + tx.amount, 0) / transactions.length || 0
+        total: transactions.length, // Keep total count including transfers
+        income: nonTransferTransactions.reduce((sum, tx) => 
+            tx.type === 'income' ? sum + tx.amountInINR : sum, 0),
+        expense: nonTransferTransactions.reduce((sum, tx) => 
+            tx.type === 'expense' ? sum + tx.amountInINR : sum, 0),
+        avgTransaction: nonTransferTransactions.reduce((sum, tx) => 
+            sum + tx.amountInINR, 0) / nonTransferTransactions.length || 0
     };
 }
 
