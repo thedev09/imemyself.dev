@@ -248,7 +248,68 @@ function getAnalyticsData(timeframe = 'monthly', selectedYear = new Date().getFu
         return Object.values(monthlyStats).sort((a, b) => a.monthIndex - b.monthIndex);
     }
 }
+async function deleteTransaction(transactionId) {
+    if (!confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+        return;
+    }
 
+    const user = getCurrentUser();
+    if (!user) throw new Error('Please sign in to continue');
+
+    try {
+        toggleLoading(true);
+        
+        const transaction = state.transactions.find(tx => tx.id === transactionId);
+        if (!transaction) throw new Error('Transaction not found');
+
+        const account = state.accounts.find(acc => acc.id === transaction.accountId);
+        if (!account) throw new Error('Account not found');
+
+        // Calculate balance adjustment
+        const amountAdjustment = transaction.type === 'income' ? -transaction.amount : transaction.amount;
+
+        const batch = db.batch();
+
+        // Delete transaction
+        const transactionRef = db.collection('users')
+            .doc(user.uid)
+            .collection('transactions')
+            .doc(transactionId);
+        batch.delete(transactionRef);
+
+        // Update account balance
+        const accountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(account.id);
+        batch.update(accountRef, { 
+            balance: account.balance + amountAdjustment,
+            updatedAt: new Date().toISOString()
+        });
+
+        await batch.commit();
+
+        // Update local state
+        state.transactions = state.transactions.filter(tx => tx.id !== transactionId);
+        
+        const accountIndex = state.accounts.findIndex(acc => acc.id === account.id);
+        if (accountIndex !== -1) {
+            state.accounts[accountIndex].balance += amountAdjustment;
+            state.accounts[accountIndex].updatedAt = new Date().toISOString();
+        }
+
+        showToast('Transaction deleted successfully');
+        await loadUserData(true);
+    } catch (error) {
+        console.error('Error deleting transaction:', error);
+        showToast(error.message || 'Error deleting transaction', 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+// Make it globally available
+window.deleteTransaction = deleteTransaction;
 // Make functions globally available
 window.handleSelfTransfer = handleSelfTransfer;
 window.calculateConvertedAmount = calculateConvertedAmount;

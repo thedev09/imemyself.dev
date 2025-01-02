@@ -1476,23 +1476,38 @@ function renderFilteredTransactions(transactions) {
     if (!tbody) return;
 
     if (!transactions.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="no-data">No transactions found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data">No transactions found</td></tr>';
         return;
     }
 
     tbody.innerHTML = transactions.map(tx => {
         const account = state.accounts.find(a => a.id === tx.accountId);
+        const isTransfer = tx.type === 'transfer';
         return `
             <tr>
                 <td>${formatDate(tx.date)}</td>
-                <td><span class="badge-${tx.type}">${tx.type}</span></td>
+                <td>
+                    <span class="badge-${tx.type}">
+                        ${isTransfer ? 'TRANSFER' : tx.type.toUpperCase()}
+                    </span>
+                </td>
                 <td class="amount-${tx.type}">
-                    ${tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount, tx.currency)}
+                    ${tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}${formatCurrency(tx.amount, tx.currency)}
                 </td>
                 <td>${tx.paymentMode || ''}</td>
                 <td>${escapeHtml(account?.name || '')}</td>
                 <td>${escapeHtml(tx.category)}</td>
-                <td>${escapeHtml(tx.notes || '')}</td>
+                <td>${tx.notes ? `<span class="transaction-notes-text">${escapeHtml(tx.notes)}</span>` : ''}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button onclick="editTransaction('${tx.id}')" class="action-btn edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
     }).join('');
@@ -1748,6 +1763,7 @@ function switchView(view) {
 // Add this function to handle transaction editing
 function createEditTransactionModal(transaction) {
     const account = state.accounts.find(acc => acc.id === transaction.accountId);
+    const isTransfer = transaction.type === 'transfer';
     
     const modalHTML = `
         <div class="modal-overlay" id="edit-transaction-modal">
@@ -1755,42 +1771,47 @@ function createEditTransactionModal(transaction) {
                 <div class="modal-header">
                     <div class="modal-title">
                         <h2>Edit Transaction</h2>
+                        <span class="transaction-date">${formatDate(transaction.date)}</span>
                     </div>
                     <button class="modal-close" onclick="closeEditTransactionModal()">×</button>
                 </div>
                 <div class="modal-body">
                     <form id="edit-transaction-form">
-                        <div class="transaction-type">
-                            <button type="button" 
-                                    class="type-btn income ${transaction.type === 'income' ? 'selected' : ''}" 
-                                    data-type="income" 
-                                    onclick="updateTransactionType(this)">
-                                Income
-                            </button>
-                            <button type="button" 
-                                    class="type-btn expense ${transaction.type === 'expense' ? 'selected' : ''}" 
-                                    data-type="expense"
-                                    onclick="updateTransactionType(this)">
-                                Expense
-                            </button>
-                        </div>
+                        ${!isTransfer ? `
+                            <div class="transaction-type">
+                                <button type="button" 
+                                        class="type-btn income ${transaction.type === 'income' ? 'selected' : ''}" 
+                                        data-type="income" 
+                                        onclick="updateTransactionType(this)">
+                                    Income
+                                </button>
+                                <button type="button" 
+                                        class="type-btn expense ${transaction.type === 'expense' ? 'selected' : ''}" 
+                                        data-type="expense"
+                                        onclick="updateTransactionType(this)">
+                                    Expense
+                                </button>
+                            </div>
+                        ` : ''}
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="editAmount" class="form-label">Amount</label>
                                 <input type="number" 
-       id="editAmount"
-       class="form-input" 
-       name="amount" 
-       value="${transaction.amount}"
-       step="0.01"
-       required>
+                                       id="editAmount"
+                                       class="form-input" 
+                                       name="amount" 
+                                       value="${transaction.amount}"
+                                       step="0.01"
+                                       min="0"
+                                       required>
                             </div>
                             <div class="form-group">
                                 <label for="editAccount" class="form-label">Account</label>
                                 <select id="editAccount"
                                         class="form-select" 
                                         name="account"
-                                        required>
+                                        required
+                                        ${isTransfer ? 'disabled' : ''}>
                                     <option value="">Select an account</option>
                                     ${state.accounts.map(acc => `
                                         <option value="${acc.id}" ${acc.id === transaction.accountId ? 'selected' : ''}>
@@ -1804,9 +1825,10 @@ function createEditTransactionModal(transaction) {
                                 <select id="editCategory"
                                         class="form-select" 
                                         name="category"
-                                        required>
+                                        required
+                                        ${isTransfer ? 'disabled' : ''}>
                                     <option value="">Select a category</option>
-                                    ${TRANSACTION_CATEGORIES[transaction.type].map(category => `
+                                    ${TRANSACTION_CATEGORIES[transaction.type]?.map(category => `
                                         <option value="${category}" ${category === transaction.category ? 'selected' : ''}>
                                             ${category}
                                         </option>
@@ -1834,11 +1856,17 @@ function createEditTransactionModal(transaction) {
                                        class="form-input" 
                                        name="notes" 
                                        value="${escapeHtml(transaction.notes || '')}"
-                                       placeholder="Add any additional details">
+                                       placeholder="Add any additional details"
+                                       ${isTransfer ? 'readonly' : ''}>
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Update Transaction</button>
+                            <button type="button" 
+                                    class="btn btn-danger"
+                                    onclick="if(confirm('Are you sure you want to delete this transaction?')) { deleteTransaction('${transaction.id}').then(() => closeEditTransactionModal()); }">
+                                Delete
+                            </button>
+                            <button type="submit" class="btn btn-primary">Update</button>
                         </div>
                     </form>
                 </div>
@@ -1847,15 +1875,18 @@ function createEditTransactionModal(transaction) {
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+
     const modal = document.getElementById('edit-transaction-modal');
     const form = document.getElementById('edit-transaction-form');
-
-    // Handle account change to update payment modes
     const accountSelect = document.getElementById('editAccount');
-    accountSelect.addEventListener('change', (e) => {
-        const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
-        updateEditPaymentModes(selectedAccount?.type?.toLowerCase() || 'bank', transaction.paymentMode);
-    });
+
+    // Update payment modes when account changes
+    if (accountSelect && !isTransfer) {
+        accountSelect.addEventListener('change', (e) => {
+            const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
+            updateEditPaymentModes(selectedAccount?.type?.toLowerCase() || 'bank', transaction.paymentMode);
+        });
+    }
 
     // Handle form submission
     form.addEventListener('submit', async (e) => {
@@ -1864,14 +1895,15 @@ function createEditTransactionModal(transaction) {
 
         try {
             const formData = new FormData(e.target);
-            const selectedType = document.querySelector('.type-btn.selected').dataset.type;
+            const selectedType = isTransfer ? 'transfer' : 
+                document.querySelector('.type-btn.selected')?.dataset.type || transaction.type;
             
             const updatedTransaction = {
                 ...transaction,
                 type: selectedType,
                 amount: parseFloat(formData.get('amount')),
-                accountId: formData.get('account'),
-                category: formData.get('category'),
+                accountId: isTransfer ? transaction.accountId : formData.get('account'),
+                category: isTransfer ? transaction.category : formData.get('category'),
                 notes: formData.get('notes') || '',
                 paymentMode: formData.get('paymentMode')
             };
@@ -1888,7 +1920,7 @@ function createEditTransactionModal(transaction) {
         }
     });
 
-    // Close modal when clicking outside
+    // Close when clicking outside
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             closeEditTransactionModal();
