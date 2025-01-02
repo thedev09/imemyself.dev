@@ -59,6 +59,11 @@ const TRANSACTION_CATEGORIES = {
         'Books',
         'Hobbies',
         'Other Expenses'
+    ],
+    transfer: [ // Add this new category type
+        'Self Transfer',
+        'Account Transfer',
+        'Wallet Transfer'
     ]
 };
 
@@ -852,17 +857,30 @@ window.initializeAnalytics = initializeAnalytics;
 
 // Update transaction render to style self transfers differently
 function renderTransactionItem(transaction, account) {
-    const isSelfTransfer = transaction.category === 'Self Transfer';
+    const isTransfer = transaction.type === 'transfer';
+    const isTransferOut = isTransfer && transaction.notes?.toLowerCase().includes('transfer to');
     
     return `
-        <div class="transaction-item ${isSelfTransfer ? 'self-transfer' : ''}">
+        <div class="transaction-item ${isTransfer ? 'transfer' : ''}">
             <div class="transaction-main">
                 <div class="transaction-primary">
-                    <span class="transaction-title">
-                        ${isSelfTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
-                    </span>
-                    <span class="transaction-tag ${transaction.type.toLowerCase()}">
-                        ${transaction.type.toUpperCase()}
+                    <div class="transaction-header">
+                        <span class="transaction-title">
+                            ${isTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
+                        </span>
+                        <div class="transaction-actions">
+                            <button onclick="event.stopPropagation(); editTransaction('${transaction.id}')" 
+                                    class="action-btn edit" 
+                                    title="Edit Transaction">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <span class="transaction-tag transfer">
+                        TRANSFER
                     </span>
                 </div>
                 <div class="transaction-details">
@@ -879,8 +897,8 @@ function renderTransactionItem(transaction, account) {
                     ` : ''}
                 </div>
             </div>
-            <div class="transaction-amount ${transaction.type.toLowerCase()}">
-                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account?.currency)}
+            <div class="transaction-amount ${isTransfer ? 'transfer' : transaction.type}">
+                ${isTransferOut ? '-' : '+'}${formatCurrency(Math.abs(transaction.amount), account?.currency)}
             </div>
         </div>
     `;

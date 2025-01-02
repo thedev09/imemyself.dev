@@ -36,9 +36,11 @@ async function handleSelfTransfer(fromAccountId, toAccountId, amount) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
 
+    // Find the source and destination accounts
     const fromAccount = state.accounts.find(acc => acc.id === fromAccountId);
     const toAccount = state.accounts.find(acc => acc.id === toAccountId);
 
+    // Validate accounts and amount
     if (!fromAccount || !toAccount) {
         throw new Error('Invalid accounts selected');
     }
@@ -68,32 +70,105 @@ async function handleSelfTransfer(fromAccountId, toAccountId, amount) {
     // Create withdrawal transaction
     const withdrawal = {
         id: Date.now().toString(),
-        type: 'expense',
+        type: 'transfer', // Changed from 'expense' to 'transfer'
         amount: parseFloat(amount),
         accountId: fromAccountId,
         category: 'Self Transfer',
         notes: `Transfer to ${toAccount.name}`,
         paymentMode: 'Account Transfer',
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        currency: fromAccount.currency,
+        amountInINR: fromAccount.currency === 'USD' ? parseFloat(amount) * USD_TO_INR : parseFloat(amount),
+        exchangeRate: fromAccount.currency === 'USD' ? USD_TO_INR : 1,
+        accountName: fromAccount.name,
+        userId: user.uid,
+        createdAt: new Date().toISOString()
     };
 
     // Create deposit transaction
     const deposit = {
         id: (Date.now() + 1).toString(),
-        type: 'income',
+        type: 'transfer', // Changed from 'income' to 'transfer'
         amount: parseFloat(convertedAmount),
         accountId: toAccountId,
         category: 'Self Transfer',
         notes: `Transfer from ${fromAccount.name}`,
         paymentMode: 'Account Transfer',
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        currency: toAccount.currency,
+        amountInINR: toAccount.currency === 'USD' ? parseFloat(convertedAmount) * USD_TO_INR : parseFloat(convertedAmount),
+        exchangeRate: toAccount.currency === 'USD' ? USD_TO_INR : 1,
+        accountName: toAccount.name,
+        userId: user.uid,
+        createdAt: new Date().toISOString()
     };
 
-    // Save both transactions
-    await saveTransaction(withdrawal);
-    await saveTransaction(deposit);
+    try {
+        // Create a batch operation
+        const batch = db.batch();
 
-    return { fromAccount, toAccount, amount, convertedAmount };
+        // Add both transactions to the batch
+        const withdrawalRef = db.collection('users')
+            .doc(user.uid)
+            .collection('transactions')
+            .doc(withdrawal.id);
+        batch.set(withdrawalRef, withdrawal);
+
+        const depositRef = db.collection('users')
+            .doc(user.uid)
+            .collection('transactions')
+            .doc(deposit.id);
+        batch.set(depositRef, deposit);
+
+        // Update source account balance
+        const fromAccountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(fromAccountId);
+        batch.update(fromAccountRef, { 
+            balance: fromAccount.balance - parseFloat(amount),
+            updatedAt: new Date().toISOString()
+        });
+
+        // Update destination account balance
+        const toAccountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(toAccountId);
+        batch.update(toAccountRef, { 
+            balance: toAccount.balance + parseFloat(convertedAmount),
+            updatedAt: new Date().toISOString()
+        });
+
+        // Commit the batch
+        await batch.commit();
+
+        // Update local state
+        state.transactions.unshift(withdrawal, deposit);
+        
+        const fromAccountIndex = state.accounts.findIndex(acc => acc.id === fromAccountId);
+        if (fromAccountIndex !== -1) {
+            state.accounts[fromAccountIndex].balance -= parseFloat(amount);
+            state.accounts[fromAccountIndex].updatedAt = new Date().toISOString();
+        }
+
+        const toAccountIndex = state.accounts.findIndex(acc => acc.id === toAccountId);
+        if (toAccountIndex !== -1) {
+            state.accounts[toAccountIndex].balance += parseFloat(convertedAmount);
+            state.accounts[toAccountIndex].updatedAt = new Date().toISOString();
+        }
+
+        return { 
+            fromAccount, 
+            toAccount, 
+            amount, 
+            convertedAmount 
+        };
+
+    } catch (error) {
+        console.error('Error in handleSelfTransfer:', error);
+        throw new Error('Failed to process transfer. Please try again.');
+    }
 }
 
 function calculateConvertedAmount(amount, fromAccountId, toAccountId) {
