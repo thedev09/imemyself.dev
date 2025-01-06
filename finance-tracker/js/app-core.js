@@ -4,8 +4,6 @@ const state = {
     transactions: [],
     currentView: 'dashboard',
     isLoading: false,
-    lastTransactionDate: null,
-    pageSize: 20
 };
 
 // Core validation functions
@@ -585,6 +583,7 @@ async function saveTransaction(transaction) {
 }
 
 // Data loading
+// In app-core.js
 async function loadUserData(forceRefresh = false) {
     const user = getCurrentUser();
     if (!user) return;
@@ -594,7 +593,7 @@ async function loadUserData(forceRefresh = false) {
     toggleLoading(true);
 
     try {
-        // Load accounts
+        // Load accounts (keep existing accounts loading code)
         const accountsSnapshot = await db.collection('users')
             .doc(user.uid)
             .collection('accounts')
@@ -606,37 +605,17 @@ async function loadUserData(forceRefresh = false) {
             ...doc.data()
         }));
 
-        // Load transactions
-        let transactionsQuery = db.collection('users')
+        // Modified transaction loading - load all transactions
+        const transactionsSnapshot = await db.collection('users')
             .doc(user.uid)
             .collection('transactions')
             .orderBy('date', 'desc')
-            .limit(state.pageSize);
+            .get();
 
-        if (state.lastTransactionDate && !forceRefresh) {
-            transactionsQuery = transactionsQuery.startAfter(state.lastTransactionDate);
-        }
-
-        const transactionsSnapshot = await transactionsQuery.get();
-        console.log('Loaded transactions:', transactionsSnapshot.size);
-
-        if (!transactionsSnapshot.empty) {
-            const newTransactions = transactionsSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            console.log('Processed transactions:', newTransactions);
-
-            if (forceRefresh) {
-                state.transactions = newTransactions;
-            } else {
-                state.transactions = [...state.transactions, ...newTransactions];
-            }
-
-            if (newTransactions.length > 0) {
-                state.lastTransactionDate = newTransactions[newTransactions.length - 1].date;
-            }
-        }
+        state.transactions = transactionsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
 
         await renderAll();
         initializeTransactionView();

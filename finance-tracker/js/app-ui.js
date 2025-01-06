@@ -1281,22 +1281,6 @@ window.renderAccounts = function() {
             }
         });
     }
-
-    // Infinite scroll for transactions
-    const transactionsView = document.getElementById('transactions-view');
-    if (transactionsView) {
-        transactionsView.addEventListener('scroll', async () => {
-            if (state.isLoading) return;
-            
-            const threshold = 100;
-            const bottomReached = 
-                transactionsView.scrollHeight - transactionsView.scrollTop - transactionsView.clientHeight < threshold;
-                
-            if (bottomReached) {
-                await loadUserData();
-            }
-        });
-    }
 });
 
 
