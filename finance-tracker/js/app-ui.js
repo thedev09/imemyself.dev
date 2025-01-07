@@ -64,6 +64,13 @@ const TRANSACTION_CATEGORIES = {
         'Self Transfer',
         'Account Transfer',
         'Wallet Transfer'
+    ],
+    adjustment: [  // Add this new type
+        'Balance Reconciliation',
+        'Bank Interest',
+        'Bank Charges',
+        'Missed Transaction',
+        'Other Adjustment'
     ]
 };
 
@@ -127,6 +134,68 @@ function renderPortfolioSummary() {
                     <div class="balance-amount">₹${totalInInr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
                     <div class="exchange-rate">1 USD = ₹${USD_TO_INR}</div>
                 </div>
+            </div>
+        </div>
+    `;
+}
+
+// Keep this at the top section of app-ui.js with other core UI functions
+function renderTransactionItem(transaction, account) {
+    const isTransfer = transaction.type === 'transfer';
+    const isAdjustment = transaction.type === 'adjustment';
+    const isTransferOut = isTransfer && transaction.notes?.toLowerCase().includes('transfer to');
+    
+    // Handle the display amount prefix
+    let amountPrefix = '';
+    if (isAdjustment) {
+        amountPrefix = transaction.isIncrease ? '+' : '-';
+    } else if (isTransferOut) {
+        amountPrefix = '-';
+    } else if (transaction.type === 'income') {
+        amountPrefix = '+';
+    } else if (transaction.type === 'expense') {
+        amountPrefix = '-';
+    }
+
+    return `
+        <div class="transaction-item ${isAdjustment ? 'adjustment' : isTransfer ? 'transfer' : ''}">
+            <div class="transaction-main">
+                <div class="transaction-primary">
+                    <div class="transaction-header">
+                        <span class="transaction-title">
+                            ${isTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
+                        </span>
+                        <div class="transaction-actions">
+                            <button onclick="event.stopPropagation(); editTransaction('${transaction.id}')" 
+                                    class="action-btn edit" 
+                                    title="Edit Transaction">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <span class="transaction-tag ${transaction.type}">
+                        ${transaction.type.toUpperCase()}
+                    </span>
+                </div>
+                <div class="transaction-details">
+                    <span class="transaction-time">${formatDate(transaction.date)}</span>
+                    <span class="transaction-separator">•</span>
+                    <span class="transaction-account">${escapeHtml(account?.name || '')}</span>
+                    ${transaction.paymentMode ? `
+                        <span class="transaction-separator">•</span>
+                        <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
+                    ` : ''}
+                    ${transaction.notes ? `
+                        <span class="transaction-separator">•</span>
+                        <span class="transaction-notes">${escapeHtml(transaction.notes)}</span>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="transaction-amount ${transaction.type}">
+                ${amountPrefix}${formatCurrency(Math.abs(transaction.amount), account?.currency)}
             </div>
         </div>
     `;
@@ -854,56 +923,6 @@ function createAnalysisChart(ctx, data, timeframe) {
 // Make it globally available
 window.initializeAnalytics = initializeAnalytics;
 
-
-// Update transaction render to style self transfers differently
-function renderTransactionItem(transaction, account) {
-    const isTransfer = transaction.type === 'transfer';
-    const isTransferOut = isTransfer && transaction.notes?.toLowerCase().includes('transfer to');
-    
-    return `
-        <div class="transaction-item ${isTransfer ? 'transfer' : ''}">
-            <div class="transaction-main">
-                <div class="transaction-primary">
-                    <div class="transaction-header">
-                        <span class="transaction-title">
-                            ${isTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
-                        </span>
-                        <div class="transaction-actions">
-                            <button onclick="event.stopPropagation(); editTransaction('${transaction.id}')" 
-                                    class="action-btn edit" 
-                                    title="Edit Transaction">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <span class="transaction-tag transfer">
-                        TRANSFER
-                    </span>
-                </div>
-                <div class="transaction-details">
-                    <span class="transaction-time">${formatDate(transaction.date)}</span>
-                    <span class="transaction-separator">•</span>
-                    <span class="transaction-account">${escapeHtml(account?.name || '')}</span>
-                    ${transaction.paymentMode ? `
-                        <span class="transaction-separator">•</span>
-                        <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
-                    ` : ''}
-                    ${transaction.notes ? `
-                        <span class="transaction-separator">•</span>
-                        <span class="transaction-notes">${escapeHtml(transaction.notes)}</span>
-                    ` : ''}
-                </div>
-            </div>
-            <div class="transaction-amount ${isTransfer ? 'transfer' : transaction.type}">
-                ${isTransferOut ? '-' : '+'}${formatCurrency(Math.abs(transaction.amount), account?.currency)}
-            </div>
-        </div>
-    `;
-}
-
 // Make functions globally available
 window.initializeSelfTransfer = initializeSelfTransfer;
 window.initializeAnalytics = initializeAnalytics;
@@ -1467,30 +1486,40 @@ function renderFilteredTransactions(transactions) {
     tbody.innerHTML = transactions.map(tx => {
         const account = state.accounts.find(a => a.id === tx.accountId);
         const isTransfer = tx.type === 'transfer';
+        const isAdjustment = tx.type === 'adjustment';
+        
+        // Determine amount prefix
+        let amountPrefix = '';
+        if (isTransfer) {
+            amountPrefix = tx.notes?.toLowerCase().includes('transfer to') ? '-' : '+';
+        } else if (isAdjustment) {
+            amountPrefix = tx.notes?.toLowerCase().includes('downward') ? '-' : '+';
+        } else {
+            amountPrefix = tx.type === 'income' ? '+' : '-';
+        }
+
         return `
             <tr>
                 <td>${formatDate(tx.date)}</td>
                 <td>
-                    <span class="badge-${tx.type}">
-                        ${isTransfer ? 'TRANSFER' : tx.type.toUpperCase()}
+                    <span class="badge-${tx.type} truncate">
+                        ${tx.type.toUpperCase()}
                     </span>
                 </td>
                 <td class="amount-${tx.type}">
-                    ${tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}${formatCurrency(tx.amount, tx.currency)}
+                    ${amountPrefix}${formatCurrency(Math.abs(tx.amount), tx.currency)}
                 </td>
-                <td>${tx.paymentMode || ''}</td>
-                <td>${escapeHtml(account?.name || '')}</td>
-                <td>${escapeHtml(tx.category)}</td>
-                <td>${tx.notes ? `<span class="transaction-notes-text">${escapeHtml(tx.notes)}</span>` : ''}</td>
+                <td><span class="truncate">${escapeHtml(tx.paymentMode || '')}</span></td>
+                <td><span class="truncate">${escapeHtml(account?.name || '')}</span></td>
+                <td><span class="truncate">${escapeHtml(tx.category)}</span></td>
+                <td><span class="truncate">${escapeHtml(tx.notes || '')}</span></td>
                 <td>
-                    <div class="action-buttons">
-                        <button onclick="editTransaction('${tx.id}')" class="action-btn edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                    <button onclick="editTransaction('${tx.id}')" class="action-btn edit" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             </tr>
         `;
@@ -1655,14 +1684,19 @@ function updateTransactionView() {
 
 // Update the calculateTransactionStats function
 function calculateTransactionStats(transactions) {
+    // Filter out adjustments and transfers from calculations
+    const nonAdjustmentTransactions = transactions.filter(tx => 
+        tx.type !== 'adjustment' && tx.type !== 'transfer'
+    );
+    
     return {
         total: transactions.length,
-        income: transactions.reduce((sum, tx) => 
+        income: nonAdjustmentTransactions.reduce((sum, tx) => 
             tx.type === 'income' ? sum + tx.amountInINR : sum, 0),
-        expense: transactions.reduce((sum, tx) => 
+        expense: nonAdjustmentTransactions.reduce((sum, tx) => 
             tx.type === 'expense' ? sum + tx.amountInINR : sum, 0),
-        avgTransaction: transactions.reduce((sum, tx) => 
-            sum + tx.amountInINR, 0) / transactions.length || 0
+        avgTransaction: nonAdjustmentTransactions.reduce((sum, tx) => 
+            sum + tx.amountInINR, 0) / nonAdjustmentTransactions.length || 0
     };
 }
 
@@ -2026,53 +2060,6 @@ async function updateTransaction(transaction) {
     }
 }
 
-// Add edit button to transaction item template
-function renderTransactionItem(transaction, account) {
-    const isSelfTransfer = transaction.category === 'Self Transfer';
-    
-    return `
-        <div class="transaction-item ${isSelfTransfer ? 'self-transfer' : ''}">
-            <div class="transaction-main">
-                <div class="transaction-primary">
-                    <div class="transaction-header">
-                        <span class="transaction-title">
-                            ${isSelfTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
-                        </span>
-                        <div class="transaction-actions">
-                            <button onclick="event.stopPropagation(); editTransaction('${transaction.id}')" 
-                                    class="action-btn edit" 
-                                    title="Edit Transaction">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <span class="transaction-tag ${transaction.type.toLowerCase()}">
-                        ${transaction.type.toUpperCase()}
-                    </span>
-                </div>
-                <div class="transaction-details">
-                    <span class="transaction-time">${formatDate(transaction.date)}</span>
-                    <span class="transaction-separator">•</span>
-                    <span class="transaction-account">${escapeHtml(account?.name || '')}</span>
-                    ${transaction.paymentMode ? `
-                        <span class="transaction-separator">•</span>
-                        <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
-                    ` : ''}
-                    ${transaction.notes ? `
-                        <span class="transaction-separator">•</span>
-                        <span class="transaction-notes">${escapeHtml(transaction.notes)}</span>
-                    ` : ''}
-                </div>
-            </div>
-            <div class="transaction-amount ${transaction.type.toLowerCase()}">
-                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account?.currency)}
-            </div>
-        </div>
-    `;
-}
 
 // Function to handle edit transaction click
 function editTransaction(transactionId) {

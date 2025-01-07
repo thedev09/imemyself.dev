@@ -192,22 +192,29 @@ function calculateConvertedAmount(amount, fromAccountId, toAccountId) {
 }
 
 function getAnalyticsData(timeframe = 'monthly', selectedYear = new Date().getFullYear()) {
-    // Filter out self transfers from calculations
-    const transactions = state.transactions.filter(tx => tx.category !== 'Self Transfer');
+    // Filter out adjustments and transfers from calculations
+    const transactions = state.transactions.filter(tx => 
+        tx.type !== 'adjustment' && tx.type !== 'transfer'
+    );
     
     if (timeframe === 'yearly') {
         const yearlyStats = {};
         
         transactions.forEach(tx => {
             const year = new Date(tx.date).getFullYear();
+            
             if (!yearlyStats[year]) {
-                yearlyStats[year] = { year, income: 0, expense: 0 };
+                yearlyStats[year] = { 
+                    year, 
+                    income: 0, 
+                    expense: 0 
+                };
             }
             
             const amount = tx.amountInINR || tx.amount;
             if (tx.type === 'income') {
                 yearlyStats[year].income += amount;
-            } else {
+            } else if (tx.type === 'expense') {
                 yearlyStats[year].expense += amount;
             }
         });
@@ -238,7 +245,7 @@ function getAnalyticsData(timeframe = 'monthly', selectedYear = new Date().getFu
                 
                 if (tx.type === 'income') {
                     monthlyStats[month].income += amount;
-                } else {
+                } else if (tx.type === 'expense') {
                     monthlyStats[month].expense += amount;
                 }
             });
@@ -246,6 +253,7 @@ function getAnalyticsData(timeframe = 'monthly', selectedYear = new Date().getFu
         return Object.values(monthlyStats).sort((a, b) => a.monthIndex - b.monthIndex);
     }
 }
+
 async function deleteTransaction(transactionId) {
     if (!confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
         return;
@@ -377,7 +385,6 @@ async function saveAccount(account) {
     
     validateAccount(account);
     
-    // Get the existing account to compare changes
     const existingAccount = state.accounts.find(a => a.id === account.id);
     
     const accountData = {
@@ -388,56 +395,47 @@ async function saveAccount(account) {
         isDeleted: false
     };
 
-    // If this is an update (not a new account), track the changes
-    if (existingAccount) {
-        const changes = [];
-        if (existingAccount.name !== account.name) {
-            changes.push(`Name changed from "${existingAccount.name}" to "${account.name}"`);
-        }
-        if (existingAccount.type !== account.type) {
-            changes.push(`Type changed from "${existingAccount.type}" to "${account.type}"`);
-        }
-        if (existingAccount.currency !== account.currency) {
-            changes.push(`Currency changed from "${existingAccount.currency}" to "${account.currency}"`);
-        }
-        if (existingAccount.balance !== account.balance) {
-            changes.push(`Balance updated from "${formatCurrency(existingAccount.balance, existingAccount.currency)}" to "${formatCurrency(account.balance, account.currency)}"`);
-        }
-
-        if (changes.length > 0) {
-            const historyEntry = {
-                id: Date.now().toString(),
-                accountId: account.id,
-                timestamp: new Date().toISOString(),
-                changes: changes,
-                userId: user.uid
-            };
-
-            // Add history to the account data
-            accountData.history = [...(existingAccount.history || []), historyEntry];
-        } else {
-            accountData.history = existingAccount.history || [];
-        }
-    } else {
-        // Initialize history array for new accounts
-        accountData.history = [{
-            id: Date.now().toString(),
-            accountId: accountData.id,
-            timestamp: accountData.createdAt,
-            changes: ['Account Created'],
-            userId: user.uid
-        }];
-    }
-
-    console.log('Saving account data:', accountData); // Debug log
-    
     try {
-        // Save the account first
-        await db.collection('users')
+        const batch = db.batch();
+        
+        // If this is an update and balance changed
+        if (existingAccount && existingAccount.balance !== account.balance) {
+            const balanceDiff = account.balance - existingAccount.balance;
+            
+            // In the adjustment transaction creation part:
+const adjustmentTransaction = {
+    id: Date.now().toString(),
+    date: new Date().toISOString(),
+    type: 'adjustment',
+    amount: Math.abs(balanceDiff),  // Keep amount positive
+    isIncrease: balanceDiff > 0,    // Add this flag
+    currency: account.currency,
+    amountInINR: account.currency === 'USD' ? Math.abs(balanceDiff * USD_TO_INR) : Math.abs(balanceDiff),
+    exchangeRate: account.currency === 'USD' ? USD_TO_INR : 1,
+    accountId: account.id,
+    accountName: account.name,
+    category: 'Balance Reconciliation',
+    notes: balanceDiff > 0 ? 'Balance adjusted upward' : 'Balance adjusted downward',
+    paymentMode: 'Balance Adjustment',
+    userId: user.uid,
+    createdAt: new Date().toISOString()
+};
+
+            const transactionRef = db.collection('users')
+                .doc(user.uid)
+                .collection('transactions')
+                .doc(adjustmentTransaction.id);
+            batch.set(transactionRef, adjustmentTransaction);
+        }
+
+        // Existing account save logic
+        const accountRef = db.collection('users')
             .doc(user.uid)
             .collection('accounts')
-            .doc(accountData.id)
-            .set(accountData);
+            .doc(accountData.id);
+        batch.set(accountRef, accountData);
+
+        await batch.commit();
         
         // Update local state
         const existingIndex = state.accounts.findIndex(a => a.id === accountData.id);
@@ -449,7 +447,7 @@ async function saveAccount(account) {
         
         return accountData;
     } catch (error) {
-        console.error('Detailed error:', error); // Debug log
+        console.error('Error in saveAccount:', error);
         throw new Error('Failed to save account. Please try again.');
     }
 }

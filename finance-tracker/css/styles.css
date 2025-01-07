@@ -2892,3 +2892,29 @@ body, .bg-gradient-dark {
     width: 100px;
     text-align: right;
 }
+/* Add these with your other transaction type styles */
+.type-btn.adjustment {
+    background: rgba(147, 51, 234, 0.1);  /* Purple shade */
+    color: #9333ea;
+}
+
+.type-btn.adjustment.selected {
+    background: rgba(147, 51, 234, 0.2);
+    color: #9333ea;
+}
+
+.badge-adjustment {
+    background: rgba(147, 51, 234, 0.1);
+    color: #9333ea;
+}
+
+.amount-adjustment {
+    color: #9333ea;
+}
+
+.transaction-tag.adjustment {
+    background: rgba(147, 51, 234, 0.1);
+    color: #9333ea;
+}
+
+
