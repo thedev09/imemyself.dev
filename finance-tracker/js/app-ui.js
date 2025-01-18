@@ -110,29 +110,44 @@ function renderPortfolioSummary() {
 
     const usdInInr = totals.usd * USD_TO_INR;
     const totalInInr = totals.inr + usdInInr;
+    // Calculate total in USD
+    const inrToUsd = totals.inr / USD_TO_INR;
+    const totalInUsd = totals.usd + inrToUsd;
 
     return `
         <div class="portfolio-summary">
-            <h2>Portfolio Summary</h2>
+            <div class="summary-header">
+                <h2 class="summary-title">Portfolio Summary</h2>
+            </div>
             <div class="currency-section">
                 <div class="balance-card clickable" data-currency="INR" style="cursor: pointer;">
                     <div class="balance-header">INR Balance</div>
-                    <div class="balance-amount">₹${totals.inr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+                    <div class="balance-amount">₹${formatIndianNumber(totals.inr)}</div>
                     <div class="account-pills">
-                        <div class="account-pill">${totals.inrBanks} Bank Accounts</div>
+                        <div class="account-pill">${totals.inrBanks} Bank Account${totals.inrBanks !== 1 ? 's' : ''}</div>
                     </div>
                 </div>
+
                 <div class="balance-card clickable" data-currency="USD" style="cursor: pointer;">
                     <div class="balance-header">USD Balance</div>
-                    <div class="balance-amount">$${totals.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
+                    <div class="balance-amount">$${totals.usd.toLocaleString('en-US', { 
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2 
+                    })}</div>
                     <div class="account-pills">
-                        <div class="account-pill">${totals.usdCrypto} Crypto Wallets</div>
+                        <div class="account-pill">${totals.usdCrypto} Crypto Wallet${totals.usdCrypto !== 1 ? 's' : ''}</div>
                     </div>
                 </div>
-                <div class="balance-card">
-                    <div class="balance-header">Total Portfolio (INR)</div>
-                    <div class="balance-amount">₹${totalInInr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                    <div class="exchange-rate">1 USD = ₹${USD_TO_INR}</div>
+
+                <div class="balance-card total-portfolio">
+                    <div class="balance-header">Total Portfolio Value</div>
+                    <div class="balance-amount">₹${formatIndianNumber(totalInInr)}</div>
+                    <div class="conversion-info">
+                        <div class="usd-value">Total USD Value: $${totalInUsd.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        })}</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -807,10 +822,11 @@ function initializeAnalytics() {
             expense: acc.expense + curr.expense
         }), { income: 0, expense: 0 });
 
-        document.getElementById('analysis-income').textContent = formatCurrency(totals.income);
-        document.getElementById('analysis-expense').textContent = formatCurrency(totals.expense);
-        const savings = totals.income - totals.expense;
-        document.getElementById('analysis-savings').textContent = formatCurrency(Math.abs(savings));
+        // In updateAnalytics function in app-ui.js
+document.getElementById('analysis-income').textContent = formatCurrency(totals.income);
+document.getElementById('analysis-expense').textContent = formatCurrency(totals.expense);
+const savings = totals.income - totals.expense;
+document.getElementById('analysis-savings').textContent = formatCurrency(Math.abs(savings));
         document.getElementById('analysis-savings').style.color = savings >= 0 ? '#4ade80' : '#f87171';
 
         // Clear existing chart
@@ -1673,10 +1689,11 @@ function updateTransactionView() {
 
     // Update stats
     const stats = window.calculateTransactionStats(filteredTransactions);
-    document.getElementById('stat-total').textContent = stats.total;
-    document.getElementById('stat-income').textContent = window.formatCurrency(stats.income);
-    document.getElementById('stat-expense').textContent = window.formatCurrency(stats.expense);
-    document.getElementById('stat-average').textContent = window.formatCurrency(stats.avgTransaction);
+    // In app-ui.js, update this part in updateTransactionView function
+document.getElementById('stat-total').textContent = stats.total.toLocaleString();
+document.getElementById('stat-income').textContent = formatCurrency(stats.income);
+document.getElementById('stat-expense').textContent = formatCurrency(stats.expense);
+document.getElementById('stat-average').textContent = formatCurrency(stats.avgTransaction);
 
     // Render transactions
     renderFilteredTransactions(sortedTransactions);

@@ -628,7 +628,23 @@ async function loadUserData(forceRefresh = false) {
     }
 }
 
-// Update the formatCurrency function
+// Add this to app-core.js near formatCurrency function
+function formatIndianNumber(number) {
+    const roundedNum = Math.abs(Number(number).toFixed(2));
+    const [whole, decimal] = roundedNum.toString().split('.');
+    
+    // Convert to Indian format
+    let formattedWhole = whole;
+    if (whole.length > 3) {
+        const last3 = whole.substring(whole.length - 3);
+        const remaining = whole.substring(0, whole.length - 3);
+        formattedWhole = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + last3;
+    }
+    
+    return formattedWhole + (decimal ? "." + decimal : "");
+}
+
+// Update formatCurrency function
 function formatCurrency(amount, currency = 'INR', showBoth = false) {
     if (typeof amount !== 'number') {
         amount = parseFloat(amount) || 0;
@@ -637,18 +653,21 @@ function formatCurrency(amount, currency = 'INR', showBoth = false) {
     try {
         if (currency === 'USD' && showBoth) {
             const inr = amount * USD_TO_INR;
-            return `$${amount.toFixed(2)} (₹${inr.toFixed(2)})`;
+            return `$${amount.toFixed(2)} (₹${formatIndianNumber(inr)})`;
         }
         
         return currency === 'USD' 
             ? `$${amount.toFixed(2)}`
-            : `₹${amount.toFixed(2)}`;
+            : `₹${formatIndianNumber(amount)}`;
     } catch (error) {
         return currency === 'USD' 
             ? `$${amount.toFixed(2)}`
-            : `₹${amount.toFixed(2)}`;
+            : `₹${formatIndianNumber(amount)}`;
     }
 }
+
+// Make it globally available
+
 
 // Updated formatDate function to include time in IST
 function formatDate(dateString) {
@@ -750,6 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Make functions globally available
+window.formatIndianNumber = formatIndianNumber;
 window.saveAccount = saveAccount;
 window.deleteAccount = deleteAccount;
 window.saveTransaction = saveTransaction;
