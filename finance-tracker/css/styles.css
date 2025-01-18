@@ -2971,3 +2971,107 @@ body, .bg-gradient-dark {
     color: white;
     margin-bottom: 0.75rem;
 }
+
+/* Add to styles.css */
+/* Custom Scrollbar Styles */
+.modal-body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Update/Add these styles in styles.css */
+.modal-transaction-item {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.modal-transaction-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.transaction-main {
+    width: 100%;
+}
+
+.transaction-primary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.transaction-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.transaction-category {
+    font-weight: 500;
+    color: #fff;
+}
+
+.transaction-amount {
+    font-weight: 500;
+}
+
+.transaction-amount.income {
+    color: #4ade80;
+}
+
+.transaction-amount.expense {
+    color: #f87171;
+}
+
+.transaction-amount.transfer {
+    color: #60a5fa;
+}
+
+.transaction-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+    font-size: 0.75rem;
+}
+
+.transaction-dot {
+    color: #4b5563;
+}
+
+.action-btn.edit {
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    opacity: 0;
+    transition: all 0.2s ease;
+    color: #94a3b8;
+}
+
+.modal-transaction-item:hover .action-btn.edit {
+    opacity: 1;
+}
+
+.action-btn.edit:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #60a5fa;
+}

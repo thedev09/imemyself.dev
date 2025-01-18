@@ -1464,22 +1464,31 @@ function renderAccountTransactions(account) {
         <div class="transactions-list">
             ${transactions.map(transaction => `
                 <div class="modal-transaction-item">
-                    <div class="transaction-icon ${transaction.type}">
-                        ${transaction.type === 'income' ? '↑' : '↓'}
-                    </div>
-                    <div class="transaction-info">
+                    <div class="transaction-main">
                         <div class="transaction-primary">
-                            <span class="transaction-category">${escapeHtml(transaction.category)}</span>
-                            <span class="transaction-amount ${transaction.type}">
-                                ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account.currency)}
-                            </span>
+                            <div class="transaction-left">
+                                <span class="transaction-category">${escapeHtml(transaction.category)}</span>
+                                <span class="transaction-amount ${transaction.type}">
+                                    ${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount, account.currency)}
+                                </span>
+                            </div>
+                            <button onclick="editTransaction('${transaction.id}', '${account.id}')" 
+                                    class="action-btn edit" 
+                                    title="Edit Transaction">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
                         </div>
                         <div class="transaction-secondary">
                             <span class="transaction-date">${formatDate(transaction.date)}</span>
                             ${transaction.paymentMode ? `
+                                <span class="transaction-dot">•</span>
                                 <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
                             ` : ''}
                             ${transaction.notes ? `
+                                <span class="transaction-dot">•</span>
                                 <span class="transaction-note">${escapeHtml(transaction.notes)}</span>
                             ` : ''}
                         </div>
