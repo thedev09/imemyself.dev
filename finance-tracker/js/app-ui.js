@@ -692,6 +692,8 @@ async function renderAll() {
 // In app-ui.js, update the renderAccounts function
 function renderAccounts() {
     const accountsGrid = document.getElementById('accounts-grid');
+    const accountSelects = document.querySelectorAll('select[name="account"]');
+    
     if (!accountsGrid) return;
 
     // Remove existing summary if any
@@ -702,6 +704,16 @@ function renderAccounts() {
 
     // Add portfolio summary
     accountsGrid.insertAdjacentHTML('beforebegin', renderPortfolioSummary());
+    
+    // Add click handlers to the balance cards
+    document.querySelectorAll('.balance-card.clickable').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const currency = e.currentTarget.dataset.currency;
+            if (currency) {
+                showFilteredAccounts(currency);
+            }
+        });
+    });
 
     if (!state.accounts.length) {
         accountsGrid.innerHTML = `
@@ -763,10 +775,22 @@ function renderAccounts() {
         </div>
     `;
 
+    // Update all account select dropdowns
+    accountSelects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = `
+            <option value="">Select an account</option>
+            ${state.accounts.map(account => `
+                <option value="${account.id}" ${currentValue === account.id ? 'selected' : ''}>
+                    ${escapeHtml(account.name)} (${account.currency} ${formatCurrency(account.balance, account.currency)})
+                </option>
+            `).join('')}
+        `;
+    });
+
     // Initialize drag and drop
     initializeAccountDragDrop();
 }
-
 
 // In app-ui.js, add this new function
 function initializeAccountDragDrop() {
