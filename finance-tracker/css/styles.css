@@ -3119,3 +3119,42 @@ body, .bg-gradient-dark {
     white-space: nowrap;
     width: 100px;
 }
+
+/* In styles.css, add these new styles */
+.account-card {
+    cursor: grab;
+    position: relative;
+}
+
+.account-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.drag-handle {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    cursor: grab;
+    color: var(--gray-400);
+}
+
+.account-card:hover .drag-handle {
+    opacity: 0.7;
+}
+
+.account-card .drag-handle:hover {
+    opacity: 1;
+    color: var(--gray-300);
+}
+
+/* Update account-actions positioning */
+.account-actions {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}

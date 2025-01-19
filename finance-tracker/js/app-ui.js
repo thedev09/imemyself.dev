@@ -689,10 +689,9 @@ async function renderAll() {
     }
 }
 
+// In app-ui.js, update the renderAccounts function
 function renderAccounts() {
     const accountsGrid = document.getElementById('accounts-grid');
-    const accountSelects = document.querySelectorAll('select[name="account"]');
-    
     if (!accountsGrid) return;
 
     // Remove existing summary if any
@@ -703,16 +702,6 @@ function renderAccounts() {
 
     // Add portfolio summary
     accountsGrid.insertAdjacentHTML('beforebegin', renderPortfolioSummary());
-    
-    // Add click handlers to the balance cards
-    document.querySelectorAll('.balance-card.clickable').forEach(card => {
-        card.addEventListener('click', (e) => {
-            const currency = e.currentTarget.dataset.currency;
-            if (currency) {
-                showFilteredAccounts(currency);
-            }
-        });
-    });
 
     if (!state.accounts.length) {
         accountsGrid.innerHTML = `
@@ -726,8 +715,16 @@ function renderAccounts() {
         return;
     }
 
-    const accountCards = state.accounts.map(account => `
-        <div class="account-card ${account.type.toLowerCase()}" onclick="showAccountDetails('${account.id}')">
+    // Sort accounts by displayOrder
+    const sortedAccounts = [...state.accounts].sort((a, b) => 
+        (a.displayOrder || 0) - (b.displayOrder || 0)
+    );
+
+    const accountCards = sortedAccounts.map(account => `
+        <div class="account-card ${account.type.toLowerCase()}" 
+             data-account-id="${account.id}"
+             draggable="true"
+             onclick="showAccountDetails('${account.id}')">
             <div class="account-actions">
                 <button onclick="event.stopPropagation(); editAccount('${account.id}')" 
                         class="action-btn edit" 
@@ -766,19 +763,88 @@ function renderAccounts() {
         </div>
     `;
 
-    // Update all account select dropdowns
-    accountSelects.forEach(select => {
-        const currentValue = select.value;
-        select.innerHTML = `
-            <option value="">Select an account</option>
-            ${state.accounts.map(account => `
-                <option value="${account.id}" ${currentValue === account.id ? 'selected' : ''}>
-                    ${escapeHtml(account.name)} (${account.currency} ${formatCurrency(account.balance, account.currency)})
-                </option>
-            `).join('')}
-        `;
+    // Initialize drag and drop
+    initializeAccountDragDrop();
+}
+
+
+// In app-ui.js, add this new function
+function initializeAccountDragDrop() {
+    const accountsGrid = document.getElementById('accounts-grid');
+    let draggedCard = null;
+
+    const cards = accountsGrid.querySelectorAll('.account-card:not(.add-account)');
+    cards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+            draggedCard = card;
+            card.classList.add('dragging');
+        });
+
+        card.addEventListener('dragend', () => {
+            card.classList.remove('dragging');
+            draggedCard = null;
+        });
+
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (draggedCard === card) return;
+            
+            const rect = card.getBoundingClientRect();
+            const midPoint = rect.y + rect.height / 2;
+            const shouldInsertAfter = e.clientY > midPoint;
+            
+            if (shouldInsertAfter) {
+                card.parentNode.insertBefore(draggedCard, card.nextSibling);
+            } else {
+                card.parentNode.insertBefore(draggedCard, card);
+            }
+        });
+
+        card.addEventListener('dragend', async () => {
+            await updateAccountOrder();
+        });
     });
 }
+
+// Add function to update account order in database
+async function updateAccountOrder() {
+    const accountsGrid = document.getElementById('accounts-grid');
+    const cards = accountsGrid.querySelectorAll('.account-card:not(.add-account)');
+    const user = getCurrentUser();
+    
+    if (!user) return;
+
+    const batch = db.batch();
+    
+    // Update displayOrder for each account
+    cards.forEach((card, index) => {
+        const accountId = card.dataset.accountId;
+        const accountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(accountId);
+            
+        batch.update(accountRef, { 
+            displayOrder: index,
+            updatedAt: new Date().toISOString()
+        });
+        
+        // Update local state
+        const account = state.accounts.find(a => a.id === accountId);
+        if (account) {
+            account.displayOrder = index;
+            account.updatedAt = new Date().toISOString();
+        }
+    });
+
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error('Error updating account order:', error);
+        showToast('Error updating account order', 'error');
+    }
+}
+
 
 // Make functions globally available
 window.renderAccounts = renderAccounts;
@@ -2133,3 +2199,6 @@ window.showFilteredAccounts = showFilteredAccounts;
 window.editTransaction = editTransaction;
 window.updateTransactionType = updateTransactionType;
 window.closeEditTransactionModal = closeEditTransactionModal;
+// At the bottom of app-ui.js
+window.initializeAccountDragDrop = initializeAccountDragDrop;
+window.updateAccountOrder = updateAccountOrder;

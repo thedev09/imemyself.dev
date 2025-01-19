@@ -385,14 +385,19 @@ async function saveAccount(account) {
     
     validateAccount(account);
     
-    const existingAccount = state.accounts.find(a => a.id === account.id);
+    // If it's a new account, get the highest current displayOrder and add 1
+    if (!account.displayOrder) {
+        const highestOrder = Math.max(...state.accounts.map(a => a.displayOrder || 0), 0);
+        account.displayOrder = highestOrder + 1;
+    }
     
     const accountData = {
         ...account,
         userId: user.uid,
         createdAt: account.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        isDeleted: false
+        isDeleted: false,
+        displayOrder: account.displayOrder
     };
 
     try {
