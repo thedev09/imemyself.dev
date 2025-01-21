@@ -2112,70 +2112,114 @@ function closeEditTransactionModal() {
     }
 }
 
+// In app-core.js
 async function updateTransaction(transaction) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
 
-    const account = state.accounts.find(acc => acc.id === transaction.accountId);
-    if (!account) throw new Error('Account not found');
-
-    // Calculate amounts based on currency
-    const originalAmount = parseFloat(transaction.amount);
-    const currency = account.currency;
-    const amountInINR = currency === 'USD' ? originalAmount * USD_TO_INR : originalAmount;
-
+    // Find old transaction
     const oldTransaction = state.transactions.find(tx => tx.id === transaction.id);
     if (!oldTransaction) throw new Error('Transaction not found');
 
-    // Calculate balance adjustment
-    const oldAmount = oldTransaction.type === 'income' ? oldTransaction.amount : -oldTransaction.amount;
-    const newAmount = transaction.type === 'income' ? transaction.amount : -transaction.amount;
-    const balanceAdjustment = newAmount - oldAmount;
-
-    const transactionData = {
-        ...transaction,
-        currency,
-        amountInINR,
-        exchangeRate: currency === 'USD' ? USD_TO_INR : 1,
-        accountName: account.name,
-        userId: user.uid,
-        updatedAt: new Date().toISOString()
-    };
+    // Find accounts
+    const oldAccount = state.accounts.find(acc => acc.id === oldTransaction.accountId);
+    const newAccount = state.accounts.find(acc => acc.id === transaction.accountId);
+    if (!oldAccount || !newAccount) throw new Error('Account not found');
 
     const batch = db.batch();
-    
-    // Update transaction
+
+    // Calculate balance adjustments
+    // First, reverse the old transaction
+    let oldAdjustment = oldTransaction.type === 'income' ? -oldTransaction.amount : oldTransaction.amount;
+    // Then, apply the new transaction
+    let newAdjustment = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+
+    // Update transaction document
     const transactionRef = db.collection('users')
         .doc(user.uid)
         .collection('transactions')
         .doc(transaction.id);
+
+    const transactionData = {
+        ...transaction,
+        currency: newAccount.currency,
+        amountInINR: newAccount.currency === 'USD' ? transaction.amount * USD_TO_INR : transaction.amount,
+        exchangeRate: newAccount.currency === 'USD' ? USD_TO_INR : 1,
+        accountName: newAccount.name,
+        updatedAt: new Date().toISOString()
+    };
+
     batch.set(transactionRef, transactionData);
 
-    // Update account balance
-    const accountRef = db.collection('users')
-        .doc(user.uid)
-        .collection('accounts')
-        .doc(account.id);
-    batch.update(accountRef, { 
-        balance: account.balance + balanceAdjustment,
-        updatedAt: new Date().toISOString()
-    });
+    // If account changed, update both old and new account balances
+    if (oldAccount.id !== newAccount.id) {
+        // Update old account - reverse the original transaction
+        const oldAccountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(oldAccount.id);
+        batch.update(oldAccountRef, { 
+            balance: oldAccount.balance + oldAdjustment,
+            updatedAt: new Date().toISOString()
+        });
 
-    await batch.commit();
-
-    // Update local state
-    const transactionIndex = state.transactions.findIndex(tx => tx.id === transaction.id);
-    if (transactionIndex !== -1) {
-        state.transactions[transactionIndex] = transactionData;
+        // Update new account - apply the new transaction
+        const newAccountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(newAccount.id);
+        batch.update(newAccountRef, { 
+            balance: newAccount.balance + newAdjustment,
+            updatedAt: new Date().toISOString()
+        });
+    } else {
+        // Same account, just update with the difference
+        const accountRef = db.collection('users')
+            .doc(user.uid)
+            .collection('accounts')
+            .doc(newAccount.id);
+        batch.update(accountRef, { 
+            balance: newAccount.balance + (newAdjustment - oldAdjustment),
+            updatedAt: new Date().toISOString()
+        });
     }
 
-    const accountIndex = state.accounts.findIndex(acc => acc.id === account.id);
-    if (accountIndex !== -1) {
-        state.accounts[accountIndex].balance += balanceAdjustment;
-        state.accounts[accountIndex].updatedAt = transactionData.updatedAt;
+    try {
+        await batch.commit();
+
+        // Update local state
+        const transactionIndex = state.transactions.findIndex(tx => tx.id === transaction.id);
+        if (transactionIndex !== -1) {
+            state.transactions[transactionIndex] = transactionData;
+        }
+
+        // Update account balances in local state
+        if (oldAccount.id !== newAccount.id) {
+            const oldAccountIndex = state.accounts.findIndex(acc => acc.id === oldAccount.id);
+            if (oldAccountIndex !== -1) {
+                state.accounts[oldAccountIndex].balance += oldAdjustment;
+                state.accounts[oldAccountIndex].updatedAt = transactionData.updatedAt;
+            }
+
+            const newAccountIndex = state.accounts.findIndex(acc => acc.id === newAccount.id);
+            if (newAccountIndex !== -1) {
+                state.accounts[newAccountIndex].balance += newAdjustment;
+                state.accounts[newAccountIndex].updatedAt = transactionData.updatedAt;
+            }
+        } else {
+            const accountIndex = state.accounts.findIndex(acc => acc.id === newAccount.id);
+            if (accountIndex !== -1) {
+                state.accounts[accountIndex].balance += (newAdjustment - oldAdjustment);
+                state.accounts[accountIndex].updatedAt = transactionData.updatedAt;
+            }
+        }
+
+        await renderAll();
+    } catch (error) {
+        console.error('Error updating transaction:', error);
+        throw new Error('Failed to update transaction. Please try again.');
     }
 }
-
 
 // Function to handle edit transaction click
 function editTransaction(transactionId) {
