@@ -377,13 +377,14 @@ async function deleteAccount(accountId) {
     }
 }
 
-// Add this to saveAccount function to track changes
-// In app-core.js
 async function saveAccount(account) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
     
     validateAccount(account);
+    
+    // Find if account already exists
+    const existingAccount = state.accounts.find(a => a.id === account.id);
     
     // If it's a new account, get the highest current displayOrder and add 1
     if (!account.displayOrder) {
@@ -403,28 +404,27 @@ async function saveAccount(account) {
     try {
         const batch = db.batch();
         
-        // If this is an update and balance changed
+        // If this is an update and balance changed, create adjustment transaction
         if (existingAccount && existingAccount.balance !== account.balance) {
             const balanceDiff = account.balance - existingAccount.balance;
             
-            // In the adjustment transaction creation part:
-const adjustmentTransaction = {
-    id: Date.now().toString(),
-    date: new Date().toISOString(),
-    type: 'adjustment',
-    amount: Math.abs(balanceDiff),  // Keep amount positive
-    isIncrease: balanceDiff > 0,    // Add this flag
-    currency: account.currency,
-    amountInINR: account.currency === 'USD' ? Math.abs(balanceDiff * USD_TO_INR) : Math.abs(balanceDiff),
-    exchangeRate: account.currency === 'USD' ? USD_TO_INR : 1,
-    accountId: account.id,
-    accountName: account.name,
-    category: 'Balance Reconciliation',
-    notes: balanceDiff > 0 ? 'Balance adjusted upward' : 'Balance adjusted downward',
-    paymentMode: 'Balance Adjustment',
-    userId: user.uid,
-    createdAt: new Date().toISOString()
-};
+            const adjustmentTransaction = {
+                id: Date.now().toString(),
+                date: new Date().toISOString(),
+                type: 'adjustment',
+                amount: Math.abs(balanceDiff),
+                isIncrease: balanceDiff > 0,
+                currency: account.currency,
+                amountInINR: account.currency === 'USD' ? Math.abs(balanceDiff * USD_TO_INR) : Math.abs(balanceDiff),
+                exchangeRate: account.currency === 'USD' ? USD_TO_INR : 1,
+                accountId: account.id,
+                accountName: account.name,
+                category: 'Balance Reconciliation',
+                notes: balanceDiff > 0 ? 'Balance adjusted upward' : 'Balance adjusted downward',
+                paymentMode: 'Balance Adjustment',
+                userId: user.uid,
+                createdAt: new Date().toISOString()
+            };
 
             const transactionRef = db.collection('users')
                 .doc(user.uid)
@@ -433,7 +433,7 @@ const adjustmentTransaction = {
             batch.set(transactionRef, adjustmentTransaction);
         }
 
-        // Existing account save logic
+        // Save account
         const accountRef = db.collection('users')
             .doc(user.uid)
             .collection('accounts')
