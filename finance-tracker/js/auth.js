@@ -99,6 +99,12 @@ async function signOut() {
     }
 }
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/finance-tracker/service-worker.js');
+    });
+  }
+
 // Auth state change listener
 firebase.auth().onAuthStateChanged(async (user) => {
     currentUser = user;
