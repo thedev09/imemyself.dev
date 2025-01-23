@@ -66,27 +66,18 @@ firebase.auth().getRedirectResult().then(async (result) => {
 async function signInWithGoogle() {
     toggleLoading(true);
     try {
-        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        const provider = new firebase.auth.GoogleAuthProvider();
-        
-        // Check if it's iOS Safari or standalone PWA
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        
-        if (isIOS || isSafari || navigator.standalone) {
-            // Always use redirect for iOS Safari and PWA
-            await firebase.auth().signInWithRedirect(provider);
-        } else {
-            // Use popup for other browsers
-            const result = await firebase.auth().signInWithPopup(provider);
-            handleAuthResult(result);
-        }
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      const provider = new firebase.auth.GoogleAuthProvider();
+  
+      // Force the redirect approach for everyone, or if you detect iOS in a simpler way
+      await firebase.auth().signInWithRedirect(provider);
     } catch (error) {
-        console.error("Error signing in:", error);
-        showToast(error.message || 'Error signing in. Please try again.', 'error');
-        toggleLoading(false);
+      console.error("Error signing in:", error);
+      showToast(error.message || 'Error signing in. Please try again.', 'error');
+      toggleLoading(false);
     }
-}
+  }
+  
 
 // Sign out
 async function signOut() {
