@@ -25,50 +25,8 @@ function updateUserProfile(user) {
     if (userEmail) userEmail.textContent = user.email;
 }
 
-async function signInWithGoogle() {
-    toggleLoading(true);
-    try {
-        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        const provider = new firebase.auth.GoogleAuthProvider();
-        
-        // Use redirect for iOS, popup for others
-        if (navigator.standalone || 
-            navigator.platform === 'iPhone' || 
-            navigator.platform === 'iPad') {
-            await firebase.auth().signInWithRedirect(provider);
-        } else {
-            const result = await firebase.auth().signInWithPopup(provider);
-            currentUser = result.user;
-            
-            if (window.db) {
-                await window.db.collection('users').doc(currentUser.uid).set({
-                    email: currentUser.email,
-                    lastLogin: new Date().toISOString(),
-                    displayName: currentUser.displayName,
-                    photoURL: currentUser.photoURL,
-                    updatedAt: new Date().toISOString()
-                }, { merge: true });
-            }
-
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            updateUserProfile(currentUser);
-            showToast('Successfully signed in!');
-            
-            if (typeof window.loadUserData === 'function') {
-                await window.loadUserData();
-            }
-        }
-    } catch (error) {
-        console.error("Error signing in:", error);
-        showToast(error.message || 'Error signing in. Please try again.', 'error');
-    } finally {
-        toggleLoading(false);
-    }
-}
-
-// Handle redirect result for iOS
-firebase.auth().getRedirectResult().then(async (result) => {
+// Helper function to handle auth result
+async function handleAuthResult(result) {
     if (result.user) {
         currentUser = result.user;
         
@@ -91,11 +49,44 @@ firebase.auth().getRedirectResult().then(async (result) => {
             await window.loadUserData();
         }
     }
+    toggleLoading(false);
+}
+
+// Handle redirect result
+firebase.auth().getRedirectResult().then(async (result) => {
+    if (result.user) {
+        await handleAuthResult(result);
+    }
 }).catch((error) => {
     console.error("Redirect error:", error);
     showToast(error.message, 'error');
     toggleLoading(false);
 });
+
+async function signInWithGoogle() {
+    toggleLoading(true);
+    try {
+        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        // Check if it's iOS Safari or standalone PWA
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        if (isIOS || isSafari || navigator.standalone) {
+            // Always use redirect for iOS Safari and PWA
+            await firebase.auth().signInWithRedirect(provider);
+        } else {
+            // Use popup for other browsers
+            const result = await firebase.auth().signInWithPopup(provider);
+            handleAuthResult(result);
+        }
+    } catch (error) {
+        console.error("Error signing in:", error);
+        showToast(error.message || 'Error signing in. Please try again.', 'error');
+        toggleLoading(false);
+    }
+}
 
 // Sign out
 async function signOut() {
