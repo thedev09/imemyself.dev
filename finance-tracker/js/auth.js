@@ -21,27 +21,57 @@ function updateUserProfile(user) {
         };
     }
     
-    if (userName) {
-        userName.textContent = user.displayName || 'User';
-    }
-    
-    if (userEmail) {
-        userEmail.textContent = user.email;
-    }
+    if (userName) userName.textContent = user.displayName || 'User';
+    if (userEmail) userEmail.textContent = user.email;
 }
 
-// Sign in with Google
 async function signInWithGoogle() {
     toggleLoading(true);
     try {
-        // Set persistence to LOCAL to keep the user signed in
         await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        
         const provider = new firebase.auth.GoogleAuthProvider();
-        const result = await firebase.auth().signInWithPopup(provider);
+        
+        // Use redirect for iOS, popup for others
+        if (navigator.standalone || 
+            navigator.platform === 'iPhone' || 
+            navigator.platform === 'iPad') {
+            await firebase.auth().signInWithRedirect(provider);
+        } else {
+            const result = await firebase.auth().signInWithPopup(provider);
+            currentUser = result.user;
+            
+            if (window.db) {
+                await window.db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    lastLogin: new Date().toISOString(),
+                    displayName: currentUser.displayName,
+                    photoURL: currentUser.photoURL,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            }
+
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            updateUserProfile(currentUser);
+            showToast('Successfully signed in!');
+            
+            if (typeof window.loadUserData === 'function') {
+                await window.loadUserData();
+            }
+        }
+    } catch (error) {
+        console.error("Error signing in:", error);
+        showToast(error.message || 'Error signing in. Please try again.', 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+// Handle redirect result for iOS
+firebase.auth().getRedirectResult().then(async (result) => {
+    if (result.user) {
         currentUser = result.user;
         
-        // After successful sign-in, update user document
         if (window.db) {
             await window.db.collection('users').doc(currentUser.uid).set({
                 email: currentUser.email,
@@ -54,23 +84,18 @@ async function signInWithGoogle() {
 
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
-        
-        // Update profile UI
         updateUserProfile(currentUser);
-        
         showToast('Successfully signed in!');
         
-        // Load user data if function exists
         if (typeof window.loadUserData === 'function') {
             await window.loadUserData();
         }
-    } catch (error) {
-        console.error("Error signing in:", error);
-        showToast(error.message || 'Error signing in. Please try again.', 'error');
-    } finally {
-        toggleLoading(false);
     }
-}
+}).catch((error) => {
+    console.error("Redirect error:", error);
+    showToast(error.message, 'error');
+    toggleLoading(false);
+});
 
 // Sign out
 async function signOut() {
@@ -99,13 +124,14 @@ async function signOut() {
     }
 }
 
+// Register service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/finance-tracker/service-worker.js', {
-        scope: '/finance-tracker/'
-      });
+        navigator.serviceWorker.register('/finance-tracker/service-worker.js', {
+            scope: '/finance-tracker/'
+        });
     });
-  }
+}
 
 // Auth state change listener
 firebase.auth().onAuthStateChanged(async (user) => {
