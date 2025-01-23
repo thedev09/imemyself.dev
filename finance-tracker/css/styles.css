@@ -3158,3 +3158,99 @@ body, .bg-gradient-dark {
     display: flex;
     gap: 0.5rem;
 }
+
+
+@media (max-width: 768px) {
+    .nav-content {
+      flex-direction: column;
+      padding: 0;
+    }
+  
+    .nav-links {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      background: #1e1e1e;
+      padding: 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+  
+    .nav-link {
+      flex: 1;
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.875rem;
+    }
+  
+    .profile-container {
+      padding: 0.75rem;
+      margin: 0;
+    }
+  
+    .user-email {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .accounts-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      padding: 1rem;
+    }
+  
+    .account-card {
+      padding: 1rem;
+    }
+  
+    .currency-section {
+      grid-template-columns: 1fr;
+    }
+  
+    .card {
+      margin: 1rem;
+      padding: 1rem;
+    }
+  
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .transaction-item {
+      padding: 0.75rem;
+    }
+  
+    .filters-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+      padding: 0.5rem;
+    }
+  
+    .table-responsive {
+      margin: 0 -1rem;
+      padding: 0 1rem;
+      overflow-x: auto;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .form-input,
+    .form-select,
+    .btn {
+      min-height: 44px;
+      font-size: 16px;
+    }
+  
+    .type-btn {
+      padding: 1rem;
+    }
+  }

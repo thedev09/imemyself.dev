@@ -101,7 +101,9 @@ async function signOut() {
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/finance-tracker/service-worker.js');
+      navigator.serviceWorker.register('/finance-tracker/service-worker.js', {
+        scope: '/finance-tracker/'
+      });
     });
   }
 
