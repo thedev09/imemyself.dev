@@ -64,20 +64,15 @@ firebase.auth().getRedirectResult().then(async (result) => {
 });
 
 async function signInWithGoogle() {
-    toggleLoading(true);
+    const provider = new firebase.auth.GoogleAuthProvider();
     try {
-      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      const provider = new firebase.auth.GoogleAuthProvider();
-  
-      // Force the redirect approach for everyone, or if you detect iOS in a simpler way
-      await firebase.auth().signInWithRedirect(provider);
+        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        await firebase.auth().signInWithRedirect(provider);
     } catch (error) {
-      console.error("Error signing in:", error);
-      showToast(error.message || 'Error signing in. Please try again.', 'error');
-      toggleLoading(false);
+        console.error("Error signing in:", error);
+        showToast(error.message || 'Error signing in. Please try again.', 'error');
     }
-  }
-  
+}
 
 // Sign out
 async function signOut() {
