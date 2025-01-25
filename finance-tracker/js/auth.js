@@ -9,18 +9,18 @@ function getCurrentUser() {
 // Update user profile UI
 function updateUserProfile(user) {
     if (!user) return;
-
+    
     const userAvatar = document.getElementById('userAvatar');
     const userName = document.getElementById('userName');
     const userEmail = document.getElementById('userEmail');
-
+    
     if (userAvatar) {
         userAvatar.src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User');
         userAvatar.onerror = () => {
             userAvatar.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User');
         };
     }
-
+    
     if (userName) userName.textContent = user.displayName || 'User';
     if (userEmail) userEmail.textContent = user.email;
 }
@@ -29,7 +29,7 @@ function updateUserProfile(user) {
 async function handleAuthResult(result) {
     if (result.user) {
         currentUser = result.user;
-
+        
         if (window.db) {
             await window.db.collection('users').doc(currentUser.uid).set({
                 email: currentUser.email,
@@ -44,7 +44,7 @@ async function handleAuthResult(result) {
         document.getElementById('mainContent').style.display = 'block';
         updateUserProfile(currentUser);
         showToast('Successfully signed in!');
-
+        
         if (typeof window.loadUserData === 'function') {
             await window.loadUserData();
         }
@@ -54,27 +54,22 @@ async function handleAuthResult(result) {
 
 // Handle redirect result
 firebase.auth().getRedirectResult().then(async (result) => {
-    console.log("Redirect result:", result); // Debugging
     if (result.user) {
         await handleAuthResult(result);
     }
 }).catch((error) => {
-    console.error("Redirect error:", error); // Debugging
+    console.error("Redirect error:", error);
     showToast(error.message, 'error');
     toggleLoading(false);
 });
 
-// Sign in with Google using redirect (NO POPUPS)
 async function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
-        // Set persistence to LOCAL (optional but recommended)
         await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-        // Use signInWithRedirect (NO POPUPS)
         await firebase.auth().signInWithRedirect(provider);
     } catch (error) {
-        console.error("Error signing in:", error); // Debugging
+        console.error("Error signing in:", error);
         showToast(error.message || 'Error signing in. Please try again.', 'error');
     }
 }
@@ -93,13 +88,13 @@ async function signOut() {
 
         await firebase.auth().signOut();
         currentUser = null;
-
+        
         document.getElementById('loginSection').style.display = 'block';
         document.getElementById('mainContent').style.display = 'none';
-
+        
         showToast('Successfully signed out!');
     } catch (error) {
-        console.error("Error signing out:", error); // Debugging
+        console.error("Error signing out:", error);
         showToast('Error signing out. Please try again.', 'error');
     } finally {
         toggleLoading(false);
@@ -111,23 +106,18 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/finance-tracker/service-worker.js', {
             scope: '/finance-tracker/'
-        }).then((registration) => {
-            console.log('Service Worker registered with scope:', registration.scope);
-        }).catch((error) => {
-            console.error('Service Worker registration failed:', error);
         });
     });
 }
 
 // Auth state change listener
 firebase.auth().onAuthStateChanged(async (user) => {
-    console.log("Auth state changed. User:", user); // Debugging
     currentUser = user;
     if (user) {
         try {
             // Update profile UI
             updateUserProfile(user);
-
+            
             // Update user's last login time
             await window.db.collection('users').doc(user.uid).set({
                 lastLogin: new Date().toISOString(),
@@ -143,7 +133,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 await window.loadUserData();
             }
         } catch (error) {
-            console.error('Error in auth state change:', error); // Debugging
+            console.error('Error in auth state change:', error);
             showToast('Error updating user data', 'error');
         }
     } else {
