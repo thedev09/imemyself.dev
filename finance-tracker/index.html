@@ -57,6 +57,44 @@
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
                     Sign in with Google
                 </button>
+            
+                <div class="form-separator">
+                    <span>or</span>
+                </div>
+                
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <input type="email" 
+                               id="loginEmail" 
+                               class="form-input" 
+                               placeholder="Email"
+                               required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" 
+                               id="loginPassword" 
+                               class="form-input" 
+                               placeholder="Password"
+                               required>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" 
+                                id="forgotPassword" 
+                                class="link-button forgot-password">
+                            Forgot Password?
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Sign In</button>
+                </form>
+                
+                <p class="auth-switch">
+                    Don't have an account? 
+                    <button type="button" 
+                            class="link-button" 
+                            onclick="toggleAuthMode()">
+                        Sign Up
+                    </button>
+                </p>
             </div>
     
             <div class="features-grid">
