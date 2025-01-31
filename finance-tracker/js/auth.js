@@ -102,20 +102,80 @@ async function handleEmailAuth(e) {
     const password = document.getElementById('loginPassword').value;
     
     try {
-        let result;
         if (isLoginMode) {
-            // Sign In
-            result = await firebase.auth().signInWithEmailAndPassword(email, password);
+            // Sign In logic
+            try {
+                const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+                await handleAuthResult(result);
+            } catch (error) {
+                if (error.code === 'auth/user-not-found') {
+                    // Check if user exists with Google
+                    const methods = await firebase.auth().fetchSignInMethodsForEmail(email);
+                    if (methods.includes('google.com')) {
+                        showToast('Please sign in with Google for this email address.', 'error');
+                    } else {
+                        throw error;
+                    }
+                } else {
+                    throw error;
+                }
+            }
         } else {
-            // Sign Up
-            result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+            // Sign Up logic
+            try {
+                // First try to sign in with Google if account exists
+                const methods = await firebase.auth().fetchSignInMethodsForEmail(email);
+                
+                if (methods.includes('google.com')) {
+                    const shouldLink = confirm('This email is already associated with a Google account. Do you want to link your password to it? You\'ll need to sign in with Google first.');
+                    
+                    if (shouldLink) {
+                        // First sign in with Google
+                        const googleProvider = new firebase.auth.GoogleAuthProvider();
+                        googleProvider.setCustomParameters({
+                            login_hint: email // Pre-fill the email
+                        });
+                        
+                        try {
+                            const googleResult = await firebase.auth().signInWithPopup(googleProvider);
+                            
+                            // Now link password auth
+                            const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+                            await googleResult.user.linkWithCredential(credential);
+                            
+                            showToast('Successfully linked email/password to your Google account!');
+                            await handleAuthResult(googleResult);
+                            return;
+                        } catch (linkError) {
+                            if (linkError.code === 'auth/credential-already-in-use') {
+                                showToast('This email is already registered. Please sign in instead.', 'error');
+                            } else {
+                                throw linkError;
+                            }
+                        }
+                    } else {
+                        showToast('Please use a different email or sign in with Google.', 'error');
+                        return;
+                    }
+                } else {
+                    // No existing account, create new one
+                    const result = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    await handleAuthResult(result);
+                }
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    showToast('This email is already registered. Please sign in instead.', 'error');
+                } else {
+                    throw error;
+                }
+            }
         }
         
-        await handleAuthResult(result);
         document.getElementById('loginForm').reset();
     } catch (error) {
         console.error('Auth error:', error);
-        showToast(error.message, 'error');
+        showToast(error.message || 'Authentication failed. Please try again.', 'error');
+    } finally {
         toggleLoading(false);
     }
 }
