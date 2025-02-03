@@ -1906,6 +1906,8 @@ function setupTransactionForm() {
 
     // Update account dropdown
     const accountSelect = document.getElementById('account');
+    const amountInput = document.getElementById('amount');
+    
     if (accountSelect && state.accounts) {
         accountSelect.innerHTML = `
             <option value="">Select account</option>
@@ -1916,6 +1918,17 @@ function setupTransactionForm() {
             `).join('')}
         `;
     }
+
+    // Add amount precision handler
+    accountSelect.addEventListener('change', (e) => {
+        const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
+        if (selectedAccount) {
+            amountInput.step = (selectedAccount.type === 'crypto' || selectedAccount.currency === 'USD') 
+                ? "0.000001" 
+                : "0.01";
+            updatePaymentModes(selectedAccount.type.toLowerCase());
+        }
+    });
 
     // Setup type buttons
     const typeButtons = document.querySelectorAll('.type-btn');
@@ -1933,21 +1946,13 @@ function setupTransactionForm() {
         expenseBtn.click();
     }
 
-    // Handle account change to update payment modes
-    accountSelect.addEventListener('change', (e) => {
-        const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
-        if (selectedAccount) {
-            updatePaymentModes(selectedAccount.type.toLowerCase());
-        }
-    });
-
     form.onsubmit = async (e) => {
         e.preventDefault();
-        console.log("Form submitted");
         const formData = new FormData(form);
         await handleTransactionSubmit(formData);
     };
 }
+
 
 function setupTransferForm() {
     const form = document.getElementById('transferForm');
@@ -2391,7 +2396,7 @@ function createEditTransactionModal(transaction) {
                                        class="form-input" 
                                        name="amount" 
                                        value="${transaction.amount}"
-                                       step="0.01"
+                                       step="${account.type === 'crypto' || account.currency === 'USD' ? '0.000001' : '0.01'}"
                                        min="0"
                                        required>
                             </div>
