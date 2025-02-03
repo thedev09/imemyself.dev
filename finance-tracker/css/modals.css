@@ -745,32 +745,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 
-/* Transfer Modal specific styles */
-#transferModal .form-input,
-#transferModal .form-select,
-#transferModal input[type="text"],
-#transferModal input[type="number"],
-#transferModal select,
-#transferModal textarea {
-    background: #1e1e1e;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+/* Generic Modal Close Button */
+.modal-close,
+.close-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Hover states */
-#transferModal .form-input:hover,
-#transferModal .form-select:hover {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: #262626;
+.modal-close:hover,
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
 }
-
-/* Focus states */
-#transferModal .form-input:focus,
-#transferModal .form-select:focus {
-    border-color: rgba(255, 255, 255, 0.16);
-    background: #262626;
-}
-
-
 
 /* Firefox specific */
 @-moz-document url-prefix() {

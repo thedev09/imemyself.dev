@@ -2255,7 +2255,7 @@ function showAccountDetails(accountId) {
                             ${formatCurrency(account.balance, account.currency)}
                         </div>
                     </div>
-                    <button class="close-btn" onclick="closeAccountDetailsModal()">&times;</button>
+                    <button class="modal-close" onclick="closeAccountDetailsModal()">×</button>
                 </div>
                 
                 <div class="modal-tabs">
