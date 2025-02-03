@@ -2032,6 +2032,10 @@ function initializeTransactionView() {
     const exportButton = document.getElementById('export-csv');
     const sortableHeaders = document.querySelectorAll('.sortable');
 
+
+    transactionFilters.dateRange = 'thisMonth'; // Set default to current month
+    filterDateSelect.value = 'thisMonth'; // Set dropdown to current month
+
     // Initialize filter options
     if (state.accounts) {
         filterAccountSelect.innerHTML = `

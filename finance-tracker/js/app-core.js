@@ -831,24 +831,60 @@ function filterTransactions(transactions, filters) {
         
         // Date filter
         const txDate = new Date(tx.date);
-        const now = new Date();
         
         switch (filters.dateRange) {
-            case 'week':
-                return txDate >= new Date(now - 7 * 24 * 60 * 60 * 1000);
-            case 'month':
-                return txDate >= new Date(now.setMonth(now.getMonth() - 1));
-            case 'year':
-                return txDate >= new Date(now.setFullYear(now.getFullYear() - 1));
+            case 'thisMonth': {
+                const dates = dateFilters.getCurrentMonthDates();
+                return txDate >= dates.startDate && txDate <= dates.endDate;
+            }
+            case 'thisYear': {
+                const dates = dateFilters.getCurrentYearDates();
+                return txDate >= dates.startDate && txDate <= dates.endDate;
+            }
+            case 'thisWeek': {
+                const dates = dateFilters.getCurrentWeekDates();
+                return txDate >= dates.startDate && txDate <= dates.endDate;
+            }
             case 'custom':
                 const start = filters.startDate ? new Date(filters.startDate) : null;
                 const end = filters.endDate ? new Date(filters.endDate) : null;
                 return (!start || txDate >= start) && (!end || txDate <= end);
+            case 'all':
             default:
                 return true;
         }
     });
 }
+
+// Add this in app-core.js after transactionFilters declaration
+const dateFilters = {
+    getCurrentMonthDates() {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { startDate: firstDay, endDate: lastDay };
+    },
+  
+    getCurrentYearDates() {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), 0, 1);
+      const lastDay = new Date(now.getFullYear(), 11, 31);
+      return { startDate: firstDay, endDate: lastDay };
+    },
+  
+    getCurrentWeekDates() {
+        const now = new Date();
+        const monday = new Date(now);
+        monday.setHours(0, 0, 0, 0); // Reset time to start of day
+        monday.setDate(now.getDate() - (now.getDay() || 7) + 1);
+        
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        sunday.setHours(23, 59, 59, 999); // Set time to end of day
+        
+        return { startDate: monday, endDate: sunday };
+      }
+  };
 
 function calculateTransactionStats(transactions) {
     // Filter out self transfers
