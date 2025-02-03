@@ -1666,30 +1666,47 @@ function renderFilteredTransactions(transactions) {
             <tr>
                 <td>${formatDate(tx.date)}</td>
                 <td>
-                    <span class="badge-${tx.type} truncate">
+                    <span class="type-tag ${tx.type.toLowerCase()}">
                         ${tx.type.toUpperCase()}
                     </span>
                 </td>
-                <td class="amount-${tx.type}">
+                <td class="amount-cell ${tx.type.toLowerCase()}">
                     ${amountPrefix}${formatCurrency(Math.abs(tx.amount), tx.currency)}
                 </td>
-                <td><span class="truncate">${escapeHtml(tx.paymentMode || '')}</span></td>
-                <td><span class="truncate">${escapeHtml(account?.name || '')}</span></td>
-                <td><span class="truncate">${escapeHtml(tx.category)}</span></td>
-                <td><span class="truncate">${escapeHtml(tx.notes || '')}</span></td>
                 <td>
-                    <button onclick="editTransaction('${tx.id}')" class="action-btn edit" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <span class="truncate payment-mode">
+                        ${escapeHtml(tx.paymentMode || '')}
+                    </span>
+                </td>
+                <td>
+                    <span class="truncate account-name">
+                        ${escapeHtml(account?.name || '')}
+                    </span>
+                </td>
+                <td>
+                    <span class="truncate category">
+                        ${escapeHtml(tx.category)}
+                    </span>
+                </td>
+                <td>
+                    <span class="truncate notes">
+                        ${escapeHtml(tx.notes || '')}
+                    </span>
+                </td>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <button onclick="editTransaction('${tx.id}')" class="action-btn edit" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join('');
 }
-
 
 function updatePaymentModes(accountType) {
     const paymentModeSelect = document.getElementById('paymentMode');

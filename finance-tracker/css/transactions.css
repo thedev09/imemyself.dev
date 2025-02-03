@@ -385,6 +385,7 @@
     background: #1e1e1e;
     color: #e2e8f0;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 1rem;
 }
 
 .transactions-table tr:hover td {
@@ -395,6 +396,10 @@
 .transactions-table tr td:first-child {
     border-top-left-radius: 8px;
     border-bottom-left-radius: 8px;
+}
+
+.transactions-table td span {
+    font-size: inherit;
 }
 
 .transactions-table tr td:last-child {
@@ -480,6 +485,55 @@
     text-align: center;
     padding: 2rem;
     color: #94a3b8;
+}
+
+/* Transaction Type Tags */
+.transactions-table .type-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+}
+
+/* Expense Tag */
+.type-tag.expense {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Income Tag */
+.type-tag.income {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* Transfer Tag */
+.type-tag.transfer {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Amount styling to match tags */
+.amount-cell {
+    font-weight: 500;
+}
+
+.amount-cell.expense {
+    color: #f87171;
+}
+
+.amount-cell.income {
+    color: #4ade80;
+}
+
+.amount-cell.transfer {
+    color: #60a5fa;
 }
 
 /* Responsive Styles */
