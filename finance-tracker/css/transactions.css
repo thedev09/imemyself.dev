@@ -372,14 +372,26 @@
     color: #94a3b8;
     font-weight: 500;
     background: transparent;
-    cursor: pointer;
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transactions-table tr {
+    margin-bottom: 4px;
 }
 
 .transactions-table td {
-    background: rgba(30, 41, 59, 0.4);
+    background: #1e1e1e;
     color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.transactions-table tr:hover td {
+    background: #262626; /* Slightly lighter on hover */
+}
+
+/* Round corners for each row */
 .transactions-table tr td:first-child {
     border-top-left-radius: 8px;
     border-bottom-left-radius: 8px;
@@ -432,6 +444,32 @@
     transition: all 0.2s;
     opacity: 0.7;
 }
+
+/* Type badges */
+.badge-EXPENSE {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.badge-INCOME {
+    background: rgba(34, 197, 94, 0.1);
+    color: #4ade80;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.badge-TRANSFER {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
 
 .transaction-item:hover .action-btn {
     opacity: 1;
