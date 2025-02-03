@@ -1,0 +1,224 @@
+/* Analysis Section Layout */
+.page-container {
+    width: 75%;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.analysis-section {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Analysis Controls */
+.analysis-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+#timeframe-select,
+#year-select {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    min-width: 150px;
+    max-width: 200px;
+}
+
+#year-select.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Analysis Stats */
+.analysis-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.analysis-stats .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+}
+
+.analysis-stats .stat-value {
+    font-size: 1.875rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.stat-value.income {
+    color: #4ade80;
+}
+
+.stat-value.expense {
+    color: #f87171;
+}
+
+/* Chart Containers */
+.chart-container {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    height: 300px; /* Fixed height for main chart */
+    position: relative;
+}
+
+.card canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Charts Grid */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.card {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.card-content {
+    padding: 1.25rem;
+}
+
+/* Chart Legend */
+.chart-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* Loading States */
+.chart-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.chart-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid rgba(59, 130, 246, 0.1);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* No Data State */
+.no-data-chart {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #94a3b8;
+}
+
+.no-data-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+/* Tooltips */
+.chart-tooltip {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 1600px) {
+    .page-container {
+        width: 85%;
+    }
+}
+
+@media (max-width: 1200px) {
+    .page-container {
+        width: 95%;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        width: 100%;
+        padding: 1rem;
+    }
+
+    .analysis-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .analysis-controls {
+        flex-direction: column;
+    }
+
+    #timeframe-select,
+    #year-select {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .analysis-stats {
+        grid-template-columns: 1fr;
+    }
+}

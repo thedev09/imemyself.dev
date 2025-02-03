@@ -30,15 +30,17 @@ function validateTransaction(transaction) {
 }
 // Add these functions to app-core.js
 
-async function handleSelfTransfer(fromAccountId, toAccountId, amount) {
-    const user = getCurrentUser();
+async function handleSelfTransfer(fromAccountId, toAccountId, amount, description = '') {
+    const user = getCurrentUser(); // Add this line
     if (!user) throw new Error('Please sign in to continue');
 
-    // Find the source and destination accounts
+    if (!fromAccountId || !toAccountId) {
+        throw new Error('Invalid accounts selected');
+    }
+
     const fromAccount = state.accounts.find(acc => acc.id === fromAccountId);
     const toAccount = state.accounts.find(acc => acc.id === toAccountId);
 
-    // Validate accounts and amount
     if (!fromAccount || !toAccount) {
         throw new Error('Invalid accounts selected');
     }
@@ -47,11 +49,11 @@ async function handleSelfTransfer(fromAccountId, toAccountId, amount) {
         throw new Error('Cannot transfer to the same account');
     }
 
-    if (parseFloat(amount) <= 0) {
+    if (amount <= 0) {
         throw new Error('Amount must be greater than 0');
     }
 
-    if (parseFloat(amount) > fromAccount.balance) {
+    if (amount > fromAccount.balance) {
         throw new Error('Insufficient balance');
     }
 
@@ -693,8 +695,126 @@ function formatDate(dateString) {
     }
 }
 
-// Add to app-core.js
-// In app-core.js
+
+async function handleTransactionSubmit(formData) {
+    try {
+        // Log form data for debugging
+        console.log("Form Data:", {
+            amount: formData.get('amount'),
+            account: formData.get('account'),
+            category: formData.get('category'),
+            paymentMode: formData.get('paymentMode')
+        });
+
+        const typeBtn = document.querySelector('.type-btn.active');
+        if (!typeBtn) {
+            throw new Error('Please select a transaction type');
+        }
+
+        // Get form values
+        const amount = parseFloat(formData.get('amount'));
+        const accountId = formData.get('account');
+        const category = formData.get('category');
+        const paymentMode = formData.get('paymentMode');
+        const description = formData.get('description') || '';
+
+        // Validate all fields
+        const validationErrors = [];
+        if (!amount || isNaN(amount) || amount <= 0) {
+            validationErrors.push('Please enter a valid amount greater than 0');
+        }
+        if (!accountId) {
+            validationErrors.push('Please select an account');
+        }
+        if (!category) {
+            validationErrors.push('Please select a category');
+        }
+        if (!paymentMode) {
+            validationErrors.push('Please select a payment mode');
+        }
+
+        if (validationErrors.length > 0) {
+            throw new Error(validationErrors.join('\n'));
+        }
+
+        const transaction = {
+            id: Date.now().toString(),
+            type: typeBtn.dataset.type,
+            amount: amount,
+            category: category,
+            accountId: accountId,
+            paymentMode: paymentMode,
+            notes: description,
+            date: new Date().toISOString()
+        };
+
+        toggleLoading(true);
+        await saveTransaction(transaction);
+        showToast('Transaction added successfully');
+        closeModal('addTransactionModal');
+        await loadUserData(true);
+    } catch (error) {
+        console.error('Error adding transaction:', error);
+        showToast(error.message, 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+async function handleTransferSubmit(formData) {
+    try {
+        // Log form data for debugging
+        console.log("Transfer Form Data:", {
+            fromAccount: formData.get('fromAccount'),
+            toAccount: formData.get('toAccount'),
+            amount: formData.get('amount'),
+            description: formData.get('description')
+        });
+
+        const fromAccountId = formData.get('fromAccount');
+        const toAccountId = formData.get('toAccount');
+        const amount = parseFloat(formData.get('amount'));
+        const description = formData.get('description') || '';
+
+        // Validate all fields
+        const validationErrors = [];
+        if (!fromAccountId) {
+            validationErrors.push('Please select source account');
+        }
+        if (!toAccountId) {
+            validationErrors.push('Please select destination account');
+        }
+        if (!amount || isNaN(amount) || amount <= 0) {
+            validationErrors.push('Please enter a valid amount greater than 0');
+        }
+
+        if (validationErrors.length > 0) {
+            throw new Error(validationErrors.join('\n'));
+        }
+
+        if (fromAccountId === toAccountId) {
+            throw new Error('Cannot transfer to the same account');
+        }
+
+        const fromAccount = state.accounts.find(acc => acc.id === fromAccountId);
+        if (amount > fromAccount.balance) {
+            throw new Error('Insufficient balance for transfer');
+        }
+
+        toggleLoading(true);
+        await handleSelfTransfer(fromAccountId, toAccountId, amount, description);
+        showToast('Transfer completed successfully');
+        closeModal('transferModal');
+        await loadUserData(true);
+    } catch (error) {
+        console.error('Error processing transfer:', error);
+        showToast(error.message, 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+
 function filterTransactions(transactions, filters) {
     return transactions.filter(tx => {
         // Type filter

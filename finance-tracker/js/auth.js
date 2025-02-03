@@ -60,16 +60,6 @@ async function handleAuthResult(result) {
     toggleLoading(false);
 }
 
-// Handle redirect result
-firebase.auth().getRedirectResult().then(async (result) => {
-    if (result.user) {
-        await handleAuthResult(result);
-    }
-}).catch((error) => {
-    console.error("Redirect error:", error);
-    showToast(error.message, 'error');
-    toggleLoading(false);
-});
 
 // Toggle between login and signup modes
 function toggleAuthMode() {
@@ -182,12 +172,21 @@ async function handleEmailAuth(e) {
 
 async function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
+    const googleBtn = document.querySelector('.google-signin-btn');
+    
     try {
-        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-        await firebase.auth().signInWithRedirect(provider);
+        googleBtn.disabled = true; // Prevent double clicks
+        toggleLoading(true);
+        
+        // Use popup instead of redirect
+        const result = await firebase.auth().signInWithPopup(provider);
+        await handleAuthResult(result);
     } catch (error) {
         console.error("Error signing in:", error);
         showToast(error.message || 'Error signing in. Please try again.', 'error');
+    } finally {
+        googleBtn.disabled = false;
+        toggleLoading(false);
     }
 }
 
@@ -232,9 +231,13 @@ async function signOut() {
 // Register service worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/finance-tracker/service-worker.js', {
-            scope: '/finance-tracker/'
-        });
+        navigator.serviceWorker.register('service-worker.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed: ', err);
+            });
     });
 }
 

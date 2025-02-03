@@ -1,0 +1,883 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 500px;
+    background: #1a1a1a;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Account detail modal - wider */
+.account-modal .modal-content {
+    background: #1e1e1e;
+    max-width: 800px;
+    max-height: 90vh;
+}
+
+/* Transaction/Transfer modal - compact */
+#addTransactionModal .modal-content,
+#transferModal .modal-content,
+#edit-transaction-modal .modal-content {
+    max-width: 500px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#account-details-modal .modal-content,
+.account-modal .modal-content {
+    background: #1e1e1e;
+    max-width: 800px;
+    max-height: 90vh;
+}
+
+/* Account modal header */
+.account-modal .modal-header {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Transaction/Transfer modal header */
+#addTransactionModal .modal-header,
+#transferModal .modal-header,
+#edit-transaction-modal .modal-header {
+    align-items: center;
+}
+
+.modal-title {
+    flex: 1;
+}
+
+.modal-title h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+
+.modal-body .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+    }
+}
+/* Form Elements within Modal */
+.modal-body .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.modal-body .form-label {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.modal-body .form-select,
+.modal-body select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.4)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+.modal-body .form-input,
+.modal-body .form-select,
+.modal-body input[type="text"],
+.modal-body input[type="number"],
+.modal-body select,
+.modal-body textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #141414; /* Darker background */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Subtle border */
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.modal-body .form-input:hover,
+.modal-body .form-select:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background-color: #161616;
+}
+
+.modal-body .form-select option,
+.modal-body select option {
+    background-color: #141414;
+    color: white;
+    padding: 0.75rem 1rem;
+}
+
+.modal-body .form-input:focus,
+.modal-body .form-select:focus {
+    border-color: rgba(255, 255, 255, 0.16);
+    background-color: #181818;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.modal-body .form-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+
+/* Transaction Type Toggle Buttons */
+.transaction-type-toggle {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+select option:hover,
+select option:focus,
+select option:active,
+select option:checked {
+    background-color: #2563eb !important;
+    color: white;
+}
+
+
+select option:hover {
+    background-color: #2563eb;
+}
+
+/* Ensure dropdowns stay dark in all browsers */
+select:-moz-focusring {
+    color: transparent;
+    text-shadow: 0 0 0 #fff;
+}
+
+@-moz-document url-prefix() {
+    select {
+        color: #fff;
+        background-color: #111827;
+    }
+    
+    select option {
+        background-color: #111827;
+    }
+}
+
+/* Transaction Type Toggle Enhancement */
+.type-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.type-btn.expense {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.type-btn.expense.active {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    box-shadow: 0 0 0 2px #ef4444;
+}
+
+.type-btn.income {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.type-btn.income.active {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    box-shadow: 0 0 0 2px #22c55e;
+}
+
+/* Modal Tabs */
+.modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-tab {
+    padding: 0.75rem 1.25rem;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 0.5rem 0.5rem 0 0;
+    transition: all 0.2s;
+}
+
+.modal-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.modal-tab.active {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+#account-details-modal .modal-body,
+.account-modal .modal-body {
+    max-height: calc(90vh - 200px);
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Form Layout */
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.modal-body .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.modal-body .form-label {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+
+.modal-body .form-input:focus,
+.modal-body .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+.form-group label {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #64748b;
+}
+
+/* Date Input Styling */
+input[type="date"] {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    color: white;
+    padding: 0.75rem;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+/* Modal Footer */
+.modal-footer {
+    padding: 1.5rem;
+    margin-top: 1.5rem; /* Add top margin for separation */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: center; /* Center the buttons */
+    gap: 1rem;
+}
+
+/* Button Styles */
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+/* Modal Content Types */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Modal Animation */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Filtered Accounts Section */
+/* In modals.css */
+
+/* Modal Content - Filtered Accounts specific */
+.filtered-accounts-modal .modal-content {
+    max-width: 1000px; /* Increased from 500px */
+    width: 90%; /* Take up more screen width */
+    background: #1a1a1a;
+}
+
+/* Filtered Accounts Grid */
+.filtered-accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem; /* Increased gap */
+    padding: 1.5rem;
+    max-height: 75vh;
+    overflow-y: auto;
+}
+
+/* Account Cards within Grid */
+.filtered-accounts-grid .account-card {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.75rem; /* Increased padding */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 250px; /* Set minimum width */
+}
+
+.filtered-accounts-grid .account-type {
+    font-size: 0.875rem; /* Slightly larger */
+    color: #94a3b8;
+    text-transform: lowercase;
+}
+
+.filtered-accounts-grid .account-name {
+    font-size: 1.5rem; /* Larger font */
+    font-weight: 600;
+    color: white;
+    margin: 0.5rem 0;
+}
+
+.filtered-accounts-grid .account-balance {
+    font-size: 1.875rem; /* Larger font */
+    font-weight: 700;
+    color: white;
+    margin: 0.5rem 0;
+}
+
+.filtered-accounts-grid .account-updated {
+    font-size: 0.813rem;
+    color: #64748b;
+    margin-top: 0.5rem;
+}
+
+.filtered-accounts-modal .modal-header {
+    background: #1a1a1a;
+    padding: 2rem 1.75rem; /* Increased padding */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.filtered-accounts-modal .modal-title h2 {
+    font-size: 1.75rem; /* Larger title */
+    color: white;
+    margin: 0;
+}
+
+.filtered-accounts-modal .total-balance {
+    color: #94a3b8;
+    font-size: 1.125rem; /* Larger subtitle */
+    margin-top: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .filtered-accounts-modal .modal-content {
+        width: 95%;
+    }
+}
+
+@media (max-width: 1024px) {
+    .filtered-accounts-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .filtered-accounts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filtered-accounts-grid .account-card {
+        padding: 1.25rem;
+    }
+}
+
+/* Modal Transaction Items */
+.modal-transaction-item {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.modal-transaction-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Activity Items */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.5rem;
+}
+
+.activity-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.activity-info {
+    flex: 1;
+}
+
+.activity-title {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.activity-date {
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+
+.modal-footer .btn {
+    min-width: 120px; /* Set minimum width for consistent button sizes */
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-footer .btn-primary {
+    background: #3b82f6;
+    color: white;
+    border: none;
+}
+
+.modal-footer .btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* Modal Animation */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-body .form-select option:hover,
+.modal-body .form-select option:focus,
+.modal-body .form-select option:active,
+.modal-body .form-select option:checked {
+    background-color: #3b82f6 !important;
+    color: white;
+}
+
+/* Form Elements within Modal */
+.modal-body .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.modal-body .form-label {
+    display: block;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Base styles for all form inputs and selects */
+.modal-body .form-input,
+.modal-body .form-select,
+.modal-body input[type="text"],
+.modal-body input[type="number"],
+.modal-body select,
+.modal-body textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+/* Select specific styles */
+.modal-body .form-select,
+.modal-body select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.4)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+/* Hover states */
+.modal-body .form-input:hover,
+.modal-body .form-select:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: #262626;
+}
+
+/* Focus states */
+.modal-body .form-input:focus,
+.modal-body .form-select:focus {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: #262626;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Placeholder */
+.modal-body .form-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Dropdown options */
+.modal-body .form-select option,
+.modal-body select option {
+    background-color: #1e1e1e;
+    color: white;
+    padding: 0.75rem 1rem;
+}
+
+/* Selected option */
+.modal-body .form-select option:checked {
+    background-color: #3b82f6;
+    color: white;
+}
+
+
+/* Add Transaction Modal specific styles */
+#addTransactionModal .form-input,
+#addTransactionModal .form-select,
+#addTransactionModal input[type="text"],
+#addTransactionModal input[type="number"],
+#addTransactionModal select,
+#addTransactionModal textarea {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Hover states */
+#addTransactionModal .form-input:hover,
+#addTransactionModal .form-select:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: #262626;
+}
+
+/* Focus states */
+#addTransactionModal .form-input:focus,
+#addTransactionModal .form-select:focus {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: #262626;
+}
+
+
+/* Transfer Modal specific styles */
+#transferModal .form-input,
+#transferModal .form-select,
+#transferModal input[type="text"],
+#transferModal input[type="number"],
+#transferModal select,
+#transferModal textarea {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Hover states */
+#transferModal .form-input:hover,
+#transferModal .form-select:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: #262626;
+}
+
+/* Focus states */
+#transferModal .form-input:focus,
+#transferModal .form-select:focus {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: #262626;
+}
+
+
+
+/* Firefox specific */
+@-moz-document url-prefix() {
+    .modal-body .form-select {
+        color: white;
+        background-color: #1e1e1e;
+    }
+    
+    .modal-body .form-select option {
+        background-color: #1e1e1e;
+    }
+}
+
+/* Styling for select element when opened */
+.modal-body .form-select::-ms-expand {
+    display: none;
+}
+
+/* Firefox specific styles */
+@-moz-document url-prefix() {
+    .modal-body .form-select {
+        color: white;
+        background-color: #141414;
+    }
+    
+    .modal-body .form-select option {
+        background-color: #141414;
+    }
+}
+
+/* Webkit (Chrome/Safari) specific styles */
+.modal-body .form-select::-webkit-listbox {
+    background-color: #141414;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.5rem;
+}
+
+.modal-body .form-select option:hover {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* Dropdown active/open state */
+.modal-body .form-select:active,
+.modal-body .form-select:focus {
+    background-color: #141414;
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Selected option */
+.modal-body .form-select option:checked {
+    background-color: #3b82f6;
+    color: white;
+}
+
+/* Disabled state */
+.modal-body .form-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Secondary/Cancel Button */
+.modal-footer .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    border: none;
+}
+
+.modal-footer .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.modal-footer .btn-danger {
+    background: #ef4444;
+    color: white;
+    border: none;
+}
+
+.modal-footer .btn-danger:hover {
+    background: #dc2626;
+}
+
+.edit-transaction-modal .modal-footer {
+    justify-content: flex-end; /* Keep right alignment for delete + update */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .account-modal .modal-content {
+        max-height: 95vh;
+    }
+
+    .modal-body {
+        max-height: calc(95vh - 200px);
+    }
+
+    .filtered-accounts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

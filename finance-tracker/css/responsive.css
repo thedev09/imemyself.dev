@@ -1,0 +1,258 @@
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1200px;
+        padding: 2rem;
+    }
+}
+
+
+@media (max-width: 1199px) {
+    .container {
+        padding: 1.5rem;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1023px) {
+    .accounts-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .currency-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+@media (max-width: 768px) {
+    /* Navigation */
+    .nav-content {
+        flex-direction: column;
+        padding: 0;
+    }
+
+    .nav-links {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-around;
+        background: #1e1e1e;
+        padding: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 100;
+    }
+
+    .nav-link {
+        flex: 1;
+        text-align: center;
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Profile */
+    .profile-container {
+        padding: 0.75rem;
+        margin: 0;
+    }
+
+    .user-email {
+        display: none;
+    }
+
+    /* Dashboard */
+    .currency-section {
+        grid-template-columns: 1fr;
+    }
+
+    .accounts-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+
+    .account-card {
+        padding: 1rem;
+    }
+
+    /* Forms */
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-input,
+    .form-select,
+    .btn {
+        min-height: 44px;
+        font-size: 16px;
+    }
+
+    /* Transactions */
+    .transaction-item {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .table-responsive {
+        margin: 0 -1rem;
+        padding: 0 1rem;
+        overflow-x: auto;
+    }
+
+    /* Analytics */
+    .analysis-controls {
+        flex-direction: column;
+    }
+
+    .analysis-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+
+    /* Modals */
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+        max-height: 95vh;
+    }
+
+    .modal-body {
+        max-height: calc(95vh - 200px);
+    }
+
+    .filtered-accounts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Stats */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Account Balance */
+    .balance-amount {
+        font-size: 1.5rem;
+    }
+
+    /* Navigation */
+    .nav-link {
+        font-size: 0.75rem;
+        padding: 0.375rem;
+    }
+
+    /* Forms */
+    .transaction-type {
+        flex-direction: column;
+    }
+
+    .type-btn {
+        width: 100%;
+    }
+
+    /* Modals */
+    .modal-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .modal-tabs {
+        overflow-x: auto;
+        padding: 1rem 1rem 0;
+    }
+
+    .modal-tab {
+        white-space: nowrap;
+    }
+}
+
+
+@media (max-height: 700px) {
+    .modal-content {
+        max-height: 85vh;
+    }
+
+    .modal-body {
+        max-height: calc(85vh - 180px);
+    }
+}
+
+@media print {
+    .nav,
+    .nav-links,
+    .profile-container,
+    .filters-card,
+    .action-btn,
+    .btn-export {
+        display: none !important;
+    }
+
+    .container {
+        padding: 0;
+    }
+
+    .card {
+        break-inside: avoid;
+        border: 1px solid #e5e7eb;
+        box-shadow: none;
+    }
+
+    body {
+        background: white;
+    }
+
+    .transaction-item,
+    .stat-card {
+        break-inside: avoid;
+    }
+}
+
+
+@media (prefers-color-scheme: dark) {
+    .form-input,
+    .form-select {
+        background: rgba(15, 23, 42, 0.5);
+    }
+
+    .modal-content,
+    .card {
+        background: #1e1e1e;
+    }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+@media (forced-colors: active) {
+    .btn,
+    .nav-link,
+    .form-input,
+    .form-select {
+        border: 1px solid currentColor;
+    }
+}

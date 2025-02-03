@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <base href="/finance-tracker/">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Personal Finance Manager - Track your income, expenses, and manage your accounts">
     <meta name="theme-color" content="#3b82f6">
@@ -10,554 +11,405 @@
     <!-- Preload important assets -->
     <link rel="preconnect" href="https://www.gstatic.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="manifest" href="/finance-tracker/manifest.json">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Finance Manager">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/finance-tracker/css/styles.css">
-    <link rel="stylesheet" href="./css/styles.css">
+    <!-- Update these lines in index.html -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/transactions.css">
+<link rel="stylesheet" href="css/analytics.css">
+<link rel="stylesheet" href="css/modals.css">
+<link rel="stylesheet" href="css/forms.css">
+<link rel="stylesheet" href="css/responsive.css">
     <!-- Add to head -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
-<body>
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="loading-spinner"></div>
+<!-- Loading Overlay -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<!-- Toast Messages -->
+<div id="toast" class="toast" style="display: none"></div>
+
+<!-- Login Section -->
+<div id="loginSection" class="login-section">
+    <div class="login-header">
+        <h1>Finance Manager</h1>
+        <p>Experience a new way to manage your money with our modern, intuitive financial tracking solution.</p>
     </div>
 
-    <!-- Toast Messages -->
-    <div id="toast" class="toast" style="display: none"></div>
+    <div class="login-card">
+        <div class="card-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to continue your financial journey</p>
+        </div>
 
-    <!-- Login Section -->
-    <div id="loginSection" class="login-section">
-        <div class="shapes">
-            <!-- Existing shapes here -->
+        <button onclick="signInWithGoogle()" class="google-signin-btn" type="button">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+            Sign in with Google
+        </button>
+
+        <div class="divider">
+            <span>or</span>
         </div>
-        
-        <div class="animated-elements">
-            <div class="floating-icon money"><i class="fas fa-dollar-sign"></i></div>
-            <div class="floating-icon chart"><i class="fas fa-chart-line"></i></div>
-            <div class="floating-icon wallet"><i class="fas fa-wallet"></i></div>
-        </div>
-    
-        <div class="container">
-            <div class="hero">
-                <h1>Finance Manager</h1>
-                <p>Experience a new way to manage your money with our modern, intuitive financial tracking solution.</p>
+
+        <form id="loginForm" class="login-form">
+            <div class="form-group">
+                <input type="email" 
+                       id="loginEmail" 
+                       class="form-input" 
+                       placeholder="Email"
+                       required>
             </div>
-        
-            <div class="login-card">
-                <h2>Welcome Back</h2>
-                <p>Sign in to continue your financial journey</p>
-                <button onclick="signInWithGoogle()" class="google-btn" type="button">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                    Sign in with Google
-                </button>
             
-                <div class="form-separator">
-                    <span>or</span>
-                </div>
-                
-                <form id="loginForm" class="auth-form">
-                    <div class="form-group">
-                        <input type="email" 
-                               id="loginEmail" 
-                               class="form-input" 
-                               placeholder="Email"
-                               required>
-                    </div>
-                    <div class="form-group">
-                        <input type="password" 
-                               id="loginPassword" 
-                               class="form-input" 
-                               placeholder="Password"
-                               required>
-                    </div>
-                    <div class="form-group">
-                        <button type="button" 
-                                id="forgotPassword" 
-                                class="link-button forgot-password">
-                            Forgot Password?
-                        </button>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-full">Sign In</button>
-                </form>
-                
-                <p class="auth-switch">
-                    Don't have an account? 
-                    <button type="button" 
-                            class="link-button" 
-                            onclick="toggleAuthMode()">
-                        Sign Up
-                    </button>
-                </p>
-            </div>
-    
-            <div class="features-grid">
-                <div class="feature">
-                    <i class="fas fa-globe"></i>
-                    <h3>Multi-Currency</h3>
-                    <p>Manage accounts in USD & INR</p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-chart-pie"></i>
-                    <h3>Analytics</h3>
-                    <p>Track spending patterns</p>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-exchange-alt"></i>
-                    <h3>Easy Transfers</h3>
-                    <p>Move money between accounts</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-
-    <!-- Main Content (hidden until login) -->
-    <div id="mainContent" class="main-content bg-gradient-dark" style="display: none;">
-        <!-- Navigation -->
-        <nav class="nav" role="navigation">
-            <div class="nav-content">
-                <h1 class="nav-title">
-                    <a href="/finance-tracker/index.html" class="logo-link">
-                      Finance Manager
-                    </a>
-                  </h1>
-                  
-                <div class="nav-links" role="tablist">
-                    <button class="nav-link active" 
-                            data-view="dashboard" 
-                            role="tab" 
-                            aria-selected="true" 
-                            aria-controls="dashboard-view">
-                        Dashboard
-                    </button>
-                    <button class="nav-link" 
-                            data-view="transactions" 
-                            role="tab" 
-                            aria-selected="false" 
-                            aria-controls="transactions-view">
-                        Transactions
-                    </button>
-                    <button class="nav-link" 
-                            data-view="analytics" 
-                            role="tab" 
-                            aria-selected="false" 
-                            aria-controls="analytics-view">
-                        Analytics
-                    </button>
-                    <button class="nav-link" 
-                            data-view="settings" 
-                            role="tab" 
-                            aria-selected="false" 
-                            aria-controls="settings-view">
-                        Settings
-                    </button>
-                </div>
-                <div class="profile-container">
-                    <div class="user-info">
-                        <img id="userAvatar" class="user-avatar" alt="Profile picture">
-                        <div class="user-details">
-                            <span id="userName" class="user-name"></span>
-                            <span id="userEmail" class="user-email"></span>
-                        </div>
-                    </div>
-                    <button onclick="signOut()" class="sign-out-btn" aria-label="Sign out">
-                        Sign Out
-                    </button>
-                </div>
-            </div>
-        </nav>
-
-        <div class="container">
-            <!-- Dashboard View -->
-            <div id="dashboard-view" class="view" role="tabpanel" aria-labelledby="dashboard-tab">
-                <div class="accounts-grid" id="accounts-grid">
-                    <!-- Account cards will be dynamically rendered here -->
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Quick Add Transaction</h2>
-                    </div>
-                    <div class="card-content">
-                        <form id="transaction-form" novalidate>
-                            <div class="transaction-type" role="radiogroup" aria-label="Transaction type">
-                                <button type="button" 
-                                        class="type-btn income selected" 
-                                        data-type="income" 
-                                        aria-pressed="true">
-                                    Income
-                                </button>
-                                <button type="button" 
-                                        class="type-btn expense" 
-                                        data-type="expense" 
-                                        aria-pressed="false">
-                                    Expense
-                                </button>
-                            </div>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="amount" class="form-label">Amount</label>
-                                    <input type="number" 
-                                           id="amount"
-                                           class="form-input" 
-                                           name="amount" 
-                                           required 
-                                           step="0.01" 
-                                           min="0"
-                                           aria-required="true">
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="account" class="form-label">Account</label>
-                                    <select id="account"
-                                            class="form-select" 
-                                            name="account" 
-                                            required
-                                            aria-required="true">
-                                        <option value="">Select an account</option>
-                                    </select>
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="paymentMode" class="form-label">Payment Mode</label>
-                                    <select id="paymentMode"
-                                            class="form-select" 
-                                            name="paymentMode"
-                                            required
-                                            aria-required="true">
-                                        <option value="">Select payment mode</option>
-                                    </select>
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                            
-                                <div class="form-group">
-                                    <label for="category" class="form-label">Category</label>
-                                    <select id="category"
-                                            class="form-select" 
-                                            name="category"
-                                            required
-                                            aria-required="true">
-                                        <option value="">Select a category</option>
-                                    </select>
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="transactionNotes" class="form-label">Notes (Optional)</label>
-                                    <input type="text" 
-                                           id="transactionNotes"
-                                           class="form-input" 
-                                           name="notes" 
-                                           placeholder="Add any additional details">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Add Transaction</button>
-                        </form>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Self Transfer</h2>
-                    </div>
-                    <div class="card-content">
-                        <form id="transfer-form" novalidate>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="fromAccount" class="form-label">From Account</label>
-                                    <select id="fromAccount"
-                                            class="form-select" 
-                                            name="fromAccount" 
-                                            required>
-                                        <option value="">Select source account</option>
-                                    </select>
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                
-                                <div class="form-group">
-                                    <label for="toAccount" class="form-label">To Account</label>
-                                    <select id="toAccount"
-                                            class="form-select" 
-                                            name="toAccount" 
-                                            required>
-                                        <option value="">Select destination account</option>
-                                    </select>
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                
-                                <div class="form-group">
-                                    <label for="transferAmount" class="form-label">Amount</label>
-                                    <input type="number" 
-                                           id="transferAmount"
-                                           class="form-input" 
-                                           name="amount" 
-                                           required 
-                                           step="0.01" 
-                                           min="0">
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                
-                                <div class="form-group" id="convertedAmountGroup" style="display: none;">
-                                    <label for="convertedAmount" class="form-label">Converted Amount</label>
-                                    <input type="text" 
-                                           id="convertedAmount"
-                                           class="form-input" 
-                                           disabled>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Transfer Funds</button>
-                        </form>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Recent Transactions</h2>
-                    </div>
-                    <div class="card-content">
-                        <div id="recent-transactions" role="list"></div>
-                    </div>
-                </div>
+            <div class="form-group">
+                <input type="password" 
+                       id="loginPassword" 
+                       class="form-input" 
+                       placeholder="Password"
+                       required>
+                <button type="button" 
+                        id="forgotPassword" 
+                        class="forgot-password">
+                    Forgot Password?
+                </button>
             </div>
 
-            <!-- Transactions View -->
-            <!-- Replace the existing transactions-view content with this -->
-<div id="transactions-view" class="view" style="display: none" role="tabpanel" aria-labelledby="transactions-tab">
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Total Transactions</div>
-            <div id="stat-total" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Total Income</div>
-            <div id="stat-income" class="stat-value income">₹0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Total Expenses</div>
-            <div id="stat-expense" class="stat-value expense">₹0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Average Transaction</div>
-            <div id="stat-average" class="stat-value">₹0</div>
-        </div>
-    </div>
+            <button type="submit" class="signin-btn">Sign In</button>
+        </form>
 
-    <!-- Filters -->
-    <div class="filters-card">
-        <div class="filters-header">
-            <h3>Filters</h3>
-            <button id="export-csv" class="btn-export">Export CSV</button>
-        </div>
-        
-        <div class="filters-grid">
-            <div class="date-filter-group">
-                <select id="filter-date" class="filter-select">
-                    <option value="all">All Time</option>
-                    <option value="week">Last Week</option>
-                    <option value="month">Last Month</option>
-                    <option value="year">Last Year</option>
-                    <option value="custom">Custom Range</option>
-                </select>
-                
-                <div id="custom-date-inputs" class="custom-date">
-                    <input type="date" id="filter-start-date" class="filter-input">
-                    <input type="date" id="filter-end-date" class="filter-input">
-                </div>
-            </div>
-    
-            <div class="filter-group">
-                <select id="filter-type" class="filter-select">
-                    <option value="all">All Types</option>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                </select>
-    
-                <select id="filter-account" class="filter-select">
-                    <option value="all">All Accounts</option>
-                </select>
-    
-                <select id="filter-category" class="filter-select">
-                    <option value="all">All Categories</option>
-                </select>
-    
-                <select id="filter-payment" class="filter-select">
-                    <option value="all">All Payment Modes</option>
-                </select>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Transactions Table -->
-    <div class="card">
-        <div class="table-responsive">
-            <table class="transactions-table" role="table">
-                <thead>
-                    <tr>
-                        <th class="sortable" data-sort="date">Date</th>
-                        <th class="sortable" data-sort="type">Type</th>
-                        <th class="sortable" data-sort="amount">Amount</th>
-                        <th class="sortable" data-sort="paymentMode">Payment Mode</th>
-                        <th class="sortable" data-sort="account">Account</th>
-                        <th class="sortable" data-sort="category">Category</th>
-                        <th>Notes</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="transactions-tbody"></tbody>
-            </table>
+        <div class="auth-switch">
+            Don't have an account? 
+            <button type="button" class="switch-btn" onclick="toggleAuthMode()">
+                Sign Up
+            </button>
         </div>
     </div>
 </div>
 
-            <!-- Analytics View -->
-            <div id="analytics-view" 
-                 class="view" 
-                 style="display: none" 
-                 role="tabpanel" 
-                 aria-labelledby="analytics-tab">
-                 <!-- Add this inside the analytics-view div -->
-<div class="charts-grid">
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Income & Expense Analysis</h2>
-            <div class="analysis-controls">
-                <select id="timeframe-select" class="form-select">
-                    <option value="monthly">Monthly View</option>
-                    <option value="yearly">Yearly View</option>
-                </select>
-                <select id="year-select" class="form-select">
-                    <!-- Will be populated dynamically -->
-                </select>
+<!-- Main Content (hidden until login) -->
+<div id="mainContent" class="main-content bg-gradient-dark" style="display: none;">
+    <!-- Navigation -->
+    <nav class="nav" role="navigation">
+        <div class="nav-content">
+            <h1 class="nav-title">
+                <a href="/finance-tracker/index.html" class="logo-link">
+                  Finance Manager
+                </a>
+            </h1>
+              
+            <div class="nav-links" role="tablist">
+                <button class="nav-link active" 
+                        data-view="dashboard" 
+                        role="tab" 
+                        aria-selected="true" 
+                        aria-controls="dashboard-view">
+                    Dashboard
+                </button>
+                <button class="nav-link" 
+                        data-view="transactions" 
+                        role="tab" 
+                        aria-selected="false" 
+                        aria-controls="transactions-view">
+                    Transactions
+                </button>
+                <button class="nav-link" 
+                        data-view="analytics" 
+                        role="tab" 
+                        aria-selected="false" 
+                        aria-controls="analytics-view">
+                    Analytics
+                </button>
+                <button class="nav-link" 
+                        data-view="settings" 
+                        role="tab" 
+                        aria-selected="false" 
+                        aria-controls="settings-view">
+                    Settings
+                </button>
+            </div>
+            <div class="profile-container">
+                <div class="user-info">
+                    <img id="userAvatar" class="user-avatar" alt="Profile picture">
+                    <div class="user-details">
+                        <span id="userName" class="user-name"></span>
+                        <span id="userEmail" class="user-email"></span>
+                    </div>
+                </div>
+                <button onclick="signOut()" class="sign-out-btn" aria-label="Sign out">
+                    Sign Out
+                </button>
             </div>
         </div>
-        <div class="card-content">
-            <div class="analysis-stats">
+    </nav>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="view" role="tabpanel" aria-labelledby="dashboard-tab">
+        <div class="page-container">
+            <!-- Accounts Grid -->
+            <div class="accounts-grid" id="accounts-grid">
+                <!-- Account cards will be dynamically rendered here -->
+            </div>
+
+            <!-- Quick Actions Section -->
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="quick-actions">
+                <button onclick="showAddTransactionModal()" class="quick-action-btn primary">
+                    <i class="fas fa-plus"></i> Add Transaction
+                </button>
+                <button onclick="showTransferModal()" class="quick-action-btn secondary">
+                    <i class="fas fa-exchange-alt"></i> Transfer Money
+                </button>
+            </div>
+
+            <!-- Recent Transactions Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Transactions</h2>
+                </div>
+                <div class="card-content">
+                    <div id="recent-transactions" role="list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions View -->
+    <div id="transactions-view" class="view" style="display: none" role="tabpanel" aria-labelledby="transactions-tab">
+        <div class="page-container">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Transactions</div>
+                    <div id="stat-total" class="stat-value">0</div>
+                </div>
                 <div class="stat-card">
                     <div class="stat-label">Total Income</div>
-                    <div id="analysis-income" class="stat-value income">₹0</div>
+                    <div id="stat-income" class="stat-value income">₹0</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Total Expenses</div>
-                    <div id="analysis-expense" class="stat-value expense">₹0</div>
+                    <div id="stat-expense" class="stat-value expense">₹0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Net Savings</div>
-                    <div id="analysis-savings" class="stat-value">₹0</div>
+                    <div class="stat-label">Average Transaction</div>
+                    <div id="stat-average" class="stat-value">₹0</div>
                 </div>
             </div>
-            <div class="chart-container">
-                <canvas id="analysis-chart" role="img" aria-label="Income and expense analysis chart"></canvas>
+
+            <!-- Filters Card -->
+            <div class="card filters-card">
+                <div class="filters-header">
+                    <h3>Filters</h3>
+                    <button id="export-csv" class="btn-export">Export CSV</button>
+                </div>
+                
+                <div class="filters-grid">
+                    <div class="date-filter-group">
+                        <select id="filter-date" class="filter-select">
+                            <option value="all">All Time</option>
+                            <option value="week">Last Week</option>
+                            <option value="month">Last Month</option>
+                            <option value="year">Last Year</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                        
+                        <div id="custom-date-inputs" class="custom-date" style="display: none;">
+                            <input type="date" id="filter-start-date" class="filter-input">
+                            <input type="date" id="filter-end-date" class="filter-input">
+                        </div>
+                    </div>
+            
+                    <div class="filter-group">
+                        <select id="filter-type" class="filter-select">
+                            <option value="all">All Types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                            <option value="transfer">Transfer</option>
+                        </select>
+            
+                        <select id="filter-account" class="filter-select">
+                            <option value="all">All Accounts</option>
+                        </select>
+            
+                        <select id="filter-category" class="filter-select">
+                            <option value="all">All Categories</option>
+                        </select>
+            
+                        <select id="filter-payment" class="filter-select">
+                            <option value="all">All Payment Modes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transactions Table -->
+            <div class="card">
+                <div class="table-responsive">
+                    <table class="transactions-table" role="table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="date">Date</th>
+                                <th class="sortable" data-sort="type">Type</th>
+                                <th class="sortable" data-sort="amount">Amount</th>
+                                <th class="sortable" data-sort="paymentMode">Payment Mode</th>
+                                <th class="sortable" data-sort="account">Account</th>
+                                <th class="sortable" data-sort="category">Category</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics View -->
+    <div id="analytics-view" class="view" style="display: none" role="tabpanel" aria-labelledby="analytics-tab">
+        <div class="page-container">
+            <div class="card analysis-card">
+                <div class="card-header">
+                    <h2 class="card-title">Income & Expense Analysis</h2>
+                    <div class="analysis-controls">
+                        <select id="timeframe-select" class="form-select">
+                            <option value="monthly">Monthly View</option>
+                            <option value="yearly">Yearly View</option>
+                        </select>
+                        <select id="year-select" class="form-select">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="analysis-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Income</div>
+                            <div id="analysis-income" class="stat-value income">₹0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Expenses</div>
+                            <div id="analysis-expense" class="stat-value expense">₹0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Net Savings</div>
+                            <div id="analysis-savings" class="stat-value">₹0</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="analysis-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Monthly Overview</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="chart-container">
+                            <canvas id="monthly-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Expense Categories</h2>
+                    </div>
+                    <div class="card-content">
+                        <div class="chart-container">
+                            <canvas id="category-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings View -->
+    <div id="settings-view" class="view" style="display: none" role="tabpanel" aria-labelledby="settings-tab">
+        <div class="page-container">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Add New Account</h2>
+                </div>
+                <div class="card-content">
+                    <form id="account-form" novalidate>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="accountName" class="form-label">Account Name</label>
+                                <input type="text" 
+                                       id="accountName"
+                                       class="form-input" 
+                                       name="name" 
+                                       required
+                                       aria-required="true">
+                                <div class="form-error" aria-live="polite"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="accountType" class="form-label">Account Type</label>
+                                <select id="accountType"
+                                        class="form-select" 
+                                        name="type"
+                                        required
+                                        aria-required="true">
+                                    <option value="">Select account type</option>
+                                    <option value="bank">Bank Account</option>
+                                    <option value="crypto">Crypto Wallet</option>
+                                </select>
+                                <div class="form-error" aria-live="polite"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="currency" class="form-label">Currency</label>
+                                <select id="currency"
+                                        class="form-select" 
+                                        name="currency"
+                                        required
+                                        aria-required="true">
+                                    <option value="">Select currency</option>
+                                    <option value="USD">USD</option>
+                                    <option value="INR">INR</option>
+                                </select>
+                                <div class="form-error" aria-live="polite"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="balance" class="form-label">Initial Balance</label>
+                                <input type="number" 
+                                       id="balance"
+                                       class="form-input" 
+                                       name="balance" 
+                                       required 
+                                       step="0.01"
+                                       min="0"
+                                       aria-required="true">
+                                <div class="form-error" aria-live="polite"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Account</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
-                <div class="charts-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Monthly Overview</h2>
-                        </div>
-                        <div class="card-content">
-                            <div class="chart-container">
-                                <canvas id="monthly-chart" role="img" aria-label="Monthly financial overview chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Expense Categories</h2>
-                        </div>
-                        <div class="card-content">
-                            <div class="chart-container">
-                                <canvas id="category-chart" role="img" aria-label="Expense categories distribution chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Settings View -->
-            <div id="settings-view" 
-                 class="view" 
-                 style="display: none" 
-                 role="tabpanel" 
-                 aria-labelledby="settings-tab">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Add New Account</h2>
-                    </div>
-                    <div class="card-content">
-                        <form id="account-form" novalidate>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label for="accountName" class="form-label">Account Name</label>
-                                    <input type="text" 
-                                           id="accountName"
-                                           class="form-input" 
-                                           name="name" 
-                                           required
-                                           aria-required="true">
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="accountType" class="form-label">Account Type</label>
-                                    <select id="accountType"
-                                            class="form-select" 
-                                            name="type"
-                                            required
-                                            aria-required="true">
-                                        <option value="">Select account type</option>
-                                        <option value="bank">Bank Account</option>
-                                        <option value="crypto">Crypto Wallet</option>
-                                    </select>
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="currency" class="form-label">Currency</label>
-                                    <select id="currency"
-                                            class="form-select" 
-                                            name="currency"
-                                            required
-                                            aria-required="true">
-                                        <option value="">Select currency</option>
-                                        <option value="USD">USD</option>
-                                        <option value="INR">INR</option>
-                                    </select>
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="balance" class="form-label">Initial Balance</label>
-                                    <input type="number" 
-                                           id="balance"
-                                           class="form-input" 
-                                           name="balance" 
-                                           required 
-                                           step="0.01"
-                                           min="0"
-                                           aria-required="true">
-                                    <div class="form-error" aria-live="polite"></div>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Add Account</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
 
     <!-- Initialize Firebase -->
     <script>
@@ -615,9 +467,9 @@
     </script>
 
 <!-- Application Scripts -->
-<script src="/finance-tracker/js/auth.js"></script>
-<script src="/finance-tracker/js/app-core.js"></script>
-<script src="/finance-tracker/js/app-ui.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app-core.js"></script>
+<script src="js/app-ui.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 </body>
 </html>

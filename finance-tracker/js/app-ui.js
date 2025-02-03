@@ -178,7 +178,7 @@ function renderTransactionItem(transaction, account) {
                 <div class="transaction-primary">
                     <div class="transaction-header">
                         <span class="transaction-title">
-                            ${isTransfer ? '↔️ ' : ''}${escapeHtml(transaction.category)}
+                            ${isTransfer ? ' ' : ''}${escapeHtml(transaction.category)}
                         </span>
                         <div class="transaction-actions">
                             <button onclick="event.stopPropagation(); editTransaction('${transaction.id}')" 
@@ -219,7 +219,7 @@ function renderTransactionItem(transaction, account) {
 
 function showFilteredAccounts(currency) {
     const modalDiv = document.createElement('div');
-    modalDiv.className = 'modal-overlay';
+    modalDiv.className = 'modal-overlay filtered-accounts-modal';
     
     const filteredAccounts = state.accounts.filter(acc => acc.currency === currency);
     const totalBalance = filteredAccounts.reduce((sum, acc) => sum + acc.balance, 0);
@@ -239,7 +239,7 @@ function showFilteredAccounts(currency) {
                 <div class="filtered-accounts-grid">
                     ${filteredAccounts.map(account => `
                         <div class="account-card ${account.type}" onclick="showAccountDetails('${account.id}')">
-                            <span class="account-type ${account.type}">${account.type}</span>
+                            <span class="account-type">${account.type}</span>
                             <h3 class="account-name">${escapeHtml(account.name)}</h3>
                             <div class="account-balance">
                                 ${formatCurrency(account.balance, account.currency)}
@@ -262,6 +262,8 @@ function showFilteredAccounts(currency) {
         }
     });
 }
+
+
 // UI Functions
 // Update switchView function in app-ui.js
 function switchView(view) {
@@ -490,6 +492,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // In app-ui.js
+// In app-ui.js
+
 function createEditAccountModal(account) {
     const modalHTML = `
         <div class="modal-overlay" id="edit-account-modal">
@@ -498,7 +502,7 @@ function createEditAccountModal(account) {
                     <div class="modal-title">
                         <h2>Edit Account</h2>
                     </div>
-                    <button class="modal-close" onclick="closeEditAccountModal()">×</button>
+                    <button class="modal-close" onclick="closeEditAccountModal()" aria-label="Close modal">×</button>
                 </div>
                 <div class="modal-body">
                     <form id="edit-account-form">
@@ -510,7 +514,8 @@ function createEditAccountModal(account) {
                                        class="form-input" 
                                        name="name" 
                                        value="${escapeHtml(account.name)}"
-                                       required>
+                                       required
+                                       autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label for="editAccountType" class="form-label">Account Type</label>
@@ -545,6 +550,7 @@ function createEditAccountModal(account) {
                             </div>
                         </div>
                         <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeEditAccountModal()">Cancel</button>
                             <button type="submit" class="btn btn-primary">Update Account</button>
                         </div>
                     </form>
@@ -552,6 +558,12 @@ function createEditAccountModal(account) {
             </div>
         </div>
     `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('edit-account-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
 
     // Add modal to the document
     document.body.insertAdjacentHTML('beforeend', modalHTML);
@@ -606,6 +618,43 @@ function createEditAccountModal(account) {
         }
     };
     document.addEventListener('keydown', escapeHandler);
+
+    // Focus the first input
+    document.getElementById('editAccountName').focus();
+}
+
+// In app-ui.js
+
+function setupEditAccountForm(account) {
+    const form = document.getElementById('edit-account-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
+
+        try {
+            const formData = new FormData(e.target);
+            const updatedAccount = {
+                ...account,
+                name: formData.get('name'),
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                balance: parseFloat(formData.get('balance')) || 0,
+                updatedAt: new Date().toISOString()
+            };
+
+            await saveAccount(updatedAccount);
+            closeEditAccountModal();
+            showToast('Account updated successfully!');
+            await loadUserData(true);
+        } catch (error) {
+            console.error('Error updating account:', error);
+            showToast(error.message || 'Error updating account', 'error');
+        } finally {
+            toggleLoading(false);
+        }
+    });
 }
 
 function closeEditAccountModal() {
@@ -1641,6 +1690,321 @@ function renderFilteredTransactions(transactions) {
     }).join('');
 }
 
+
+function updatePaymentModes(accountType) {
+    const paymentModeSelect = document.getElementById('paymentMode');
+    if (!paymentModeSelect) return;
+
+    const PAYMENT_MODES = {
+        bank: [
+            'UPI',
+            'Bank Transfer',
+            'Debit Card',
+            'Credit Card',
+            'Cash',
+            'Net Banking'
+        ],
+        crypto: [
+            'Crypto Transfer',
+            'Exchange Transfer',
+            'DeFi Transaction'
+        ]
+    };
+
+    const modes = PAYMENT_MODES[accountType] || PAYMENT_MODES.bank;
+    
+    paymentModeSelect.innerHTML = `
+        <option value="">Select payment mode</option>
+        ${modes.map(mode => `
+            <option value="${mode}">${mode}</option>
+        `).join('')}
+    `;
+}
+
+// Update in app-ui.js
+function showAddTransactionModal() {
+    const modalHTML = `
+        <div class="modal-overlay" id="addTransactionModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>Add Transaction</h2>
+                    </div>
+                    <button class="modal-close" onclick="closeModal('addTransactionModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="transaction-type-toggle">
+                        <button class="type-btn expense active" data-type="expense">Expense</button>
+                        <button class="type-btn income" data-type="income">Income</button>
+                    </div>
+                    <form id="transactionForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Amount</label>
+                                <input type="number" id="amount" name="amount" placeholder="Enter amount" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select id="category" name="category" required>
+                                    <option value="">Select category</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Account</label>
+                                <select id="account" name="account" required>
+                                    <option value="">Select account</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Mode</label>
+                                <select id="paymentMode" name="paymentMode" required>
+                                    <option value="">Select payment mode</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Description (Optional)</label>
+                            <input type="text" id="description" name="description" placeholder="Enter description (optional)">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeModal('addTransactionModal')">Cancel</button>
+                            <button type="submit" class="btn-primary">Add Transaction</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('addTransactionModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add click handler for closing on outside click
+    const modal = document.getElementById('addTransactionModal');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) { // Click is on the overlay
+            closeModal('addTransactionModal');
+        }
+    });
+
+    setupTransactionForm();
+}
+
+function showTransferModal() {
+    const modalHTML = `
+        <div class="modal-overlay" id="transferModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>Transfer Money</h2>
+                    </div>
+                    <button class="modal-close" onclick="closeModal('transferModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="transferForm">
+                        <div class="form-group">
+                            <label>From Account</label>
+                            <select id="fromAccount" name="fromAccount" required>
+                                <option value="">Select account</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>To Account</label>
+                            <select id="toAccount" name="toAccount" required>
+                                <option value="">Select account</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount</label>
+                            <input type="number" id="transferAmount" name="amount" placeholder="Enter amount" required>
+                        </div>
+                        <div class="form-group" id="convertedAmountGroup" style="display: none;">
+                            <label>Converted Amount</label>
+                            <input type="text" id="convertedAmount" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="transferDescription" name="description" placeholder="Enter description">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeModal('transferModal')">Cancel</button>
+                            <button type="submit" class="btn-primary">Transfer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('transferModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add click handler for closing on outside click
+    const modal = document.getElementById('transferModal');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) { // Click is on the overlay
+            closeModal('transferModal');
+        }
+    });
+
+    setupTransferForm();
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.remove(); // Use remove instead of just hiding
+    }
+}
+
+
+function showModal(modalId) {
+    const existingModal = document.getElementById(modalId);
+    if (existingModal) {
+        existingModal.remove();
+    }
+    if (modalId === 'transferModal') {
+        showTransferModal();
+    } else if (modalId === 'addTransactionModal') {
+        showAddTransactionModal();
+    }
+}
+
+
+function setupTransactionForm() {
+    const form = document.getElementById('transactionForm');
+    if (!form) return;
+
+    // Update account dropdown
+    const accountSelect = document.getElementById('account');
+    if (accountSelect && state.accounts) {
+        accountSelect.innerHTML = `
+            <option value="">Select account</option>
+            ${state.accounts.map(acc => `
+                <option value="${acc.id}">
+                    ${escapeHtml(acc.name)} (${acc.currency} ${formatCurrency(acc.balance, acc.currency)})
+                </option>
+            `).join('')}
+        `;
+    }
+
+    // Setup type buttons
+    const typeButtons = document.querySelectorAll('.type-btn');
+    typeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            typeButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateCategoryOptions(btn.dataset.type);
+        });
+    });
+
+    // Force select expense by default
+    const expenseBtn = document.querySelector('.type-btn.expense');
+    if (expenseBtn) {
+        expenseBtn.click();
+    }
+
+    // Handle account change to update payment modes
+    accountSelect.addEventListener('change', (e) => {
+        const selectedAccount = state.accounts.find(acc => acc.id === e.target.value);
+        if (selectedAccount) {
+            updatePaymentModes(selectedAccount.type.toLowerCase());
+        }
+    });
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        console.log("Form submitted");
+        const formData = new FormData(form);
+        await handleTransactionSubmit(formData);
+    };
+}
+
+function setupTransferForm() {
+    const form = document.getElementById('transferForm');
+    if (!form) return;
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        console.log("Transfer form submitted");
+        const formData = new FormData(form);
+        await handleTransferSubmit(formData);
+    };
+}
+
+function setupTransferForm() {
+    // Populate account dropdowns
+    const fromAccountSelect = document.getElementById('fromAccount');
+    const toAccountSelect = document.getElementById('toAccount');
+
+    if (fromAccountSelect && toAccountSelect && state.accounts) {
+        const accountOptions = '<option value="">Select account</option>' + 
+            state.accounts.map(acc => `
+                <option value="${acc.id}">
+                    ${escapeHtml(acc.name)} (${acc.currency} ${formatCurrency(acc.balance, acc.currency)})
+                </option>
+            `).join('');
+
+        fromAccountSelect.innerHTML = accountOptions;
+        toAccountSelect.innerHTML = accountOptions;
+    }
+
+    // Handle converted amount display
+    fromAccountSelect.addEventListener('change', updateConvertedAmount);
+    toAccountSelect.addEventListener('change', updateConvertedAmount);
+    document.getElementById('transferAmount').addEventListener('input', updateConvertedAmount);
+
+    // Setup form submission
+    const form = document.getElementById('transferForm');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        await handleTransferSubmit(new FormData(form));
+        closeModal('transferModal');
+    };
+}
+
+function updateConvertedAmount() {
+    const fromAccount = document.getElementById('fromAccount').value;
+    const toAccount = document.getElementById('toAccount').value;
+    const amount = document.getElementById('transferAmount').value;
+    const convertedGroup = document.getElementById('convertedAmountGroup');
+    const convertedInput = document.getElementById('convertedAmount');
+
+    if (fromAccount && toAccount && amount > 0) {
+        const fromAcc = state.accounts.find(acc => acc.id === fromAccount);
+        const toAcc = state.accounts.find(acc => acc.id === toAccount);
+
+        if (fromAcc.currency !== toAcc.currency) {
+            convertedGroup.style.display = 'block';
+            const convertedAmount = calculateConvertedAmount(amount, fromAccount, toAccount);
+            convertedInput.value = formatCurrency(convertedAmount, toAcc.currency);
+        } else {
+            convertedGroup.style.display = 'none';
+        }
+    } else {
+        convertedGroup.style.display = 'none';
+    }
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        e.target.style.display = 'none';
+    }
+});
+
 // Add to app-ui.js
 const transactionFilters = {
     dateRange: 'all',
@@ -1849,12 +2213,83 @@ function exportTransactionsToCSV() {
 window.updateTransactionView = updateTransactionView;
 window.initializeTransactionView = initializeTransactionView;
 
-// Update showAccountDetails function
 function showAccountDetails(accountId) {
     const account = state.accounts.find(acc => acc.id === accountId);
     if (!account) return;
-    createAccountDetailsModal(account);
+
+    // Create and show modal
+    const modalHTML = `
+        <div class="modal-overlay" id="account-details-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>${escapeHtml(account.name)}</h2>
+                        <span class="account-type ${account.type.toLowerCase()}">${account.type}</span>
+                        <div class="account-balance">
+                            ${formatCurrency(account.balance, account.currency)}
+                        </div>
+                    </div>
+                    <button class="close-btn" onclick="closeAccountDetailsModal()">&times;</button>
+                </div>
+                
+                <div class="modal-tabs">
+                    <button class="modal-tab active" data-tab="transactions">Transactions</button>
+                    <button class="modal-tab" data-tab="activity">Account Activity</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="tab-content active" id="transactions-tab">
+                        ${renderAccountTransactions(account)}
+                    </div>
+                    <div class="tab-content" id="activity-tab">
+                        ${renderAccountActivity(account)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add modal to document
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add event listeners
+    const modal = document.getElementById('account-details-modal');
+    
+    // Tab switching
+    modal.querySelectorAll('.modal-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            modal.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            modal.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            modal.querySelector(`#${tab.dataset.tab}-tab`).classList.add('active');
+        });
+    });
+
+    // Close on outside click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeAccountDetailsModal();
+        }
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeAccountDetailsModal();
+        }
+    });
 }
+
+function closeAccountDetailsModal() {
+    const modal = document.getElementById('account-details-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Make sure these functions are globally available
+window.showAccountDetails = showAccountDetails;
+window.closeAccountDetailsModal = closeAccountDetailsModal;
 
 // Make functions globally available
 window.showAccountDetails = showAccountDetails;
@@ -2129,10 +2564,21 @@ async function updateTransaction(transaction) {
     const batch = db.batch();
 
     // Calculate balance adjustments
-    // First, reverse the old transaction
-    let oldAdjustment = oldTransaction.type === 'income' ? -oldTransaction.amount : oldTransaction.amount;
+    // First, reverse the old transaction completely
+    let oldAdjustment;
+    if (oldTransaction.type === 'income') {
+        oldAdjustment = -oldTransaction.amount; // Subtract the old income
+    } else if (oldTransaction.type === 'expense') {
+        oldAdjustment = +oldTransaction.amount; // Add back the old expense
+    }
+
     // Then, apply the new transaction
-    let newAdjustment = transaction.type === 'income' ? transaction.amount : -transaction.amount;
+    let newAdjustment;
+    if (transaction.type === 'income') {
+        newAdjustment = +transaction.amount; // Add the new income
+    } else if (transaction.type === 'expense') {
+        newAdjustment = -transaction.amount; // Subtract the new expense
+    }
 
     // Update transaction document
     const transactionRef = db.collection('users')
@@ -2153,7 +2599,7 @@ async function updateTransaction(transaction) {
 
     // If account changed, update both old and new account balances
     if (oldAccount.id !== newAccount.id) {
-        // Update old account - reverse the original transaction
+        // Update old account balance
         const oldAccountRef = db.collection('users')
             .doc(user.uid)
             .collection('accounts')
@@ -2163,7 +2609,7 @@ async function updateTransaction(transaction) {
             updatedAt: new Date().toISOString()
         });
 
-        // Update new account - apply the new transaction
+        // Update new account balance
         const newAccountRef = db.collection('users')
             .doc(user.uid)
             .collection('accounts')
@@ -2173,13 +2619,13 @@ async function updateTransaction(transaction) {
             updatedAt: new Date().toISOString()
         });
     } else {
-        // Same account, just update with the difference
+        // Same account, apply net adjustment
         const accountRef = db.collection('users')
             .doc(user.uid)
             .collection('accounts')
             .doc(newAccount.id);
         batch.update(accountRef, { 
-            balance: newAccount.balance + (newAdjustment - oldAdjustment),
+            balance: newAccount.balance + (oldAdjustment + newAdjustment),
             updatedAt: new Date().toISOString()
         });
     }
@@ -2209,7 +2655,7 @@ async function updateTransaction(transaction) {
         } else {
             const accountIndex = state.accounts.findIndex(acc => acc.id === newAccount.id);
             if (accountIndex !== -1) {
-                state.accounts[accountIndex].balance += (newAdjustment - oldAdjustment);
+                state.accounts[accountIndex].balance += (oldAdjustment + newAdjustment);
                 state.accounts[accountIndex].updatedAt = transactionData.updatedAt;
             }
         }
