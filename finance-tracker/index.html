@@ -208,50 +208,64 @@
             </div>
 
             <!-- Filters Card -->
-            <div class="card filters-card">
-                <div class="filters-header">
-                    <h3>Filters</h3>
-                    <button id="export-csv" class="btn-export">Export CSV</button>
-                </div>
+            <!-- Filters Card -->
+<div class="card filters-card">
+    <div class="filters-header">
+        <h3>Filters</h3>
+        <button id="export-csv" class="btn-export">
+            <i class="fas fa-download"></i>
+            Export CSV
+        </button>
+    </div>
+    
+    <div class="filters-grid">
+        <div class="filters-row">
+            <div class="filter-group date-filter">
+                <select id="filter-date" class="filter-select">
+                    <option value="thisMonth">This Month</option>
+                    <option value="thisWeek">This Week</option>
+                    <option value="thisYear">This Year</option>
+                    <option value="all">All Time</option>
+                    <option value="custom">Custom Range</option>
+                </select>
                 
-                <div class="filters-grid">
-                    <div class="date-filter-group">
-                        <select id="filter-date" class="filter-select">
-                            <option value="thisMonth">This Month</option>
-                            <option value="thisYear">This Year</option>
-                            <option value="thisWeek">This Week</option>
-                            <option value="all">All Time</option>
-                            <option value="custom">Custom Range</option>
-                        </select>
-                        
-                        <div id="custom-date-inputs" class="custom-date" style="display: none;">
-                            <input type="date" id="filter-start-date" class="filter-input">
-                            <input type="date" id="filter-end-date" class="filter-input">
-                        </div>
-                    </div>
-            
-                    <div class="filter-group">
-                        <select id="filter-type" class="filter-select">
-                            <option value="all">All Types</option>
-                            <option value="income">Income</option>
-                            <option value="expense">Expense</option>
-                            <option value="transfer">Transfer</option>
-                        </select>
-            
-                        <select id="filter-account" class="filter-select">
-                            <option value="all">All Accounts</option>
-                        </select>
-            
-                        <select id="filter-category" class="filter-select">
-                            <option value="all">All Categories</option>
-                        </select>
-            
-                        <select id="filter-payment" class="filter-select">
-                            <option value="all">All Payment Modes</option>
-                        </select>
-                    </div>
+                <div id="custom-date-inputs" class="custom-date">
+                    <input type="date" id="filter-start-date" class="filter-input">
+                    <input type="date" id="filter-end-date" class="filter-input">
                 </div>
             </div>
+
+            <div class="filter-group">
+                <select id="filter-type" class="filter-select">
+                    <option value="all">All Types</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                    <option value="transfer">Transfer</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filters-row">
+            <div class="filter-group">
+                <select id="filter-account" class="filter-select">
+                    <option value="all">All Accounts</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <select id="filter-category" class="filter-select">
+                    <option value="all">All Categories</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <select id="filter-payment" class="filter-select">
+                    <option value="all">All Payment Modes</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
             
             <!-- Transactions Table -->
             <div class="card">
