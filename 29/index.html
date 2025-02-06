@@ -1,15 +1,331 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <style>
-    /* Set the width and height of the iframe to 100% */
-    iframe {
-      width: 100%;
-      height: 100%;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Be My Valentine?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ffe6ea 0%, #ffb6c1 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(255, 45, 85, 0.15);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #ff2d55;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .emoji {
+            font-size: 5rem;
+            margin: 1rem 0;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        button {
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            min-width: 120px;
+        }
+
+        #yesBtn {
+            background: #ff2d55;
+            color: white;
+        }
+
+        #noBtn {
+            background: white;
+            color: #ff2d55;
+            border: 2px solid #ff2d55;
+        }
+
+        .celebration {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+
+        .celebration.show {
+            display: block;
+        }
+
+        .heart {
+            position: fixed;
+            font-size: 1.5rem;
+            animation: float 3s linear forwards;
+        }
+
+        .firework {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: explode 1s ease-out forwards;
+        }
+
+        .success-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 2.5rem;
+            border-radius: 20px;
+            z-index: 1001;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(255, 45, 85, 0.2);
+            animation: messageIn 1s ease-out;
+        }
+
+        .success-message h2 {
+            color: #ff2d55;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .success-message p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #ff4d6d;
+            margin-bottom: 1rem;
+        }
+
+        .love-drawing {
+            font-size: 3rem;
+            line-height: 1.2;
+            margin: 2rem 0;
+            white-space: pre;
+            font-family: monospace;
+            color: #ff2d55;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(30); opacity: 0; }
+        }
+
+        @keyframes messageIn {
+            from {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes doodle {
+            0% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+            100% { transform: rotate(-5deg); }
+        }
+
+        .doodle {
+            animation: doodle 2s ease-in-out infinite;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
-  <!-- Use the src attribute to specify the URL of the countdown timer -->
-  <iframe src="https://itsalmo.st/embed/20-mmyu" scrolling="no" frameborder="0" style="border: 1px solid #DBD8D7;"></iframe>
+    <div class="celebration" id="celebration"></div>
+    <div class="container">
+        <h1>Will you be my Valentine?</h1>
+        <div class="emoji">🥺</div>
+        <div class="buttons">
+            <button id="yesBtn">Yes 😊</button>
+            <button id="noBtn">No 😢</button>
+        </div>
+    </div>
+
+    <div class="success-message" id="successMessage">
+        <h2>I knew it<br>😙</br></h2>
+        <div class="love-drawing">
+    ♥️  ♥️  ♥️
+  ♥️      ♥️
+    ♥️  ♥️
+      ♥️</div>
+        <p>Le chummi 😗</p>
+        <p>Pta tha mrko hamesha se prr tu sharmaati rhi 😌</p>
+        <p>Prr koi na, iam here now 💑</p>
+        <div class="doodle">💝 💫 🌹 💕 💖</div>
+    </div>
+
+    <script>
+        const messages = [
+            "Are you sure? 🥺",
+            "Pretty please? 🙏",
+            "Don't break my heart! 💔",
+            "soch le! 🤔",
+            "Pakka nhi? 😢",
+            "game ni kheluga sath 💔",
+            "ek mauka! 🌹",
+            "But we're perfect! ✨",
+            "I'll treat you right! 👑",
+            "One more chance? 🎭",
+            "I'll buy you food! 🍕",
+            "Netflix & Chill? 🎬",
+            "Gaana gauga tere liye! 🤝",
+            "Please reconsider! 🎯",
+            "Don't do this to me! 😭",
+            "I'm not giving up! 💪",
+            "You're my soulmate! 🔮",
+            "We're meant to be! 🎭",
+            "I'll write you poems! 📝",
+            "I'll sing for you! 🎤",
+            "Dance with me! 💃",
+            "Let's make memories! 📸",
+            "Adventure awaits! 🌎",
+            "I'll cook for you! 🍳",
+            "Movie date? 🎥",
+            "Coffee date? ☕",
+            "Ice cream date? 🍦",
+            "Beach day? 🏖️",
+            "Picnic in the park? 🧺",
+            "Stargazing night? 🌟",
+            "Road trip together? 🚗",
+            "I'll be your superhero! 🦸‍♂️",
+            "Let's build dreams! 🏰",
+            "I'll catch stars for you! ⭐",
+            "Be my sunshine! ☀️",
+            "You're my missing piece! 🧩",
+            "Let's grow old together! 👴👵",
+            "I'll fight dragons for you! 🐉",
+            "You're my treasure! 💎",
+            "Be my player 2! 🎮",
+            "Let's share headphones! 🎧",
+            "I'll be your teddy bear! 🧸",
+            "Chocolate fountain date? 🍫",
+            "Let's paint the town! 🎨",
+            "Be my morning coffee! ☕",
+            "You're my favorite notification! 📱",
+            "Let's create magic! ✨",
+            "Be my happy ending! 📖",
+            "You're my favorite person! 💫",
+            "Last chance! 🎯",
+            "Final offer! 💝"
+        ];
+
+        const emojis = ['❤️', '💖', '💝', '💕', '💓', '💗', '💞', '💘', '💟'];
+        let messageIndex = 0;
+        const noBtn = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        const container = document.querySelector('.container');
+        const emojiDisplay = document.querySelector('.emoji');
+        const celebration = document.getElementById('celebration');
+        const successMessage = document.getElementById('successMessage');
+
+        function moveButton() {
+            const maxX = window.innerWidth - noBtn.offsetWidth;
+            const maxY = window.innerHeight - noBtn.offsetHeight;
+            
+            const newX = Math.random() * maxX;
+            const newY = Math.random() * maxY;
+
+            noBtn.style.position = 'fixed';
+            noBtn.style.left = newX + 'px';
+            noBtn.style.top = newY + 'px';
+
+            if (messageIndex < messages.length) {
+                noBtn.textContent = messages[messageIndex];
+                emojiDisplay.textContent = messages[messageIndex].split(' ').pop();
+                messageIndex++;
+
+                if (messageIndex === messages.length) {
+                    noBtn.textContent = "Itna dur aayi hai to... It's a YES! 💖";
+                    startCelebration();
+                }
+            }
+        }
+
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            celebration.appendChild(heart);
+            heart.onanimationend = () => heart.remove();
+        }
+
+        function createFirework() {
+            const colors = ['#ff0000', '#ff69b4', '#ff1493', '#ff00ff', '#ff4500'];
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.style.left = Math.random() * 100 + 'vw';
+            firework.style.top = Math.random() * 100 + 'vh';
+            firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            celebration.appendChild(firework);
+            firework.onanimationend = () => firework.remove();
+        }
+
+        function startCelebration() {
+            container.style.display = 'none';
+            celebration.classList.add('show');
+            successMessage.style.display = 'block';
+            
+            // Create continuous hearts and fireworks
+            setInterval(createHeart, 50);
+            setInterval(createFirework, 100);
+            
+            // Initial burst
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    createHeart();
+                    createFirework();
+                }, i * 50);
+            }
+        }
+
+        noBtn.addEventListener('mouseover', moveButton);
+        noBtn.addEventListener('click', moveButton);
+        yesBtn.addEventListener('click', startCelebration);
+    </script>
 </body>
 </html>
