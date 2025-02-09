@@ -28,7 +28,8 @@ function validateTransaction(transaction) {
     }
     return true;
 }
-// Add these functions to app-core.js
+
+
 
 async function handleSelfTransfer(fromAccountId, toAccountId, amount, description = '') {
     const user = getCurrentUser(); // Add this line
@@ -169,6 +170,24 @@ async function handleSelfTransfer(fromAccountId, toAccountId, amount, descriptio
         console.error('Error in handleSelfTransfer:', error);
         throw new Error('Failed to process transfer. Please try again.');
     }
+}
+
+// In app-core.js
+function formatCurrency(amount, short = false) {
+    if (typeof amount !== 'number') {
+        amount = parseFloat(amount) || 0;
+    }
+
+    if (short && Math.abs(amount) >= 100000) {
+        const inLakhs = amount / 100000;
+        return `₹${inLakhs.toFixed(1)}L`;
+    }
+
+    return amount.toLocaleString('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+    });
 }
 
 function calculateConvertedAmount(amount, fromAccountId, toAccountId) {
@@ -344,6 +363,419 @@ function validateAccount(account) {
     return true;
 }
 
+
+// Add these functions if they don't exist
+function getNetWorthTrend(period) {
+    const endDate = new Date();
+    let startDate = new Date();
+    
+    switch(period) {
+        case '1M':
+            startDate.setMonth(endDate.getMonth() - 1);
+            break;
+        case '3M':
+            startDate.setMonth(endDate.getMonth() - 3);
+            break;
+        case '6M':
+            startDate.setMonth(endDate.getMonth() - 6);
+            break;
+        case '1Y':
+            startDate.setFullYear(endDate.getFullYear() - 1);
+            break;
+    }
+
+    const dates = [];
+    const values = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+        values.push(calculateNetWorthForDate(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return { dates, values };
+}
+
+// In app-core.js
+function calculateNetWorthForDate(targetDate) {
+    // Convert to end of day for accurate calculations
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get all accounts as of that date
+    const accountBalances = {};
+    
+    // Initialize with starting balances of accounts
+    state.accounts.forEach(account => {
+        accountBalances[account.id] = {
+            balance: account.balance,
+            currency: account.currency
+        };
+    });
+
+    // Get all transactions up to this date
+    const transactions = state.transactions
+        .filter(tx => new Date(tx.date) <= endOfDay)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Process each transaction chronologically
+    transactions.forEach(tx => {
+        const account = accountBalances[tx.accountId];
+        if (!account) return;
+
+        switch(tx.type) {
+            case 'income':
+                account.balance += tx.amount;
+                break;
+            case 'expense':
+                account.balance -= tx.amount;
+                break;
+            case 'transfer':
+                // For transfers, identify if it's outgoing or incoming
+                if (tx.notes?.toLowerCase().includes('transfer to')) {
+                    account.balance -= tx.amount;
+                } else {
+                    account.balance += tx.amount;
+                }
+                break;
+        }
+    });
+
+    // Calculate total net worth in INR
+    let netWorthINR = 0;
+    Object.values(accountBalances).forEach(({ balance, currency }) => {
+        if (currency === 'USD') {
+            netWorthINR += balance * USD_TO_INR;
+        } else {
+            netWorthINR += balance;
+        }
+    });
+
+    return netWorthINR;
+}
+
+// Function to get net worth trend data
+function getNetWorthTrend(period) {
+    // Get start date based on period
+    const endDate = new Date();
+    let startDate = new Date();
+    
+    switch(period) {
+        case '1M':
+            startDate.setMonth(endDate.getMonth() - 1);
+            break;
+        case '3M':
+            startDate.setMonth(endDate.getMonth() - 3);
+            break;
+        case '6M':
+            startDate.setMonth(endDate.getMonth() - 6);
+            break;
+        case '1Y':
+            startDate.setFullYear(endDate.getFullYear() - 1);
+            break;
+        default:
+            startDate = new Date(endDate.getFullYear(), 0, 1); // Start of year
+    }
+
+    // Get daily points
+    const dates = [];
+    const values = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+        values.push(calculateNetWorthForDate(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return { dates, values };
+}
+
+// Add this function to create/update snapshots
+async function updateNetWorthSnapshot() {
+    const user = getCurrentUser();
+    if (!user) return;
+
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    // Calculate current net worth
+    const netWorth = state.accounts.reduce((total, account) => {
+        const balance = parseFloat(account.balance) || 0;
+        return total + (account.currency === 'USD' ? balance * USD_TO_INR : balance);
+    }, 0);
+
+    // Create account breakdown
+    const accountBreakdown = {};
+    state.accounts.forEach(account => {
+        accountBreakdown[account.id] = {
+            balance: account.balance,
+            currency: account.currency,
+            accountName: account.name
+        };
+    });
+
+    // Create/update snapshot
+    try {
+        const snapshotRef = db.collection('users')
+            .doc(user.uid)
+            .collection('netWorthSnapshots')
+            .doc(today);
+
+        await snapshotRef.set({
+            date: today,
+            totalNetWorth: netWorth,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            accountBreakdown,
+            userId: user.uid
+        }, { merge: true });
+
+        console.log(`Net worth snapshot updated for ${today}`);
+    } catch (error) {
+        console.error('Error updating net worth snapshot:', error);
+        throw error;
+    }
+}
+
+async function getNetWorthSnapshots(period = '3M') {
+    const user = getCurrentUser();
+    if (!user) return { dates: [], values: [] };
+
+    const endDate = new Date();
+    let startDate = new Date();
+
+    // Calculate start date based on period
+    switch(period) {
+        case '1M':
+            startDate.setMonth(endDate.getMonth() - 1);
+            break;
+        case '3M':
+            startDate.setMonth(endDate.getMonth() - 3);
+            break;
+        case '6M':
+            startDate.setMonth(endDate.getMonth() - 6);
+            break;
+        case '1Y':
+            startDate.setFullYear(endDate.getFullYear() - 1);
+            break;
+    }
+
+    try {
+        const snapshots = await db.collection('users')
+            .doc(user.uid)
+            .collection('netWorthSnapshots')
+            .where('date', '>=', startDate.toISOString().split('T')[0])
+            .where('date', '<=', endDate.toISOString().split('T')[0])
+            .orderBy('date')
+            .get();
+
+        const data = snapshots.docs.map(doc => ({
+            date: doc.data().date,
+            value: doc.data().totalNetWorth
+        }));
+
+        return {
+            dates: data.map(d => d.date),
+            values: data.map(d => d.value)
+        };
+    } catch (error) {
+        console.error('Error fetching net worth snapshots:', error);
+        return { dates: [], values: [] };
+    }
+}
+
+// Add or update these functions in app-core.js
+
+function getTopSpendingCategories(period = 'month') {
+    const startDate = new Date();
+    if (period === 'month') {
+        startDate.setMonth(startDate.getMonth() - 1);
+    } else {
+        startDate.setFullYear(startDate.getFullYear() - 1);
+    }
+
+    // Get current period spending
+    const categorySpending = {};
+    let totalSpending = 0;
+
+    state.transactions
+        .filter(tx => 
+            tx.type === 'expense' && 
+            new Date(tx.date) >= startDate
+        )
+        .forEach(tx => {
+            const amount = tx.amountInINR || tx.amount;
+            if (!categorySpending[tx.category]) {
+                categorySpending[tx.category] = 0;
+            }
+            categorySpending[tx.category] += amount;
+            totalSpending += amount;
+        });
+
+    // Get previous period spending for comparison
+    const previousStartDate = new Date(startDate);
+    const previousEndDate = new Date(startDate);
+    if (period === 'month') {
+        previousStartDate.setMonth(previousStartDate.getMonth() - 1);
+    } else {
+        previousStartDate.setFullYear(previousStartDate.getFullYear() - 1);
+    }
+
+    const previousSpending = {};
+    state.transactions
+        .filter(tx =>
+            tx.type === 'expense' &&
+            new Date(tx.date) >= previousStartDate &&
+            new Date(tx.date) < startDate
+        )
+        .forEach(tx => {
+            if (!previousSpending[tx.category]) {
+                previousSpending[tx.category] = 0;
+            }
+            previousSpending[tx.category] += tx.amountInINR || tx.amount;
+        });
+
+    // Calculate percentages and changes
+    return Object.entries(categorySpending)
+        .map(([category, amount]) => ({
+            category,
+            amount,
+            percentage: (amount / totalSpending * 100).toFixed(1),
+            previousAmount: previousSpending[category] || 0,
+            change: previousSpending[category] 
+                ? ((amount - previousSpending[category]) / previousSpending[category] * 100).toFixed(1)
+                : 0
+        }))
+        .sort((a, b) => b.amount - a.amount);
+}
+
+function getPaymentMethodsDistribution(period = 'month') {
+    const startDate = new Date();
+    if (period === 'month') {
+        startDate.setMonth(startDate.getMonth() - 1);
+    } else {
+        startDate.setFullYear(startDate.getFullYear() - 1);
+    }
+
+    const relevantTransactions = state.transactions.filter(tx => 
+        new Date(tx.date) >= startDate &&
+        tx.type !== 'transfer' &&
+        tx.paymentMode
+    );
+
+    const methodTotals = {};
+    let totalAmount = 0;
+
+    relevantTransactions.forEach(tx => {
+        if (!methodTotals[tx.paymentMode]) {
+            methodTotals[tx.paymentMode] = 0;
+        }
+        methodTotals[tx.paymentMode] += tx.amountInINR || tx.amount;
+        totalAmount += tx.amountInINR || tx.amount;
+    });
+
+    return Object.entries(methodTotals)
+        .map(([method, amount]) => ({
+            method,
+            amount,
+            percentage: (amount / totalAmount * 100).toFixed(1)
+        }))
+        .sort((a, b) => b.amount - a.amount);
+}
+
+function getMonthlyBreakdown() {
+    const months = {};
+    
+    state.transactions.forEach(tx => {
+        const monthKey = tx.date.substring(0, 7); // YYYY-MM format
+        
+        if (!months[monthKey]) {
+            months[monthKey] = {
+                month: monthKey,
+                income: 0,
+                expenses: 0,
+                transfers: 0,
+                netWorth: 0
+            };
+        }
+        
+        const amount = tx.amountInINR || tx.amount;
+        
+        switch (tx.type) {
+            case 'income':
+                months[monthKey].income += amount;
+                break;
+            case 'expense':
+                months[monthKey].expenses += amount;
+                break;
+            case 'transfer':
+                months[monthKey].transfers += amount;
+                break;
+        }
+    });
+
+    return Object.entries(months)
+        .map(([month, data]) => {
+            const savings = data.income - data.expenses;
+            const savingsRate = data.income > 0 ? 
+                (savings / data.income * 100).toFixed(1) : '0.0';
+            
+            return {
+                month,
+                income: data.income,
+                expenses: data.expenses,
+                savings,
+                savingsRate,
+                netWorth: calculateNetWorthForDate(new Date(month + '-01'))
+            };
+        })
+        .sort((a, b) => b.month.localeCompare(a.month)); // Sort by date descending
+}
+
+// Make functions globally available
+window.getTopSpendingCategories = getTopSpendingCategories;
+window.getPaymentMethodsDistribution = getPaymentMethodsDistribution;
+window.getMonthlyBreakdown = getMonthlyBreakdown;
+
+
+// Add these to app-core.js
+function getChangePercentage(current, previous) {
+    if (!previous) return 0;
+    return ((current - previous) / previous * 100).toFixed(1);
+}
+
+function getNetWorthTrend(period) {
+    const endDate = new Date();
+    let startDate = new Date();
+    
+    switch(period) {
+        case '1M':
+            startDate.setMonth(endDate.getMonth() - 1);
+            break;
+        case '3M':
+            startDate.setMonth(endDate.getMonth() - 3);
+            break;
+        case '6M':
+            startDate.setMonth(endDate.getMonth() - 6);
+            break;
+        case '1Y':
+            startDate.setFullYear(endDate.getFullYear() - 1);
+            break;
+    }
+
+    const dates = [];
+    const values = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+        dates.push(currentDate.toISOString().split('T')[0]);
+        values.push(calculateNetWorthForDate(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return { dates, values };
+}
+
 // Account Management Functions
 async function deleteAccount(accountId) {
     if (!confirm('Are you sure you want to delete this account? The transactions will be preserved for record-keeping.')) {
@@ -514,18 +946,14 @@ function renderAccountActivity(account) {
 // Add this constant at the top of app-core.js
 const USD_TO_INR = 84;
 
-// Update the saveTransaction function
 async function saveTransaction(transaction) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
 
     validateTransaction(transaction);
 
-    const transactionRef = db.collection('users')
-        .doc(user.uid)
-        .collection('transactions')
-        .doc(transaction.id || Date.now().toString());
-        
+    const batch = db.batch();
+
     try {
         const accountRef = db.collection('users')
             .doc(user.uid)
@@ -556,28 +984,43 @@ async function saveTransaction(transaction) {
             userId: user.uid,
             createdAt: new Date().toISOString()
         };
-        
-        await transactionRef.set(transactionData);
 
-        // Update account balance in its native currency
+        // Add transaction to batch
+        const transactionRef = db.collection('users')
+            .doc(user.uid)
+            .collection('transactions')
+            .doc(transactionData.id);
+        batch.set(transactionRef, transactionData);
+
+        // Update account balance
+        let newBalance = account.balance;
         if (account && !account.isDeleted) {
-            const newBalance = transaction.type === 'income' 
+            newBalance = transaction.type === 'income' 
                 ? account.balance + originalAmount
                 : account.balance - originalAmount;
 
-            await accountRef.update({ 
+            batch.update(accountRef, { 
                 balance: newBalance,
                 updatedAt: new Date().toISOString()
             });
+        }
 
+        // Commit batch
+        await batch.commit();
+
+        // Update net worth snapshot
+        await updateNetWorthSnapshot();
+
+        // Update local state
+        state.transactions.unshift(transactionData);
+        
+        if (account && !account.isDeleted) {
             const accountIndex = state.accounts.findIndex(acc => acc.id === transaction.accountId);
             if (accountIndex !== -1) {
                 state.accounts[accountIndex].balance = newBalance;
                 state.accounts[accountIndex].updatedAt = transactionData.createdAt;
             }
         }
-
-        state.transactions.unshift(transactionData);
         
         renderAll();
         return true;
@@ -587,9 +1030,63 @@ async function saveTransaction(transaction) {
     }
 }
 
-// Data loading
 // In app-core.js
+
+async function backfillNetWorthSnapshots() {
+    const user = getCurrentUser();
+    if (!user) return;
+
+    try {
+        toggleLoading(true);
+
+        // Get all transactions sorted by date
+        const transactions = [...state.transactions].sort((a, b) => 
+            new Date(a.date) - new Date(b.date)
+        );
+
+        if (transactions.length === 0) return;
+
+        // Get unique dates from transactions
+        const uniqueDates = [...new Set(transactions.map(tx => 
+            new Date(tx.date).toISOString().split('T')[0]
+        ))];
+
+        // Process each date
+        const batch = db.batch();
+        for (const date of uniqueDates) {
+            // Calculate net worth for this date
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            const netWorth = calculateNetWorthForDate(endOfDay);
+
+            // Create snapshot document
+            const snapshotRef = db.collection('users')
+                .doc(user.uid)
+                .collection('netWorthSnapshots')
+                .doc(date);
+
+            batch.set(snapshotRef, {
+                date,
+                totalNetWorth: netWorth,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                userId: user.uid
+            }, { merge: true });
+        }
+
+        await batch.commit();
+        showToast('Historical net worth data backfilled successfully');
+    } catch (error) {
+        console.error('Error backfilling net worth snapshots:', error);
+        showToast('Error backfilling historical data', 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+
 async function loadUserData(forceRefresh = false) {
+    console.log("Loading user data, forceRefresh:", forceRefresh);
     const user = getCurrentUser();
     if (!user) return;
     
@@ -598,37 +1095,42 @@ async function loadUserData(forceRefresh = false) {
     toggleLoading(true);
 
     try {
-        // Load accounts (keep existing accounts loading code)
-        const accountsSnapshot = await db.collection('users')
-            .doc(user.uid)
-            .collection('accounts')
-            .where('isDeleted', '==', false)
-            .get();
-        
+        // Load accounts and transactions
+        const [accountsSnapshot, transactionsSnapshot] = await Promise.all([
+            db.collection('users').doc(user.uid).collection('accounts')
+                .where('isDeleted', '==', false).get(),
+            db.collection('users').doc(user.uid).collection('transactions')
+                .orderBy('date', 'desc').get()
+        ]);
+
+        // Update state
         state.accounts = accountsSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
-
-        // Modified transaction loading - load all transactions
-        const transactionsSnapshot = await db.collection('users')
-            .doc(user.uid)
-            .collection('transactions')
-            .orderBy('date', 'desc')
-            .get();
 
         state.transactions = transactionsSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
 
-        await renderAll();
-        initializeTransactionView();
-        updateTransactionView();
+        console.log("Loaded transactions:", state.transactions.length);
 
+        // First create/update snapshot after state is loaded
+        await updateNetWorthSnapshot();
+
+        // Then initialize views
+        if (state.currentView === 'transactions') {
+            initializeTransactionView();
+        } else if (state.currentView === 'analytics') {
+            initializeAnalytics();
+        }
+
+        // Finally render everything
+        await renderAll();
     } catch (error) {
         console.error('Error loading data:', error);
-        showToast('Error loading transactions: ' + error.message, 'error');
+        showToast('Error loading data: ' + error.message, 'error');
     } finally {
         state.isLoading = false;
         toggleLoading(false);
@@ -815,6 +1317,7 @@ async function handleTransferSubmit(formData) {
 }
 
 
+// In app-core.js
 function filterTransactions(transactions, filters) {
     return transactions.filter(tx => {
         // Type filter
@@ -831,60 +1334,79 @@ function filterTransactions(transactions, filters) {
         
         // Date filter
         const txDate = new Date(tx.date);
+        let startDate, endDate;
         
         switch (filters.dateRange) {
             case 'thisMonth': {
                 const dates = dateFilters.getCurrentMonthDates();
-                return txDate >= dates.startDate && txDate <= dates.endDate;
-            }
-            case 'thisYear': {
-                const dates = dateFilters.getCurrentYearDates();
-                return txDate >= dates.startDate && txDate <= dates.endDate;
+                startDate = dates.startDate;
+                endDate = dates.endDate;
+                break;
             }
             case 'thisWeek': {
                 const dates = dateFilters.getCurrentWeekDates();
-                return txDate >= dates.startDate && txDate <= dates.endDate;
+                startDate = dates.startDate;
+                endDate = dates.endDate;
+                break;
             }
-            case 'custom':
-                const start = filters.startDate ? new Date(filters.startDate) : null;
-                const end = filters.endDate ? new Date(filters.endDate) : null;
-                return (!start || txDate >= start) && (!end || txDate <= end);
+            case 'thisYear': {
+                const dates = dateFilters.getCurrentYearDates();
+                startDate = dates.startDate;
+                endDate = dates.endDate;
+                break;
+            }
+            case 'custom': {
+                startDate = filters.startDate ? new Date(filters.startDate) : null;
+                endDate = filters.endDate ? new Date(filters.endDate) : null;
+                if (endDate) {
+                    endDate.setHours(23, 59, 59, 999);
+                }
+                break;
+            }
             case 'all':
             default:
                 return true;
         }
+
+        if (startDate && txDate < startDate) return false;
+        if (endDate && txDate > endDate) return false;
+
+        return true;
     });
 }
 
-// Add this in app-core.js after transactionFilters declaration
+// In app-core.js
 const dateFilters = {
     getCurrentMonthDates() {
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      return { startDate: firstDay, endDate: lastDay };
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        return { startDate: firstDay, endDate: lastDay };
     },
-  
-    getCurrentYearDates() {
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), 0, 1);
-      const lastDay = new Date(now.getFullYear(), 11, 31);
-      return { startDate: firstDay, endDate: lastDay };
-    },
-  
+
     getCurrentWeekDates() {
         const now = new Date();
-        const monday = new Date(now);
-        monday.setHours(0, 0, 0, 0); // Reset time to start of day
-        monday.setDate(now.getDate() - (now.getDay() || 7) + 1);
+        const firstDay = new Date(now);
+        const dayOfWeek = firstDay.getDay();
+        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; 
         
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-        sunday.setHours(23, 59, 59, 999); // Set time to end of day
+        firstDay.setDate(now.getDate() + diff);
+        firstDay.setHours(0, 0, 0, 0);
         
-        return { startDate: monday, endDate: sunday };
-      }
-  };
+        const lastDay = new Date(firstDay);
+        lastDay.setDate(firstDay.getDate() + 6);
+        lastDay.setHours(23, 59, 59, 999);
+        
+        return { startDate: firstDay, endDate: lastDay };
+    },
+
+    getCurrentYearDates() {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), 0, 1);
+        const lastDay = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        return { startDate: firstDay, endDate: lastDay };
+    }
+};
 
 function calculateTransactionStats(transactions) {
     // Filter out self transfers

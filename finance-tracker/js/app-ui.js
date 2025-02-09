@@ -1,19 +1,3 @@
-const chartInstances = {
-    analysisChart: null,
-    monthlyChart: null,
-    categoryChart: null
-};
-
-function cleanupCharts() {
-    Object.values(chartInstances).forEach(chart => {
-        if (chart) {
-            chart.destroy();
-        }
-    });
-    Object.keys(chartInstances).forEach(key => {
-        chartInstances[key] = null;
-    });
-}
 
 // Transaction Categories
 const TRANSACTION_CATEGORIES = {
@@ -39,25 +23,16 @@ const TRANSACTION_CATEGORIES = {
         'Entertainment',
         'Friends & Family',
         'Shopping',
-        'Transportation',
-        'Housing',
         'Utilities',
         'Healthcare',
-        'Education',
         'Personal Care',
         'Gifts & Donations',
         'Bills',
         'Groceries',
-        'Clothing',
-        'Electronics',
-        'Home Maintenance',
         'Vehicle',
-        'Insurance',
         'Subscriptions',
-        'Pets',
-        'Sports & Fitness',
-        'Books',
         'Hobbies',
+        'Eval',
         'Other Expenses'
     ],
     transfer: [ // Add this new category type
@@ -264,18 +239,13 @@ function showFilteredAccounts(currency) {
 }
 
 
-// UI Functions
-// Update switchView function in app-ui.js
 function switchView(view) {
+    console.log("Switching to view:", view);
     state.currentView = view;
-    
-    // Clean up any existing charts before switching views
-    cleanupCharts();
     
     document.querySelectorAll('.view').forEach(el => {
         if (el.id === `${view}-view`) {
             el.style.display = 'block';
-            el.classList.add('loading');
         } else {
             el.style.display = 'none';
         }
@@ -286,20 +256,14 @@ function switchView(view) {
         el.setAttribute('aria-selected', el.dataset.view === view);
     });
 
-    // Initialize appropriate view after DOM updates
-    setTimeout(() => {
-        document.querySelectorAll('.view').forEach(el => {
-            el.classList.remove('loading');
-        });
-
-        if (view === 'dashboard') {
-            initializeSelfTransfer();
-            renderAccounts();
-            renderTransactions();
-        } else if (view === 'analytics') {
-            initializeAnalytics();
-        }
-    }, 300);
+    // Initialize view-specific components
+    if (view === 'transactions') {
+        console.log("Initializing transaction view");
+        initializeTransactionView();
+    } else if (view === 'analytics') {
+        console.log("Initializing analytics view");
+        initializeAnalytics();
+    }
 }
 
 function initializeSelfTransfer() {
@@ -927,6 +891,18 @@ window.renderPortfolioSummary = renderPortfolioSummary;
 function initializeAnalytics() {
     const timeframeSelect = document.getElementById('timeframe-select');
     const yearSelect = document.getElementById('year-select');
+
+
+    // Add this new code for trend period
+    const trendPeriodSelect = document.getElementById('trend-period');
+    if (trendPeriodSelect) {
+        trendPeriodSelect.addEventListener('change', () => {
+            renderIncomeExpenseChart();
+        });
+    }
+
+
+
     
     // Clear any existing charts
     cleanupCharts();
@@ -976,6 +952,17 @@ document.getElementById('analysis-savings').textContent = formatCurrency(Math.ab
             }
             chartInstances.analysisChart = createAnalysisChart(analysisCtx, data, timeframe);
         }
+    }
+
+    // Render all charts
+    renderIncomeExpenseChart();
+    renderTopCategories();
+    renderPaymentMethods();
+    renderMonthlyBreakdown();
+
+    const breakdownYear = document.getElementById('breakdown-year');
+    if (breakdownYear) {
+        breakdownYear.addEventListener('change', renderMonthlyBreakdown);
     }
 
     // Initial setup
@@ -1639,73 +1626,88 @@ function renderAccountTransactions(account) {
 }
 
 function renderFilteredTransactions(transactions) {
+    console.log("Rendering filtered transactions:", transactions.length);
     const tbody = document.getElementById('transactions-tbody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error("transactions-tbody element not found");
+        return;
+    }
 
-    if (!transactions.length) {
+    if (!transactions || transactions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="no-data">No transactions found</td></tr>';
         return;
     }
 
-    tbody.innerHTML = transactions.map(tx => {
-        const account = state.accounts.find(a => a.id === tx.accountId);
-        const isTransfer = tx.type === 'transfer';
-        const isAdjustment = tx.type === 'adjustment';
-        
-        // Determine amount prefix
-        let amountPrefix = '';
-        if (isTransfer) {
-            amountPrefix = tx.notes?.toLowerCase().includes('transfer to') ? '-' : '+';
-        } else if (isAdjustment) {
-            amountPrefix = tx.notes?.toLowerCase().includes('downward') ? '-' : '+';
-        } else {
-            amountPrefix = tx.type === 'income' ? '+' : '-';
-        }
+    try {
+        const rows = transactions.map(tx => {
+            const account = state.accounts.find(a => a.id === tx.accountId);
+            
+            // Determine amount prefix based on transaction type
+            let amountPrefix = '';
+            if (tx.type === 'income') amountPrefix = '+';
+            else if (tx.type === 'expense') amountPrefix = '-';
+            else if (tx.type === 'transfer') {
+                amountPrefix = tx.notes?.toLowerCase().includes('transfer to') ? '-' : '+';
+            }
 
-        return `
-            <tr>
-                <td>${formatDate(tx.date)}</td>
-                <td>
-                    <span class="type-tag ${tx.type.toLowerCase()}">
-                        ${tx.type.toUpperCase()}
-                    </span>
-                </td>
-                <td class="amount-cell ${tx.type.toLowerCase()}">
-                    ${amountPrefix}${formatCurrency(Math.abs(tx.amount), tx.currency)}
-                </td>
-                <td>
-                    <span class="truncate payment-mode">
-                        ${escapeHtml(tx.paymentMode || '')}
-                    </span>
-                </td>
-                <td>
-                    <span class="truncate account-name">
-                        ${escapeHtml(account?.name || '')}
-                    </span>
-                </td>
-                <td>
-                    <span class="truncate category">
-                        ${escapeHtml(tx.category)}
-                    </span>
-                </td>
-                <td>
-                    <span class="truncate notes">
-                        ${escapeHtml(tx.notes || '')}
-                    </span>
-                </td>
-                <td class="actions-cell">
-                    <div class="action-buttons">
-                        <button onclick="editTransaction('${tx.id}')" class="action-btn edit" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
+            return `
+                <tr>
+                    <td>${formatDate(tx.date)}</td>
+                    <td>
+                        <span class="type-tag ${tx.type.toLowerCase()}">
+                            ${tx.type.toUpperCase()}
+                        </span>
+                    </td>
+                    <td class="amount-cell ${tx.type.toLowerCase()}">
+                        ${amountPrefix}${formatCurrency(Math.abs(tx.amount), tx.currency)}
+                    </td>
+                    <td>
+                        <span class="truncate payment-mode">
+                            ${escapeHtml(tx.paymentMode || '')}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="truncate account-name">
+                            ${escapeHtml(account?.name || '')}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="truncate category">
+                            ${escapeHtml(tx.category || '')}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="truncate notes">
+                            ${escapeHtml(tx.notes || '')}
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <div class="action-buttons">
+                            <button onclick="editTransaction('${tx.id}')" class="action-btn edit" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = rows;
+        
+        // Update stats
+        const stats = calculateTransactionStats(transactions);
+        document.getElementById('stat-total').textContent = stats.total.toLocaleString();
+        document.getElementById('stat-income').textContent = formatCurrency(stats.income);
+        document.getElementById('stat-expense').textContent = formatCurrency(stats.expense);
+        document.getElementById('stat-average').textContent = formatCurrency(stats.avgTransaction);
+
+    } catch (error) {
+        console.error("Error rendering transactions:", error);
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data">Error rendering transactions</td></tr>';
+    }
 }
 
 function updatePaymentModes(accountType) {
@@ -1723,6 +1725,7 @@ function updatePaymentModes(accountType) {
         ],
         crypto: [
             'Crypto Transfer',
+            'Crypto Card',
             'Exchange Transfer',
             'DeFi Transaction'
         ]
@@ -2045,6 +2048,9 @@ let currentSort = {
 
 // Initialize transaction filters and sorting
 function initializeTransactionView() {
+    console.log("Initializing transaction view with transactions:", state.transactions.length);
+
+    // Initialize filter dropdowns
     const filterDateSelect = document.getElementById('filter-date');
     const customDateInputs = document.getElementById('custom-date-inputs');
     const filterTypeSelect = document.getElementById('filter-type');
@@ -2052,14 +2058,22 @@ function initializeTransactionView() {
     const filterCategorySelect = document.getElementById('filter-category');
     const filterPaymentSelect = document.getElementById('filter-payment');
     const exportButton = document.getElementById('export-csv');
-    const sortableHeaders = document.querySelectorAll('.sortable');
+    const tbody = document.getElementById('transactions-tbody');
 
+    if (!tbody) {
+        console.error("Transactions tbody element not found");
+        return;
+    }
 
-    transactionFilters.dateRange = 'thisMonth'; // Set default to current month
-    filterDateSelect.value = 'thisMonth'; // Set dropdown to current month
+    // Set default filter values
+    transactionFilters.dateRange = 'thisMonth';
+    transactionFilters.type = 'all';
+    transactionFilters.account = 'all';
+    transactionFilters.category = 'all';
+    transactionFilters.paymentMode = 'all';
 
-    // Initialize filter options
-    if (state.accounts) {
+    // Initialize account filter
+    if (filterAccountSelect && state.accounts) {
         filterAccountSelect.innerHTML = `
             <option value="all">All Accounts</option>
             ${state.accounts.map(acc => `
@@ -2068,7 +2082,7 @@ function initializeTransactionView() {
         `;
     }
 
-    // Populate unique categories and payment modes
+    // Collect unique categories and payment modes
     const categories = new Set();
     const paymentModes = new Set();
     state.transactions.forEach(tx => {
@@ -2076,116 +2090,134 @@ function initializeTransactionView() {
         if (tx.paymentMode) paymentModes.add(tx.paymentMode);
     });
 
-    filterCategorySelect.innerHTML = `
-        <option value="all">All Categories</option>
-        ${[...categories].map(cat => `
-            <option value="${cat}">${escapeHtml(cat)}</option>
-        `).join('')}
-    `;
+    // Initialize category filter
+    if (filterCategorySelect) {
+        filterCategorySelect.innerHTML = `
+            <option value="all">All Categories</option>
+            ${[...categories].map(cat => `
+                <option value="${cat}">${escapeHtml(cat)}</option>
+            `).join('')}
+        `;
+    }
 
-    filterPaymentSelect.innerHTML = `
-        <option value="all">All Payment Modes</option>
-        ${[...paymentModes].map(mode => `
-            <option value="${mode}">${escapeHtml(mode)}</option>
-        `).join('')}
-    `;
+    // Initialize payment mode filter
+    if (filterPaymentSelect) {
+        filterPaymentSelect.innerHTML = `
+            <option value="all">All Payment Modes</option>
+            ${[...paymentModes].map(mode => `
+                <option value="${mode}">${escapeHtml(mode)}</option>
+            `).join('')}
+        `;
+    }
 
-    // Event Listeners
+    // Add event listeners
     filterDateSelect.addEventListener('change', (e) => {
         transactionFilters.dateRange = e.target.value;
-        customDateInputs.style.display = e.target.value === 'custom' ? 'grid' : 'none';
+        if (e.target.value === 'custom') {
+            customDateInputs.style.display = 'grid';
+            // Set default date range for custom filter (current month)
+            const { startDate, endDate } = dateFilters.getCurrentMonthDates();
+            document.getElementById('filter-start-date').value = startDate.toISOString().split('T')[0];
+            document.getElementById('filter-end-date').value = endDate.toISOString().split('T')[0];
+            transactionFilters.startDate = startDate.toISOString().split('T')[0];
+            transactionFilters.endDate = endDate.toISOString().split('T')[0];
+        } else {
+            customDateInputs.style.display = 'none';
+            transactionFilters.startDate = null;
+            transactionFilters.endDate = null;
+        }
         updateTransactionView();
     });
-
-    document.getElementById('filter-start-date')?.addEventListener('change', (e) => {
-        transactionFilters.startDate = e.target.value;
-        updateTransactionView();
-    });
-
-    document.getElementById('filter-end-date')?.addEventListener('change', (e) => {
-        transactionFilters.endDate = e.target.value;
-        updateTransactionView();
-    });
-
-    filterTypeSelect.addEventListener('change', (e) => {
-        transactionFilters.type = e.target.value;
-        updateTransactionView();
-    });
-
-    filterAccountSelect.addEventListener('change', (e) => {
-        transactionFilters.account = e.target.value;
-        updateTransactionView();
-    });
-
-    filterCategorySelect.addEventListener('change', (e) => {
-        transactionFilters.category = e.target.value;
-        updateTransactionView();
-    });
-
-    filterPaymentSelect.addEventListener('change', (e) => {
-        transactionFilters.paymentMode = e.target.value;
-        updateTransactionView();
-    });
-
-    // Sorting
-    sortableHeaders.forEach(header => {
-        header.addEventListener('click', () => {
-            const key = header.dataset.sort;
-            if (currentSort.key === key) {
-                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.key = key;
-                currentSort.direction = 'asc';
-            }
-            
-            // Update header classes
-            sortableHeaders.forEach(h => h.classList.remove('asc', 'desc'));
-            header.classList.add(currentSort.direction);
-            
+    
+    // Add these listeners for custom date inputs
+    const startDateInput = document.getElementById('filter-start-date');
+    const endDateInput = document.getElementById('filter-end-date');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.addEventListener('change', (e) => {
+            transactionFilters.startDate = e.target.value;
             updateTransactionView();
         });
-    });
+    
+        endDateInput.addEventListener('change', (e) => {
+            transactionFilters.endDate = e.target.value;
+            updateTransactionView();
+        });
+    }
 
-    // Export CSV
-    exportButton.addEventListener('click', exportTransactionsToCSV);
+    // Event listeners for other filters
+    if (filterTypeSelect) {
+        filterTypeSelect.addEventListener('change', (e) => {
+            transactionFilters.type = e.target.value;
+            updateTransactionView();
+        });
+    }
+
+    if (filterAccountSelect) {
+        filterAccountSelect.addEventListener('change', (e) => {
+            transactionFilters.account = e.target.value;
+            updateTransactionView();
+        });
+    }
+
+    if (filterCategorySelect) {
+        filterCategorySelect.addEventListener('change', (e) => {
+            transactionFilters.category = e.target.value;
+            updateTransactionView();
+        });
+    }
+
+    if (filterPaymentSelect) {
+        filterPaymentSelect.addEventListener('change', (e) => {
+            transactionFilters.paymentMode = e.target.value;
+            updateTransactionView();
+        });
+    }
+
+    // Initial render
+    updateTransactionView();
 }
 
-// Update transaction view with filters and sorting
+
 function updateTransactionView() {
-    const filteredTransactions = window.filterTransactions(state.transactions, transactionFilters);
-    
-    // Sort transactions
-    const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-        let aVal = a[currentSort.key];
-        let bVal = b[currentSort.key];
-        
-        // Handle date sorting
-        if (currentSort.key === 'date') {
-            aVal = new Date(aVal).getTime();
-            bVal = new Date(bVal).getTime();
-        }
-        
-        // Handle amount sorting
-        if (currentSort.key === 'amount') {
-            aVal = parseFloat(aVal);
-            bVal = parseFloat(bVal);
-        }
-        
-        if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
-        return 0;
-    });
+    console.log("Updating transaction view...");
+    console.log("Current filters:", transactionFilters);
+    console.log("Total transactions:", state.transactions.length);
 
-    // Update stats
-    const stats = window.calculateTransactionStats(filteredTransactions);
-    // In app-ui.js, update this part in updateTransactionView function
-document.getElementById('stat-total').textContent = stats.total.toLocaleString();
-document.getElementById('stat-income').textContent = formatCurrency(stats.income);
-document.getElementById('stat-expense').textContent = formatCurrency(stats.expense);
-document.getElementById('stat-average').textContent = formatCurrency(stats.avgTransaction);
+    try {
+        const filteredTransactions = filterTransactions(state.transactions, transactionFilters);
+        console.log("Filtered transactions:", filteredTransactions.length);
+        
+        // Sort transactions
+        const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+            let aVal = a[currentSort.key];
+            let bVal = b[currentSort.key];
+            
+            // Handle date sorting
+            if (currentSort.key === 'date') {
+                aVal = new Date(aVal).getTime();
+                bVal = new Date(bVal).getTime();
+            }
+            
+            // Handle amount sorting
+            if (currentSort.key === 'amount') {
+                aVal = parseFloat(aVal);
+                bVal = parseFloat(bVal);
+            }
+            
+            if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
 
-    // Render transactions
-    renderFilteredTransactions(sortedTransactions);
+        renderFilteredTransactions(sortedTransactions);
+    } catch (error) {
+        console.error("Error in updateTransactionView:", error);
+        const tbody = document.getElementById('transactions-tbody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">Error updating transactions view</td></tr>';
+        }
+    }
 }
 
 // Update the calculateTransactionStats function
@@ -2327,32 +2359,6 @@ if (accountSelect) {
     accountSelect.addEventListener('change', (e) => {
         updatePaymentModes(e.target.value);
     });
-}
-// Single switchView function
-function switchView(view) {
-    state.currentView = view;
-    
-    document.querySelectorAll('.view').forEach(el => {
-        if (el.id === `${view}-view`) {
-            el.style.display = 'block';
-        } else {
-            el.style.display = 'none';
-        }
-    });
-    
-    document.querySelectorAll('.nav-link').forEach(el => {
-        el.classList.toggle('active', el.dataset.view === view);
-        el.setAttribute('aria-selected', el.dataset.view === view);
-    });
-
-    if (view === 'dashboard') {
-        // Initialize immediately
-        initializeSelfTransfer();
-        renderAccounts();
-        renderTransactions();
-    } else if (view === 'analytics') {
-        initializeAnalytics();
-    }
 }
 
 // Add this function to handle transaction editing

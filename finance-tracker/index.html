@@ -291,66 +291,171 @@
     </div>
 
     <!-- Analytics View -->
-    <div id="analytics-view" class="view" style="display: none" role="tabpanel" aria-labelledby="analytics-tab">
-        <div class="page-container">
-            <div class="card analysis-card">
-                <div class="card-header">
-                    <h2 class="card-title">Income & Expense Analysis</h2>
-                    <div class="analysis-controls">
-                        <select id="timeframe-select" class="form-select">
-                            <option value="monthly">Monthly View</option>
-                            <option value="yearly">Yearly View</option>
-                        </select>
-                        <select id="year-select" class="form-select">
-                            <!-- Populated dynamically -->
-                        </select>
+    <!-- Analytics View -->
+<div id="analytics-view" class="view" style="display: none" role="tabpanel" aria-labelledby="analytics-tab">
+    <div class="page-container">
+        <!-- Net Worth Section -->
+        <div class="card net-worth">
+            <div class="card-header">
+                <h2 class="card-title">Net Worth Overview</h2>
+                <div class="time-filters">
+                    <button data-period="1M">1M</button>
+                    <button data-period="3M" class="active">3M</button>
+                    <button data-period="6M">6M</button>
+                    <button data-period="1Y">1Y</button>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="net-worth-stats">
+                    <div class="stat-group">
+                        <h3>Total Net Worth</h3>
+                        <div id="total-net-worth" class="stat-value">₹0</div>
+                        <div id="monthly-change-amount" class="stat-change">vs last month</div>
+                    </div>
+                    <div class="stat-group">
+                        <h3>Monthly Change</h3>
+                        <div id="monthly-change" class="stat-value">0%</div>
+                    </div>
+                    <div class="stat-group">
+                        <h3>YTD Growth</h3>
+                        <div id="ytd-growth" class="stat-value">0%</div>
                     </div>
                 </div>
-                <div class="card-content">
-                    <div class="analysis-stats">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Income</div>
-                            <div id="analysis-income" class="stat-value income">₹0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Expenses</div>
-                            <div id="analysis-expense" class="stat-value expense">₹0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Net Savings</div>
-                            <div id="analysis-savings" class="stat-value">₹0</div>
-                        </div>
+                <div class="chart-container">
+                    <canvas id="netWorthChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Income vs Expense Analysis Section -->
+        <div class="card income-expense-analysis">
+            <div class="card-header">
+                <h2 class="card-title">Income & Expense Analysis</h2>
+                <div class="header-controls">
+                    <select id="trend-period" class="time-select">
+                        <option value="monthly">Monthly View</option>
+                        <option value="yearly">Yearly View</option>
+                    </select>
+                    <select id="trend-year" class="time-select">
+                        <!-- Will be populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="stats-overview">
+                    <div class="stat-box income">
+                        <h3>Total Income</h3>
+                        <div id="total-income" class="stat-value">₹0</div>
                     </div>
-                    <div class="chart-container">
-                        <canvas id="analysis-chart"></canvas>
+                    <div class="stat-box expenses">
+                        <h3>Total Expenses</h3>
+                        <div id="total-expenses" class="stat-value">₹0</div>
+                    </div>
+                    <div class="stat-box savings">
+                        <h3>Net Savings</h3>
+                        <div id="net-savings" class="stat-value">₹0</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="incomeExpenseChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spending Analysis Section -->
+        <div class="card spending-analysis">
+            <div class="card-header">
+                <h2 class="card-title">Spending Analysis</h2>
+                <div class="period-filter">
+                    <select id="spending-period" class="time-select">
+                        <option value="all">All Time</option>
+                        <option value="thisMonth">This Month</option>
+                        <option value="last3">Last 3 Months</option>
+                        <option value="last6">Last 6 Months</option>
+                        <option value="thisYear">This Year</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                    <div id="spending-custom-range" class="custom-date-range" style="display: none;">
+                        <input type="date" id="spending-start-date" class="date-input">
+                        <input type="date" id="spending-end-date" class="date-input">
                     </div>
                 </div>
             </div>
-
-            <div class="charts-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Monthly Overview</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="chart-container">
-                            <canvas id="monthly-chart"></canvas>
-                        </div>
-                    </div>
+            
+            <div class="spending-stats">
+                <div class="stat-group">
+                    <h3>Total Income</h3>
+                    <div id="spending-income" class="stat-value">₹0</div>
                 </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Expense Categories</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="chart-container">
-                            <canvas id="category-chart"></canvas>
-                        </div>
-                    </div>
+                <div class="stat-group">
+                    <h3>Total Expenses</h3>
+                    <div id="spending-expenses" class="stat-value">₹0</div>
+                </div>
+                <div class="stat-group">
+                    <h3>Net Savings</h3>
+                    <div id="spending-savings" class="stat-value">₹0</div>
+                </div>
+                <div class="stat-group">
+                    <h3>Savings Rate</h3>
+                    <div id="spending-rate" class="stat-value">0%</div>
+                </div>
+            </div>
+
+            <!-- In index.html, inside the spending analysis card -->
+<div class="spending-details">
+    <div class="spending-section">
+        <h3>
+            Top Categories
+            <button class="view-all" onclick="showCategoriesModal()">View All</button>
+        </h3>
+        <div id="spending-categories">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+    <div class="spending-section">
+        <h3>
+            Payment Methods
+            <button class="view-all" onclick="showPaymentMethodsModal()">View All</button>
+        </h3>
+        <div id="spending-payments">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+        </div>
+
+        <!-- Monthly Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Monthly Breakdown</h2>
+                <div class="year-selector">
+                    <select id="breakdown-year" class="form-select">
+                        <!-- Will be populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="table-responsive">
+                    <table class="breakdown-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Income</th>
+                                <th>Expenses</th>
+                                <th>Savings</th>
+                                <th>Rate</th>
+                                <th>Net Worth</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-breakdown">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Settings View -->
     <div id="settings-view" class="view" style="display: none" role="tabpanel" aria-labelledby="settings-tab">
@@ -481,9 +586,10 @@
     </script>
 
 <!-- Application Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 <script src="/finance-tracker/js/auth.js"></script>
 <script src="/finance-tracker/js/app-core.js"></script>
 <script src="/finance-tracker/js/app-ui.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+<script src="/finance-tracker/js/analytics.js"></script>
 </body>
 </html>

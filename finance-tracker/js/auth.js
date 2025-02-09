@@ -32,29 +32,32 @@ async function handleAuthResult(result) {
         currentUser = result.user;
         const isNewUser = result.additionalUserInfo?.isNewUser;
         
-        if (window.db) {
-            const userData = {
-                email: currentUser.email,
-                lastLogin: new Date().toISOString(),
-                displayName: currentUser.displayName || currentUser.email.split('@')[0],
-                photoURL: currentUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email)}`,
-                updatedAt: new Date().toISOString()
-            };
-            
-            if (isNewUser) {
-                userData.createdAt = new Date().toISOString();
+        try {
+            // First create/update the user document
+            await db.collection('users')
+                .doc(currentUser.uid)
+                .set({
+                    email: currentUser.email,
+                    lastLogin: new Date().toISOString(),
+                    displayName: currentUser.displayName || currentUser.email.split('@')[0],
+                    photoURL: currentUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.email)}`,
+                    updatedAt: new Date().toISOString(),
+                    createdAt: isNewUser ? new Date().toISOString() : firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+            // Update UI and show login success message
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            updateUserProfile(currentUser);
+            showToast(isNewUser ? 'Account created successfully!' : 'Successfully signed in!');
+
+            // Load user data after successful authentication
+            if (typeof window.loadUserData === 'function') {
+                await window.loadUserData(true);
             }
-
-            await window.db.collection('users').doc(currentUser.uid).set(userData, { merge: true });
-        }
-
-        document.getElementById('loginSection').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-        updateUserProfile(currentUser);
-        showToast(isNewUser ? 'Account created successfully!' : 'Successfully signed in!');
-        
-        if (typeof window.loadUserData === 'function') {
-            await window.loadUserData();
+        } catch (error) {
+            console.error('Error in handleAuthResult:', error);
+            showToast('Error initializing user data. Please try again.', 'error');
         }
     }
     toggleLoading(false);
@@ -175,15 +178,19 @@ async function signInWithGoogle() {
     const googleBtn = document.querySelector('.google-signin-btn');
     
     try {
-        googleBtn.disabled = true; // Prevent double clicks
+        googleBtn.disabled = true;
         toggleLoading(true);
         
-        // Use popup instead of redirect
         const result = await firebase.auth().signInWithPopup(provider);
         await handleAuthResult(result);
     } catch (error) {
         console.error("Error signing in:", error);
         showToast(error.message || 'Error signing in. Please try again.', 'error');
+        
+        // If the error is due to permissions, show a more specific message
+        if (error.code === 'permission-denied') {
+            showToast('Access denied. Please try signing in again.', 'error');
+        }
     } finally {
         googleBtn.disabled = false;
         toggleLoading(false);
@@ -241,35 +248,36 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Auth state change listener
 firebase.auth().onAuthStateChanged(async (user) => {
-    currentUser = user;
-    if (user) {
-        try {
-            // Update profile UI
-            updateUserProfile(user);
-            
-            // Update user's last login time
-            await window.db.collection('users').doc(user.uid).set({
-                lastLogin: new Date().toISOString(),
-                email: user.email,
-                displayName: user.displayName || user.email.split('@')[0],
-                photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}`
-            }, { merge: true });
+    try {
+        currentUser = user;
+        if (user) {
+            // First update user document
+            await db.collection('users')
+                .doc(user.uid)
+                .set({
+                    lastLogin: new Date().toISOString(),
+                    email: user.email,
+                    displayName: user.displayName || user.email.split('@')[0],
+                    photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}`
+                }, { merge: true });
 
+            // Update UI
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('mainContent').style.display = 'block';
+            updateUserProfile(user);
 
+            // Then load user data
             if (typeof window.loadUserData === 'function') {
-                await window.loadUserData();
+                await window.loadUserData(true);
             }
-        } catch (error) {
-            console.error('Error in auth state change:', error);
-            showToast('Error updating user data', 'error');
+        } else {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
         }
-    } else {
-        document.getElementById('loginSection').style.display = 'block';
-        document.getElementById('mainContent').style.display = 'none';
+    } catch (error) {
+        console.error('Error in auth state change:', error);
+        showToast('Error loading user data. Please try signing in again.', 'error');
     }
 });
 
