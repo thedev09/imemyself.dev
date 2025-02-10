@@ -66,6 +66,7 @@ const PAYMENT_MODES = {
     ]
 };
 
+
 function renderPortfolioSummary() {
     const USD_TO_INR = 84;
 
@@ -85,19 +86,22 @@ function renderPortfolioSummary() {
 
     const usdInInr = totals.usd * USD_TO_INR;
     const totalInInr = totals.inr + usdInInr;
-    // Calculate total in USD
-    const inrToUsd = totals.inr / USD_TO_INR;
-    const totalInUsd = totals.usd + inrToUsd;
+    const totalInUsd = (totals.inr / USD_TO_INR) + totals.usd;
 
     return `
         <div class="portfolio-summary">
             <div class="summary-header">
                 <h2 class="summary-title">Portfolio Summary</h2>
+                <button class="toggle-visibility-btn" onclick="togglePortfolioVisibility()">
+                    <i class="fas fa-eye${isPortfolioVisible() ? '' : '-slash'}"></i>
+                </button>
             </div>
             <div class="currency-section">
                 <div class="balance-card clickable" data-currency="INR" style="cursor: pointer;">
                     <div class="balance-header">INR Balance</div>
-                    <div class="balance-amount">₹${formatIndianNumber(totals.inr)}</div>
+                    <div class="balance-amount" data-balance-value>
+                        ${isPortfolioVisible() ? '₹' + formatIndianNumber(totals.inr) : '₹ XXXXX'}
+                    </div>
                     <div class="account-pills">
                         <div class="account-pill">${totals.inrBanks} Bank Account${totals.inrBanks !== 1 ? 's' : ''}</div>
                     </div>
@@ -105,10 +109,12 @@ function renderPortfolioSummary() {
 
                 <div class="balance-card clickable" data-currency="USD" style="cursor: pointer;">
                     <div class="balance-header">USD Balance</div>
-                    <div class="balance-amount">$${totals.usd.toLocaleString('en-US', { 
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2 
-                    })}</div>
+                    <div class="balance-amount" data-balance-value>
+                        ${isPortfolioVisible() ? '$' + totals.usd.toLocaleString('en-US', { 
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2 
+                        }) : '$ XXXXX'}
+                    </div>
                     <div class="account-pills">
                         <div class="account-pill">${totals.usdCrypto} Crypto Wallet${totals.usdCrypto !== 1 ? 's' : ''}</div>
                     </div>
@@ -116,17 +122,61 @@ function renderPortfolioSummary() {
 
                 <div class="balance-card total-portfolio">
                     <div class="balance-header">Total Portfolio Value</div>
-                    <div class="balance-amount">₹${formatIndianNumber(totalInInr)}</div>
+                    <div class="balance-amount" data-balance-value>
+                        ${isPortfolioVisible() ? '₹' + formatIndianNumber(totalInInr) : '₹ XXXXX'}
+                    </div>
                     <div class="conversion-info">
-                        <div class="usd-value">Total USD Value: $${totalInUsd.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        })}</div>
+                        <div class="usd-value" data-balance-value>
+                            Total USD Value: ${isPortfolioVisible() ? '$' + totalInUsd.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }) : '$ XXXXX'}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     `;
+}
+
+// Add these functions near the top of app-ui.js with other core functions
+function isPortfolioVisible() {
+    return localStorage.getItem('portfolioVisible') === 'true';
+}
+
+function togglePortfolioVisibility() {
+    const currentState = isPortfolioVisible();
+    localStorage.setItem('portfolioVisible', !currentState);
+    renderAccounts(); // Re-render to update the display
+}
+
+// Make them globally available
+window.isPortfolioVisible = isPortfolioVisible;
+window.togglePortfolioVisibility = togglePortfolioVisibility;
+
+function renderDashboard() {
+    // First render accounts
+    renderAccounts();
+
+    // Then render recent transactions
+    const recentTransactionsContainer = document.getElementById('recent-transactions');
+    if (recentTransactionsContainer) {
+        if (!state.transactions.length) {
+            recentTransactionsContainer.innerHTML = '<div class="no-data">No transactions found</div>';
+            return;
+        }
+
+        const sortedTransactions = [...state.transactions]
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5); // Get only the 5 most recent transactions
+
+        recentTransactionsContainer.innerHTML = sortedTransactions
+            .map(transaction => {
+                const account = state.accounts.find(a => a.id === transaction.accountId);
+                return renderTransactionItem(transaction, account);
+            })
+            .join('');
+    }
 }
 
 // Keep this at the top section of app-ui.js with other core UI functions
@@ -702,11 +752,8 @@ async function renderAll() {
     }
 }
 
-// In app-ui.js, update the renderAccounts function
 function renderAccounts() {
     const accountsGrid = document.getElementById('accounts-grid');
-    const accountSelects = document.querySelectorAll('select[name="account"]');
-    
     if (!accountsGrid) return;
 
     // Remove existing summary if any
@@ -728,6 +775,7 @@ function renderAccounts() {
         });
     });
 
+    // Handle no accounts case
     if (!state.accounts.length) {
         accountsGrid.innerHTML = `
             <div class="account-card">
@@ -745,42 +793,40 @@ function renderAccounts() {
         (a.displayOrder || 0) - (b.displayOrder || 0)
     );
 
-    // In app-ui.js, in the renderAccounts function
-const accountCards = sortedAccounts.map(account => `
-    <div class="account-card ${account.type.toLowerCase()}" 
-         data-account-id="${account.id}"
-         draggable="true"
-         onclick="showAccountDetails('${account.id}')">
-        <div class="account-actions">
-            <button onclick="event.stopPropagation(); editAccount('${account.id}')" 
-                    class="action-btn edit" 
-                    title="Edit Account">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-            </button>
-            <button onclick="event.stopPropagation(); deleteAccount('${account.id}')" 
-                    class="action-btn delete" 
-                    title="Delete Account">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-            </button>
+    // Render account cards
+    accountsGrid.innerHTML = sortedAccounts.map(account => `
+        <div class="account-card ${account.type.toLowerCase()}" 
+             data-account-id="${account.id}"
+             draggable="true"
+             onclick="showAccountDetails('${account.id}')">
+            <div class="account-actions">
+                <button onclick="event.stopPropagation(); editAccount('${account.id}')" 
+                        class="action-btn edit" 
+                        title="Edit Account">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button onclick="event.stopPropagation(); deleteAccount('${account.id}')" 
+                        class="action-btn delete" 
+                        title="Delete Account">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+            <span class="account-type ${account.type.toLowerCase()}">${account.type}</span>
+            <h3 class="account-name">${escapeHtml(account.name)}</h3>
+            <div class="account-balance">
+                ${formatCurrency(account.balance, account.currency)}
+            </div>
+            <div class="account-updated">
+                Last activity: ${formatDate(account.lastActivityAt || account.updatedAt)}
+            </div>
         </div>
-        <span class="account-type ${account.type.toLowerCase()}">${account.type}</span>
-        <h3 class="account-name">${escapeHtml(account.name)}</h3>
-        <div class="account-balance">
-            ${formatCurrency(account.balance, account.currency)}
-        </div>
-        <div class="account-updated">
-            Last activity: ${formatDate(account.lastActivityAt || account.updatedAt)}
-        </div>
-    </div>
-`).join('');
-
-    accountsGrid.innerHTML = accountCards + `
+    `).join('') + `
         <div class="account-card add-account" onclick="switchView('settings')">
             <div class="add-account-content">
                 <span class="add-icon">+</span>
@@ -789,22 +835,20 @@ const accountCards = sortedAccounts.map(account => `
         </div>
     `;
 
-    // Update all account select dropdowns
-    accountSelects.forEach(select => {
-        const currentValue = select.value;
-        select.innerHTML = `
-            <option value="">Select an account</option>
-            ${state.accounts.map(account => `
-                <option value="${account.id}" ${currentValue === account.id ? 'selected' : ''}>
-                    ${escapeHtml(account.name)} (${account.currency} ${formatCurrency(account.balance, account.currency)})
-                </option>
-            `).join('')}
-        `;
-    });
-
     // Initialize drag and drop
     initializeAccountDragDrop();
 }
+
+// Add this to handle dashboard initialization
+document.addEventListener('DOMContentLoaded', () => {
+    if (state.currentView === 'dashboard') {
+        renderDashboard();
+    }
+});
+
+// Make sure these are globally available
+window.renderDashboard = renderDashboard;
+window.renderAccounts = renderAccounts;
 
 // In app-ui.js, add this new function
 function initializeAccountDragDrop() {
@@ -1319,53 +1363,22 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCategoryOptions('income');
 // Add this function to app-ui.js
 
-function renderPortfolioSummary() {
-    const USD_TO_INR = 84;
 
-    const totals = state.accounts.reduce((acc, account) => {
-        const amount = parseFloat(account.balance) || 0;
-        
-        if (account.currency === 'INR') {
-            acc.inr += amount;
-            if (account.type === 'bank') acc.inrBanks++;
-        } else if (account.currency === 'USD') {
-            acc.usd += amount;
-            if (account.type === 'crypto') acc.usdCrypto++;
-        }
-        
-        return acc;
-    }, { inr: 0, usd: 0, inrBanks: 0, usdCrypto: 0 });
 
-    const usdInInr = totals.usd * USD_TO_INR;
-    const totalInInr = totals.inr + usdInInr;
-
-    return `
-        <div class="portfolio-summary">
-            <h2>Portfolio Summary</h2>
-            <div class="currency-section">
-                <div class="balance-card clickable" data-currency="INR" style="cursor: pointer;">
-                    <div class="balance-header">INR Balance</div>
-                    <div class="balance-amount">₹${totals.inr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                    <div class="account-pills">
-                        <div class="account-pill">${totals.inrBanks} Bank Accounts</div>
-                    </div>
-                </div>
-                <div class="balance-card clickable" data-currency="USD" style="cursor: pointer;">
-                    <div class="balance-header">USD Balance</div>
-                    <div class="balance-amount">$${totals.usd.toLocaleString('en-US', { maximumFractionDigits: 2 })}</div>
-                    <div class="account-pills">
-                        <div class="account-pill">${totals.usdCrypto} Crypto Wallets</div>
-                    </div>
-                </div>
-                <div class="balance-card">
-                    <div class="balance-header">Total Portfolio (INR)</div>
-                    <div class="balance-amount">₹${totalInInr.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-                    <div class="exchange-rate">1 USD = ₹${USD_TO_INR}</div>
-                </div>
-            </div>
-        </div>
-    `;
+function isPortfolioVisible() {
+    return localStorage.getItem('portfolioVisible') === 'true';
 }
+
+function togglePortfolioVisibility() {
+    const currentState = isPortfolioVisible();
+    localStorage.setItem('portfolioVisible', !currentState);
+    renderAccounts(); // Re-render to update the display
+}
+
+// Make them globally available
+window.isPortfolioVisible = isPortfolioVisible;
+window.togglePortfolioVisibility = togglePortfolioVisibility;
+
 
 // Update the renderAccounts function
 const originalRenderAccounts = window.renderAccounts;

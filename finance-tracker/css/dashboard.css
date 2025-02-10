@@ -86,6 +86,34 @@
     margin-top: 0.25rem;
 }
 
+
+/* Portfolio Summary Toggle Button */
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.toggle-visibility-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-size: 1.25rem;
+}
+
+.toggle-visibility-btn:hover {
+    color: white;
+}
+
+/* Animation for showing/hiding values */
+[data-balance-value] {
+    transition: opacity 0.2s ease-in-out;
+}
+
 /* Accounts Grid */
 .accounts-grid {
     display: grid;

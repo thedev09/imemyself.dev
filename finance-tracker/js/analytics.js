@@ -45,6 +45,13 @@
             console.error("Error in initializeAnalytics:", error);
             showToast("Error initializing analytics. Please try again.", 'error');
         }
+
+        const breakdownYear = document.getElementById('breakdown-year');
+    if (breakdownYear) {
+        breakdownYear.addEventListener('change', () => {
+            renderMonthlyBreakdown();
+        });
+    }
     }
 
     function setupAnalyticsEventListeners() {
@@ -187,11 +194,10 @@
         const tbody = document.getElementById('monthly-breakdown');
         const yearSelect = document.getElementById('breakdown-year');
         if (!tbody) return;
-
+    
         const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth();
         const years = Array.from({length: 5}, (_, i) => currentYear - i);
-
+    
         // Initialize year selector if it exists
         if (yearSelect && !yearSelect.options.length) {
             yearSelect.innerHTML = years.map(year => `
@@ -199,62 +205,55 @@
                     ${year}
                 </option>
             `).join('');
-
+    
             yearSelect.addEventListener('change', () => {
                 renderMonthlyBreakdown();
             });
         }
-
+    
         const selectedYear = parseInt(yearSelect?.value || currentYear);
-
-        // Group transactions by month
+    
+        // Group transactions by month for the selected year only
         const monthlyData = state.transactions
             .filter(tx => {
                 const txDate = new Date(tx.date);
-                const txYear = txDate.getFullYear();
-                const txMonth = txDate.getMonth();
-                
-                // For current year, only include months up to current month
-                if (txYear === currentYear) {
-                    return txMonth <= currentMonth;
-                }
-                // For past years, include all months
-                return txYear === selectedYear;
+                return txDate.getFullYear() === selectedYear; // Filter by selected year
             })
             .reduce((acc, tx) => {
                 const txDate = new Date(tx.date);
-                const month = txDate.toLocaleString('default', { month: 'long' });
+                const monthKey = txDate.toLocaleString('default', { month: 'long' });
+                const monthIndex = txDate.getMonth();
                 
-                if (!acc[month]) {
-                    acc[month] = {
+                if (!acc[monthKey]) {
+                    acc[monthKey] = {
                         income: 0,
                         expenses: 0,
-                        monthIndex: txDate.getMonth(),
-                        month: month
+                        monthIndex: monthIndex,
+                        month: monthKey,
+                        year: txDate.getFullYear()
                     };
                 }
-
+    
+                const amount = tx.amountInINR || tx.amount;
                 if (tx.type === 'income') {
-                    acc[month].income += tx.amountInINR || tx.amount;
+                    acc[monthKey].income += amount;
                 } else if (tx.type === 'expense') {
-                    acc[month].expenses += tx.amountInINR || tx.amount;
+                    acc[monthKey].expenses += amount;
                 }
                 
                 return acc;
             }, {});
-
+    
         // Calculate savings and rates for each month
         Object.values(monthlyData).forEach(data => {
             data.savings = data.income - data.expenses;
             data.savingsRate = data.income > 0 ? ((data.savings / data.income) * 100).toFixed(1) : '0.0';
-            // Ensure proper Net Worth calculation (same as savings for this implementation)
-            data.netWorth = data.savings;
         });
-
+    
         // Sort by month index (latest first)
         const sortedMonths = Object.values(monthlyData)
             .sort((a, b) => b.monthIndex - a.monthIndex);
-
+    
         // Render the months
         tbody.innerHTML = sortedMonths.map(data => `
             <tr>
@@ -265,8 +264,8 @@
                     ${data.savings < 0 ? '-' : ''}${formatCurrency(Math.abs(data.savings))}
                 </td>
                 <td>${data.savingsRate}%</td>
-                <td style="color: ${data.netWorth < 0 ? '#f87171' : '#4ade80'}">
-                    ${data.netWorth < 0 ? '-' : ''}${formatCurrency(Math.abs(data.netWorth))}
+                <td style="color: ${data.savings < 0 ? '#f87171' : '#4ade80'}">
+                    ${data.savings < 0 ? '-' : ''}${formatCurrency(Math.abs(data.savings))}
                 </td>
             </tr>
         `).join('') || '<tr><td colspan="6" class="no-data">No data available for selected year</td></tr>';
