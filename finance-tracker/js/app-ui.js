@@ -505,8 +505,129 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// In app-ui.js
-// In app-ui.js
+// Add this function to app-ui.js
+function showAddAccountModal() {
+    const modalHTML = `
+        <div class="modal-overlay" id="addAccountModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>Add New Account</h2>
+                    </div>
+                    <button class="modal-close" onclick="closeModal('addAccountModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="addAccountForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="accountName" class="form-label">Account Name</label>
+                                <input type="text" 
+                                       id="accountName"
+                                       class="form-input" 
+                                       name="name" 
+                                       required
+                                       placeholder="Enter account name">
+                            </div>
+                            <div class="form-group">
+                                <label for="accountType" class="form-label">Account Type</label>
+                                <select id="accountType"
+                                        class="form-select" 
+                                        name="type"
+                                        required>
+                                    <option value="">Select account type</option>
+                                    <option value="bank">Bank Account</option>
+                                    <option value="crypto">Crypto Wallet</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="currency" class="form-label">Currency</label>
+                                <select id="currency"
+                                        class="form-select" 
+                                        name="currency"
+                                        required>
+                                    <option value="">Select currency</option>
+                                    <option value="USD">USD</option>
+                                    <option value="INR">INR</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="balance" class="form-label">Initial Balance</label>
+                                <input type="number" 
+                                       id="balance"
+                                       class="form-input" 
+                                       name="balance" 
+                                       required 
+                                       step="0.01"
+                                       min="0"
+                                       placeholder="Enter initial balance">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('addAccountModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Add Account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('addAccountModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Setup form submission
+    const form = document.getElementById('addAccountForm');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        toggleLoading(true);
+
+        try {
+            const formData = new FormData(e.target);
+            const account = {
+                id: Date.now().toString(),
+                name: formData.get('name'),
+                type: formData.get('type'),
+                currency: formData.get('currency'),
+                balance: parseFloat(formData.get('balance')) || 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            await saveAccount(account);
+            closeModal('addAccountModal');
+            showToast('Account created successfully!');
+            await loadUserData(true);
+        } catch (error) {
+            console.error('Error saving account:', error);
+            showToast(error.message || 'Error saving account', 'error');
+        } finally {
+            toggleLoading(false);
+        }
+    });
+
+    // Add click handler for closing on outside click
+    const modal = document.getElementById('addAccountModal');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal('addAccountModal');
+        }
+    });
+
+    // Add escape key handler
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal('addAccountModal');
+        }
+    });
+}
+
+// Make sure this function is globally available
+window.showAddAccountModal = showAddAccountModal;
 
 function createEditAccountModal(account) {
     const modalHTML = `
@@ -827,12 +948,12 @@ function renderAccounts() {
             </div>
         </div>
     `).join('') + `
-        <div class="account-card add-account" onclick="switchView('settings')">
-            <div class="add-account-content">
-                <span class="add-icon">+</span>
-                <span class="add-text">Add New Account</span>
-            </div>
-        </div>
+        <div class="account-card add-account" onclick="showAddAccountModal()">
+    <div class="add-account-content">
+        <span class="add-icon">+</span>
+        <span class="add-text">Add New Account</span>
+    </div>
+</div>
     `;
 
     // Initialize drag and drop
@@ -1896,13 +2017,16 @@ function showTransferModal() {
     setupTransferForm();
 }
 
+// Make sure this exists in app-ui.js
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        modal.remove(); // Use remove instead of just hiding
+        modal.remove();
     }
 }
 
+// Make it globally available
+window.closeModal = closeModal;
 
 function showModal(modalId) {
     const existingModal = document.getElementById(modalId);

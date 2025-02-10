@@ -927,6 +927,24 @@
         display: none;
     }
 
+    /* In modals.css */
+#addAccountModal .modal-content {
+    max-width: 500px;
+}
+
+#addAccountModal .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+    #addAccountModal .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
     /* Firefox specific styles */
     @-moz-document url-prefix() {
         .modal-body .form-select {
