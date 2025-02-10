@@ -272,7 +272,7 @@
 
 .transaction-tag.adjustment {
     background: rgba(147, 51, 234, 0.1);
-    color: #9333ea;
+    color: #a855f7;
 }
 
 .transaction-details {
@@ -475,6 +475,14 @@
     font-size: 0.875rem;
 }
 
+.badge-ADJUSTMENT {
+    background: rgba(147, 51, 234, 0.1); /* Purple/violet background */
+    color: #a855f7; /* Lighter purple for text */
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
 
 .transaction-item:hover .action-btn {
     opacity: 1;
@@ -519,6 +527,12 @@
     border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+.type-tag.adjustment {
+    background: rgba(147, 51, 234, 0.15);
+    color: #a855f7;
+    border: 1px solid rgba(147, 51, 234, 0.2);
+}
+
 /* Amount styling to match tags */
 .amount-cell {
     font-weight: 500;
@@ -535,6 +549,13 @@
 .amount-cell.transfer {
     color: #60a5fa;
 }
+
+.amount-cell.adjustment {
+    color: #a855f7;
+}
+
+
+
 
 /* Responsive Styles */
 @media (max-width: 1600px) {
