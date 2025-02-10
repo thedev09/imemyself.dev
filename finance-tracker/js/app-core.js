@@ -826,11 +826,15 @@ async function saveAccount(account) {
         account.displayOrder = highestOrder + 1;
     }
     
+    // Get current timestamp
+    const currentTimestamp = new Date().toISOString();
+
     const accountData = {
         ...account,
         userId: user.uid,
-        createdAt: account.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: account.createdAt || currentTimestamp,
+        updatedAt: currentTimestamp,
+        lastActivityAt: currentTimestamp,
         isDeleted: false,
         displayOrder: account.displayOrder
     };
@@ -844,7 +848,7 @@ async function saveAccount(account) {
             
             const adjustmentTransaction = {
                 id: Date.now().toString(),
-                date: new Date().toISOString(),
+                date: currentTimestamp,
                 type: 'adjustment',
                 amount: Math.abs(balanceDiff),
                 isIncrease: balanceDiff > 0,
@@ -857,7 +861,7 @@ async function saveAccount(account) {
                 notes: balanceDiff > 0 ? 'Balance adjusted upward' : 'Balance adjusted downward',
                 paymentMode: 'Balance Adjustment',
                 userId: user.uid,
-                createdAt: new Date().toISOString()
+                createdAt: currentTimestamp
             };
 
             const transactionRef = db.collection('users')
@@ -882,6 +886,14 @@ async function saveAccount(account) {
             state.accounts[existingIndex] = accountData;
         } else {
             state.accounts.push(accountData);
+        }
+        
+        // Update net worth snapshot
+        try {
+            await updateNetWorthSnapshot();
+        } catch (error) {
+            console.error('Error updating net worth snapshot:', error);
+            // Don't throw error here as account was saved successfully
         }
         
         return accountData;
@@ -1178,23 +1190,48 @@ function formatCurrency(amount, currency = 'INR', showBoth = false) {
 // Make it globally available
 
 
-// Updated formatDate function to include time in IST
+// In app-core.js, update the formatDate function
 function formatDate(dateString) {
     if (!dateString) return 'N/A';
-    try {
-        return new Date(dateString).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
+    
+    const now = new Date();
+    const date = new Date(dateString);
+    
+    // If date is today
+    if (date.toDateString() === now.toDateString()) {
+        return `Today, ${date.toLocaleTimeString('en-US', {
             hour: 'numeric',
             minute: '2-digit',
-            hour12: true,
-            timeZone: 'Asia/Kolkata'
-        });
-    } catch (error) {
-        console.error('Error formatting date:', error);
-        return 'Invalid Date';
+            hour12: true
+        })}`;
     }
+    
+    // If date is yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+        return `Yesterday, ${date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        })}`;
+    }
+    
+    // If date is within last 7 days
+    const daysAgo = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    if (daysAgo < 7) {
+        return `${daysAgo} days ago`;
+    }
+    
+    // Otherwise return full date
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
 }
 
 
