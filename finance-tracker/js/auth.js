@@ -248,32 +248,31 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// Update the auth state observer
 firebase.auth().onAuthStateChanged(async (user) => {
     try {
         currentUser = user;
+        const loginSection = document.getElementById('loginSection');
+        const mainContent = document.getElementById('mainContent');
+        
         if (user) {
-            // First update user document
-            await db.collection('users')
-                .doc(user.uid)
-                .set({
-                    lastLogin: new Date().toISOString(),
-                    email: user.email,
-                    displayName: user.displayName || user.email.split('@')[0],
-                    photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}`
-                }, { merge: true });
-
-            // Update UI
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
+            // User is signed in
+            if (loginSection) loginSection.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'block';
             updateUserProfile(user);
-
+            
             // Then load user data
             if (typeof window.loadUserData === 'function') {
                 await window.loadUserData(true);
             }
         } else {
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('mainContent').style.display = 'none';
+            // User is signed out
+            if (loginSection) {
+                loginSection.style.display = 'flex'; // Changed from 'block' to 'flex'
+                loginSection.style.justifyContent = 'center';
+                loginSection.style.alignItems = 'center';
+            }
+            if (mainContent) mainContent.style.display = 'none';
         }
     } catch (error) {
         console.error('Error in auth state change:', error);

@@ -1,53 +1,42 @@
-/* Login Section Base */
 .login-section {
     min-height: 100vh;
-    width: 100vw;  /* Add this */
-    position: fixed;  /* Add this */
-    top: 0;  /* Add this */
-    left: 0;  /* Add this */
-    background: #0F172A;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: #1a1a1a;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    z-index: 1000;  /* Add this */
+    z-index: 1000;
 }
 
-/* Header Styles */
 .login-header {
     text-align: center;
-    max-width: 600px;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
 }
 
 .login-header h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
     color: white;
     margin-bottom: 1rem;
-}
-
-.login-header p {
-    color: #94A3B8;
-    font-size: 1.125rem;
-    line-height: 1.6;
 }
 
 /* Login Card */
 .login-card {
     width: 100%;
     max-width: 400px;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(10px);
+    background: #1e1e1e;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1rem;
     padding: 2.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
-    text-align: center;
+    text-align: left; /* Change from center to left */
     margin-bottom: 2rem;
 }
 
@@ -55,12 +44,7 @@
     color: white;
     font-size: 1.5rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-.card-header p {
-    color: #94A3B8;
-    font-size: 1rem;
+    margin: 0;
 }
 
 /* Google Sign In Button */
@@ -70,24 +54,27 @@
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    background: #3B82F6;
-    color: white;
+    background: #ffffff;
+    color: #333333;
     padding: 0.75rem;
     border: none;
     border-radius: 0.5rem;
     font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .google-signin-btn:hover {
-    background: #2563EB;
+    background: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .google-signin-btn img {
     width: 1.5rem;
     height: 1.5rem;
-    filter: brightness(0) invert(1);
 }
 
 /* Divider */
@@ -107,8 +94,39 @@
 
 .divider span {
     padding: 0 1rem;
-    color: #94A3B8;
+    color: #94a3b8;
     font-size: 0.875rem;
+}
+
+.login-card .card-header {
+    text-align: center !important;
+    margin-bottom: 2rem;
+    width: 100%;
+}
+
+.login-card .card-header .login-title {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+    width: 100%;
+}
+
+.login-card .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #1A1A1A !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    color: white;
+    font-size: 1rem;
+}
+
+.login-card .form-input:focus {
+    background-color: #1A1A1A !important;
+    border-color: #1a355f;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 /* Form Elements */
@@ -120,22 +138,22 @@
 
 .form-group {
     position: relative;
+    margin-bottom: 1rem;
 }
 
 .form-input {
     width: 100%;
     padding: 0.75rem 1rem;
-    background: rgba(15, 23, 42, 0.5);
+    background: #1a1a1a; /* Updated to match the modal's input style */
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0.5rem;
     color: white;
     font-size: 1rem;
-    transition: border-color 0.2s;
 }
 
 .form-input:focus {
     outline: none;
-    border-color: #3B82F6;
+    border-color: #1a355f;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
@@ -147,15 +165,16 @@
 .forgot-password {
     background: none;
     border: none;
-    color: #3B82F6;
+    color: #3b82f6;
     font-size: 0.875rem;
     padding: 0;
-    margin-top: 0.5rem;
     cursor: pointer;
     float: right;
+    margin-top: 0.5rem;
 }
 
 .forgot-password:hover {
+    color: #60a5fa;
     text-decoration: underline;
 }
 
@@ -163,39 +182,41 @@
 .signin-btn {
     width: 100%;
     padding: 0.75rem;
-    background: #3B82F6;
+    background: #3b82f6;
     color: white;
     border: none;
     border-radius: 0.5rem;
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 0.5rem;
+    transition: all 0.2s;
+    margin-top: 1rem;
 }
 
 .signin-btn:hover {
-    background: #2563EB;
+    background: #2563eb;
 }
 
 /* Auth Switch */
 .auth-switch {
     text-align: center;
     margin-top: 1.5rem;
-    color: #94A3B8;
+    color: #94a3b8;
     font-size: 0.875rem;
 }
 
 .switch-btn {
     background: none;
     border: none;
-    color: #3B82F6;
+    color: #3b82f6;
     cursor: pointer;
-    padding: 0;
     font-size: 0.875rem;
+    padding: 0;
+    margin-left: 0.25rem;
 }
 
 .switch-btn:hover {
+    color: #60a5fa;
     text-decoration: underline;
 }
 
@@ -207,10 +228,6 @@
 
     .login-header h1 {
         font-size: 2rem;
-    }
-
-    .login-header p {
-        font-size: 1rem;
     }
 
     .login-card {
