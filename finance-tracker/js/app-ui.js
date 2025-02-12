@@ -314,6 +314,9 @@ function switchView(view) {
         console.log("Initializing analytics view");
         initializeAnalytics();
     }
+    else if (view === 'settings') {
+        initializeSettings();
+    }
 }
 
 function initializeSelfTransfer() {
@@ -867,6 +870,9 @@ async function renderAll() {
                 await renderCharts();
             }
         }
+        if (state.currentView === 'settings') {
+            initializeSettings();
+        }
     } catch (error) {
         console.error('Error rendering data:', error);
         showToast('Error displaying data. Please refresh the page.', 'error');
@@ -885,7 +891,7 @@ function renderAccounts() {
 
     // Add portfolio summary
     accountsGrid.insertAdjacentHTML('beforebegin', renderPortfolioSummary());
-    
+
     // Add click handlers to the balance cards
     document.querySelectorAll('.balance-card.clickable').forEach(card => {
         card.addEventListener('click', (e) => {
@@ -899,11 +905,11 @@ function renderAccounts() {
     // Handle no accounts case
     if (!state.accounts.length) {
         accountsGrid.innerHTML = `
-            <div class="account-card">
-                <div class="no-data">No accounts found</div>
-                <button onclick="switchView('settings')" class="btn btn-primary">
-                    + Add Account
-                </button>
+            <div class="account-card add-account" onclick="showAddAccountModal()">
+                <div class="add-account-content">
+                    <span class="add-icon">+</span>
+                    <span class="add-text">Add New Account</span>
+                </div>
             </div>
         `;
         return;

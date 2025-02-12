@@ -1,0 +1,242 @@
+/* Settings Page Container */
+.settings-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+/* Profile Section */
+.profile-section {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-picture {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid #3b82f6;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.name-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.current-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+}
+
+.edit-name-btn {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.edit-name-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.name-edit-form {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.name-edit-form.active {
+    display: flex;
+}
+
+.name-input {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.confirm-name-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.confirm-name-btn:hover {
+    background: #2563eb;
+}
+
+.user-email {
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+
+.auth-method {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+/* Data Management Section */
+.data-section {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.data-section h2 {
+    color: white;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.export-btn {
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.export-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.clear-data-btn {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.clear-data-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.data-actions {
+    display: flex;
+    gap: 1rem;
+    flex-direction: row; /* Keep buttons in a single line */
+}
+
+.export-btn, .clear-transactions-btn, .clear-data-btn {
+    flex: 1; /* Make all buttons take equal width */
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.clear-transactions-btn {
+    background: rgba(249, 115, 22, 0.1);  /* Orange shade */
+    color: #fb923c;  /* Orange text */
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.clear-transactions-btn:hover {
+    background: rgba(249, 115, 22, 0.2);
+    border-color: rgba(249, 115, 22, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1600px) {
+    .settings-container {
+        width: 85%;
+    }
+}
+
+@media (max-width: 1200px) {
+    .settings-container {
+        width: 95%;
+    }
+}
+
+@media (max-width: 768px) {
+    .data-actions {
+        flex-direction: column; /* Stack buttons on mobile */
+    }
+
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .name-section {
+        justify-content: center;
+    }
+
+    .name-edit-form {
+        flex-direction: column;
+    }
+
+    .data-actions {
+        flex-direction: column;
+    }
+}
