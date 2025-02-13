@@ -29,7 +29,84 @@ function validateTransaction(transaction) {
     return true;
 }
 
+async function handleAccountDeletion(accountId) {
+    const user = getCurrentUser();
+    if (!user) throw new Error('Please sign in to continue');
 
+    const deletionType = document.querySelector('input[name="deletionType"]:checked').value;
+    const account = state.accounts.find(acc => acc.id === accountId);
+    
+    if (!account) {
+        showToast('Account not found', 'error');
+        return;
+    }
+
+    toggleLoading(true);
+
+    try {
+        const batch = db.batch();
+
+        if (deletionType === 'delete') {
+            // Delete all transactions
+            const transactionsSnapshot = await db.collection('users')
+                .doc(user.uid)
+                .collection('transactions')
+                .where('accountId', '==', accountId)
+                .get();
+
+            transactionsSnapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            // Delete the account
+            batch.delete(db.collection('users')
+                .doc(user.uid)
+                .collection('accounts')
+                .doc(accountId));
+
+            // Update local state
+            state.transactions = state.transactions.filter(tx => tx.accountId !== accountId);
+        } else {
+            // Keep transactions but mark them as from deleted account
+            const transactionsSnapshot = await db.collection('users')
+                .doc(user.uid)
+                .collection('transactions')
+                .where('accountId', '==', accountId)
+                .get();
+
+            transactionsSnapshot.docs.forEach(doc => {
+                batch.update(doc.ref, {
+                    accountDeleted: true,
+                    accountName: account.name, // Preserve the account name
+                    accountDeletedAt: new Date().toISOString()
+                });
+            });
+
+            // Delete the account
+            batch.delete(db.collection('users')
+                .doc(user.uid)
+                .collection('accounts')
+                .doc(accountId));
+        }
+
+        await batch.commit();
+
+        // Update local state
+        state.accounts = state.accounts.filter(acc => acc.id !== accountId);
+
+        // Close modal and show success message
+        closeModal('delete-account-modal');
+        showToast('Account deleted successfully');
+
+        // Refresh data
+        await loadUserData(true);
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        showToast(error.message || 'Error deleting account', 'error');
+    } finally {
+        toggleLoading(false);
+    }
+}
 
 async function handleSelfTransfer(fromAccountId, toAccountId, amount, description = '') {
     const user = getCurrentUser(); // Add this line
@@ -774,41 +851,6 @@ function getNetWorthTrend(period) {
     }
 
     return { dates, values };
-}
-
-// Account Management Functions
-async function deleteAccount(accountId) {
-    if (!confirm('Are you sure you want to delete this account? The transactions will be preserved for record-keeping.')) {
-        return;
-    }
-
-    toggleLoading(true);
-    try {
-        const user = getCurrentUser();
-        if (!user) throw new Error('Please sign in to continue');
-
-        await db.collection('users')
-            .doc(user.uid)
-            .collection('accounts')
-            .doc(accountId)
-            .update({
-                isDeleted: true,
-                deletedAt: new Date().toISOString()
-            });
-
-        state.accounts = state.accounts.filter(acc => acc.id !== accountId);
-        renderAccounts();
-        showToast('Account deleted successfully');
-
-        if (typeof window.loadUserData === 'function') {
-            await window.loadUserData(true);
-        }
-    } catch (error) {
-        console.error('Error deleting account:', error);
-        showToast(error.message || 'Error deleting account', 'error');
-    } finally {
-        toggleLoading(false);
-    }
 }
 
 async function saveAccount(account) {

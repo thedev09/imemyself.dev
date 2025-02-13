@@ -6,6 +6,18 @@
     min-width: 1200px; /* Base minimum width */
 }
 
+.account-name.deleted {
+    text-decoration: line-through;
+    opacity: 0.8;
+    color: #94a3b8;
+}
+
+.transaction-account.deleted-account {
+    text-decoration: line-through;
+    opacity: 0.8;
+    color: #94a3b8;
+}
+
 /* Stats Grid */
 .stats-grid {
     display: grid;

@@ -179,11 +179,11 @@ function renderDashboard() {
     }
 }
 
-// Keep this at the top section of app-ui.js with other core UI functions
 function renderTransactionItem(transaction, account) {
     const isTransfer = transaction.type === 'transfer';
     const isAdjustment = transaction.type === 'adjustment';
     const isTransferOut = isTransfer && transaction.notes?.toLowerCase().includes('transfer to');
+    const isDeletedAccount = !account || account.isDeleted; // Add this line
     
     // Handle the display amount prefix
     let amountPrefix = '';
@@ -209,10 +209,7 @@ function renderTransactionItem(transaction, account) {
                             <button onclick="event.stopPropagation(); editTransaction('${transaction.id}')" 
                                     class="action-btn edit" 
                                     title="Edit Transaction">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
+                                <i class="fas fa-edit"></i>
                             </button>
                         </div>
                     </div>
@@ -223,7 +220,9 @@ function renderTransactionItem(transaction, account) {
                 <div class="transaction-details">
                     <span class="transaction-time">${formatDate(transaction.date)}</span>
                     <span class="transaction-separator">•</span>
-                    <span class="transaction-account">${escapeHtml(account?.name || '')}</span>
+                    <span class="transaction-account ${isDeletedAccount ? 'deleted-account' : ''}">
+                        ${escapeHtml(isDeletedAccount ? transaction.accountName : account.name)}
+                    </span>
                     ${transaction.paymentMode ? `
                         <span class="transaction-separator">•</span>
                         <span class="transaction-payment">${escapeHtml(transaction.paymentMode)}</span>
@@ -921,46 +920,40 @@ function renderAccounts() {
     );
 
     // Render account cards
-    accountsGrid.innerHTML = sortedAccounts.map(account => `
-        <div class="account-card ${account.type.toLowerCase()}" 
-             data-account-id="${account.id}"
-             draggable="true"
-             onclick="showAccountDetails('${account.id}')">
-            <div class="account-actions">
-                <button onclick="event.stopPropagation(); editAccount('${account.id}')" 
-                        class="action-btn edit" 
-                        title="Edit Account">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                </button>
-                <button onclick="event.stopPropagation(); deleteAccount('${account.id}')" 
-                        class="action-btn delete" 
-                        title="Delete Account">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                </button>
-            </div>
-            <span class="account-type ${account.type.toLowerCase()}">${account.type}</span>
-            <h3 class="account-name">${escapeHtml(account.name)}</h3>
-            <div class="account-balance">
-                ${formatCurrency(account.balance, account.currency)}
-            </div>
-            <div class="account-updated">
-                Last activity: ${formatDate(account.lastActivityAt || account.updatedAt)}
-            </div>
+    // In renderAccounts function
+accountsGrid.innerHTML = sortedAccounts.map(account => `
+    <div class="account-card ${account.type.toLowerCase()}" 
+         data-account-id="${account.id}"
+         draggable="true"
+         onclick="showAccountDetails('${account.id}')">
+        <div class="account-actions">
+            <button onclick="event.stopPropagation(); editAccount('${account.id}')" 
+                    class="action-btn edit" 
+                    title="Edit Account">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="event.stopPropagation(); showDeleteAccountModal('${account.id}')" 
+                    class="action-btn delete" 
+                    title="Delete Account">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
-    `).join('') + `
-        <div class="account-card add-account" onclick="showAddAccountModal()">
-    <div class="add-account-content">
-        <span class="add-icon">+</span>
-        <span class="add-text">Add New Account</span>
+        <span class="account-type">${account.type}</span>
+        <h3 class="account-name">${escapeHtml(account.name)}</h3>
+        <div class="account-balance">
+            ${formatCurrency(account.balance, account.currency)}
+        </div>
+        <div class="account-updated">
+            Last updated: ${formatDate(account.lastActivityAt || account.updatedAt)}
+        </div>
     </div>
-</div>
-    `;
+`).join('') + `
+    <div class="account-card add-account" onclick="showAddAccountModal()">
+        <div class="add-account-content">
+            <span class="add-icon">+</span>
+            <span class="add-text">Add New Account</span>
+        </div>
+    </div>`;
 
     // Initialize drag and drop
     initializeAccountDragDrop();
@@ -1767,88 +1760,60 @@ function renderAccountTransactions(account) {
 }
 
 function renderFilteredTransactions(transactions) {
-    console.log("Rendering filtered transactions:", transactions.length);
     const tbody = document.getElementById('transactions-tbody');
-    if (!tbody) {
-        console.error("transactions-tbody element not found");
-        return;
-    }
+    if (!tbody) return;
 
     if (!transactions || transactions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="no-data">No transactions found</td></tr>';
         return;
     }
 
-    try {
-        const rows = transactions.map(tx => {
-            const account = state.accounts.find(a => a.id === tx.accountId);
-            
-            // Determine amount prefix based on transaction type
-            let amountPrefix = '';
-            if (tx.type === 'income') amountPrefix = '+';
-            else if (tx.type === 'expense') amountPrefix = '-';
-            else if (tx.type === 'transfer') {
-                amountPrefix = tx.notes?.toLowerCase().includes('transfer to') ? '-' : '+';
-            }
-
-            return `
-                <tr>
-                    <td>${formatDate(tx.date)}</td>
-                    <td>
-                        <span class="type-tag ${tx.type.toLowerCase()}">
-                            ${tx.type.toUpperCase()}
-                        </span>
-                    </td>
-                    <td class="amount-cell ${tx.type.toLowerCase()}">
-                        ${amountPrefix}${formatCurrency(Math.abs(tx.amount), tx.currency)}
-                    </td>
-                    <td>
-                        <span class="truncate payment-mode">
-                            ${escapeHtml(tx.paymentMode || '')}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="truncate account-name">
-                            ${escapeHtml(account?.name || '')}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="truncate category">
-                            ${escapeHtml(tx.category || '')}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="truncate notes">
-                            ${escapeHtml(tx.notes || '')}
-                        </span>
-                    </td>
-                    <td class="actions-cell">
-                        <div class="action-buttons">
-                            <button onclick="editTransaction('${tx.id}')" class="action-btn edit" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteTransaction('${tx.id}')" class="action-btn delete" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        tbody.innerHTML = rows;
+    tbody.innerHTML = transactions.map(tx => {
+        // Add deleted account handling
+        const accountNameClass = tx.accountDeleted ? 'account-name deleted' : 'account-name';
         
-        // Update stats
-        const stats = calculateTransactionStats(transactions);
-        document.getElementById('stat-total').textContent = stats.total.toLocaleString();
-        document.getElementById('stat-income').textContent = formatCurrency(stats.income);
-        document.getElementById('stat-expense').textContent = formatCurrency(stats.expense);
-        document.getElementById('stat-average').textContent = formatCurrency(stats.avgTransaction);
-
-    } catch (error) {
-        console.error("Error rendering transactions:", error);
-        tbody.innerHTML = '<tr><td colspan="8" class="no-data">Error rendering transactions</td></tr>';
-    }
+        // Format amount prefix
+        let amountPrefix = '';
+        if (tx.type === 'income') amountPrefix = '+';
+        else if (tx.type === 'expense') amountPrefix = '-';
+        else if (tx.type === 'transfer' && tx.notes?.toLowerCase().includes('transfer to')) amountPrefix = '-';
+        
+        return `
+            <tr>
+                <td>${formatDate(tx.date)}</td>
+                <td>
+                    <span class="type-tag ${tx.type.toLowerCase()}">
+                        ${tx.type.toUpperCase()}
+                    </span>
+                </td>
+                <td class="amount-cell ${tx.type.toLowerCase()}">
+                    ${amountPrefix}${formatCurrency(tx.amount, tx.currency)}
+                </td>
+                <td>${escapeHtml(tx.paymentMode || '')}</td>
+                <td>
+                    <span class="${accountNameClass}">
+                        ${escapeHtml(tx.accountName || '')}
+                    </span>
+                </td>
+                <td>${escapeHtml(tx.category || '')}</td>
+                <td>${escapeHtml(tx.notes || '')}</td>
+                <td class="actions-cell">
+                    <div class="action-buttons">
+                        <button onclick="editTransaction('${tx.id}')" 
+                                class="action-btn edit" 
+                                title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTransaction('${tx.id}')" 
+                                class="action-btn delete" 
+                                title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 function updatePaymentModes(accountType) {
@@ -2100,6 +2065,81 @@ function setupTransactionForm() {
     };
 }
 
+function showDeleteAccountModal(accountId) {
+    const account = state.accounts.find(acc => acc.id === accountId);
+    if (!account) return;
+
+    const transactions = state.transactions.filter(tx => tx.accountId === accountId);
+
+    const modalHTML = `
+        <div class="modal-overlay" id="delete-account-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <h2>Delete Account</h2>
+                    </div>
+                    <button class="modal-close" onclick="closeModal('delete-account-modal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete "${escapeHtml(account.name)}"?</p>
+                    <p>This account has ${transactions.length} transactions.</p>
+                    
+                    <div class="deletion-options">
+                        <label class="deletion-option">
+                            <input type="radio" 
+                                   name="deletionType" 
+                                   value="keep" 
+                                   checked>
+                            <div class="deletion-content">
+                                <div class="deletion-title">Keep Transaction History</div>
+                                <div class="deletion-description">
+                                    Account will be deleted but all transactions will be preserved
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="deletion-option">
+                            <input type="radio" 
+                                   name="deletionType" 
+                                   value="delete">
+                            <div class="deletion-content">
+                                <div class="deletion-title">Delete Everything</div>
+                                <div class="deletion-description">
+                                    Delete account and all its transactions permanently
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('delete-account-modal')">
+                        Cancel
+                    </button>
+                    <button class="btn btn-danger" onclick="handleAccountDeletion('${accountId}')">
+                        Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add event listener for clicking outside
+    const modal = document.getElementById('delete-account-modal');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal('delete-account-modal');
+        }
+    });
+
+    // Add escape key handler too
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal('delete-account-modal');
+        }
+    });
+}
 
 function setupTransferForm() {
     const form = document.getElementById('transferForm');
@@ -2337,13 +2377,11 @@ function updateTransactionView() {
             let aVal = a[currentSort.key];
             let bVal = b[currentSort.key];
             
-            // Handle date sorting
             if (currentSort.key === 'date') {
                 aVal = new Date(aVal).getTime();
                 bVal = new Date(bVal).getTime();
             }
             
-            // Handle amount sorting
             if (currentSort.key === 'amount') {
                 aVal = parseFloat(aVal);
                 bVal = parseFloat(bVal);
@@ -2354,7 +2392,16 @@ function updateTransactionView() {
             return 0;
         });
 
+        // Render transactions table
         renderFilteredTransactions(sortedTransactions);
+
+        // Update stats with filtered transactions
+        const stats = calculateTransactionStats(filteredTransactions);
+        document.getElementById('stat-total').textContent = stats.total.toLocaleString();
+        document.getElementById('stat-income').textContent = formatCurrency(stats.income);
+        document.getElementById('stat-expense').textContent = formatCurrency(stats.expense);
+        document.getElementById('stat-average').textContent = formatCurrency(stats.avgTransaction);
+
     } catch (error) {
         console.error("Error in updateTransactionView:", error);
         const tbody = document.getElementById('transactions-tbody');
@@ -2364,21 +2411,29 @@ function updateTransactionView() {
     }
 }
 
-// Update the calculateTransactionStats function
 function calculateTransactionStats(transactions) {
-    // Filter out adjustments and transfers from calculations
-    const nonAdjustmentTransactions = transactions.filter(tx => 
-        tx.type !== 'adjustment' && tx.type !== 'transfer'
-    );
-    
     return {
         total: transactions.length,
-        income: nonAdjustmentTransactions.reduce((sum, tx) => 
-            tx.type === 'income' ? sum + tx.amountInINR : sum, 0),
-        expense: nonAdjustmentTransactions.reduce((sum, tx) => 
-            tx.type === 'expense' ? sum + tx.amountInINR : sum, 0),
-        avgTransaction: nonAdjustmentTransactions.reduce((sum, tx) => 
-            sum + tx.amountInINR, 0) / nonAdjustmentTransactions.length || 0
+        income: transactions.reduce((sum, tx) => {
+            if (tx.type !== 'income') return sum;
+            const amount = tx.amountInINR !== undefined && tx.amountInINR !== null 
+                ? tx.amountInINR 
+                : tx.amount;
+            return sum + (amount || 0);
+        }, 0),
+        expense: transactions.reduce((sum, tx) => {
+            if (tx.type !== 'expense') return sum;
+            const amount = tx.amountInINR !== undefined && tx.amountInINR !== null 
+                ? tx.amountInINR 
+                : tx.amount;
+            return sum + (amount || 0);
+        }, 0),
+        avgTransaction: transactions.length ? transactions.reduce((sum, tx) => {
+            const amount = tx.amountInINR !== undefined && tx.amountInINR !== null 
+                ? tx.amountInINR 
+                : tx.amount;
+            return sum + (amount || 0);
+        }, 0) / transactions.length : 0
     };
 }
 
@@ -2892,3 +2947,6 @@ window.closeEditTransactionModal = closeEditTransactionModal;
 // At the bottom of app-ui.js
 window.initializeAccountDragDrop = initializeAccountDragDrop;
 window.updateAccountOrder = updateAccountOrder;
+window.showDeleteAccountModal = showDeleteAccountModal;
+window.handleAccountDeletion = handleAccountDeletion;
+window.closeModal = closeModal;
