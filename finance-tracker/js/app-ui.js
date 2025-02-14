@@ -921,6 +921,7 @@ function renderAccounts() {
 
     // Render account cards
     // In renderAccounts function
+// In app-ui.js, in the renderAccounts function
 accountsGrid.innerHTML = sortedAccounts.map(account => `
     <div class="account-card ${account.type.toLowerCase()}" 
          data-account-id="${account.id}"
@@ -938,7 +939,7 @@ accountsGrid.innerHTML = sortedAccounts.map(account => `
                 <i class="fas fa-trash"></i>
             </button>
         </div>
-        <span class="account-type">${account.type}</span>
+        <span class="account-type ${account.type.toLowerCase()}">${account.type}</span>
         <h3 class="account-name">${escapeHtml(account.name)}</h3>
         <div class="account-balance">
             ${formatCurrency(account.balance, account.currency)}

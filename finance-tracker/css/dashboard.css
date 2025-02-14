@@ -150,14 +150,15 @@
     font-weight: 500;
 }
 
+/* Add/update these specific type styles */
 .account-type.bank {
-    background: rgba(59, 130, 246, 0.1);
-    color: #60a5fa;
+    background: rgba(59, 130, 246, 0.1); /* Blue background with opacity */
+    color: #60a5fa; /* Light blue text */
 }
 
 .account-type.crypto {
-    background: rgba(139, 92, 246, 0.1);
-    color: #a78bfa;
+    background: rgba(139, 92, 246, 0.1); /* Purple background with opacity */
+    color: #a78bfa; /* Light purple text */
 }
 
 .account-name {
