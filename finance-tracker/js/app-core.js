@@ -1278,6 +1278,12 @@ function formatDate(dateString) {
 
 
 async function handleTransactionSubmit(formData) {
+    const submitButton = document.getElementById('submit-transaction-btn');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+    }
+
     try {
         // Log form data for debugging
         console.log("Form Data:", {
@@ -1337,6 +1343,12 @@ async function handleTransactionSubmit(formData) {
     } catch (error) {
         console.error('Error adding transaction:', error);
         showToast(error.message, 'error');
+        
+        // Re-enable submit button on error
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Add Transaction';
+        }
     } finally {
         toggleLoading(false);
     }

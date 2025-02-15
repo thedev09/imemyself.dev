@@ -35,6 +35,16 @@
     color: white;
 }
 
+/* In forms.css */
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background-color: #4b5563; /* Darker color when disabled */
+}
+
+.btn-primary:disabled {
+    background-color: #1e40af; /* Darker blue when disabled */
+}
 
 .form-input:hover,
 .form-select:hover {

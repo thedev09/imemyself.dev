@@ -1896,9 +1896,9 @@ function showAddTransactionModal() {
                             <input type="text" id="description" name="description" placeholder="Enter description (optional)">
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn-secondary" onclick="closeModal('addTransactionModal')">Cancel</button>
-                            <button type="submit" class="btn-primary">Add Transaction</button>
-                        </div>
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addTransactionModal')">Cancel</button>
+        <button type="submit" id="submit-transaction-btn" class="btn btn-primary">Add Transaction</button>
+    </div>
                     </form>
                 </div>
             </div>
