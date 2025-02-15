@@ -1355,15 +1355,13 @@ async function handleTransactionSubmit(formData) {
 }
 
 async function handleTransferSubmit(formData) {
-    try {
-        // Log form data for debugging
-        console.log("Transfer Form Data:", {
-            fromAccount: formData.get('fromAccount'),
-            toAccount: formData.get('toAccount'),
-            amount: formData.get('amount'),
-            description: formData.get('description')
-        });
+    const submitButton = document.getElementById('submit-transfer-btn');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+    }
 
+    try {
         const fromAccountId = formData.get('fromAccount');
         const toAccountId = formData.get('toAccount');
         const amount = parseFloat(formData.get('amount'));
@@ -1402,6 +1400,12 @@ async function handleTransferSubmit(formData) {
     } catch (error) {
         console.error('Error processing transfer:', error);
         showToast(error.message, 'error');
+        
+        // Re-enable submit button on error
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Transfer';
+        }
     } finally {
         toggleLoading(false);
     }

@@ -470,16 +470,18 @@ async function editAccount(accountId) {
     };
 }
 
-// Also update the account form's default submit handler to check for edit mode
+// Update the account form submission handler
 document.addEventListener('DOMContentLoaded', () => {
     const accountForm = document.getElementById('account-form');
     if (accountForm) {
         accountForm.addEventListener('submit', async (e) => {
-            // If we're in edit mode, don't handle the submit here
-            if (accountForm.dataset.editMode === 'true') return;
-
             e.preventDefault();
-            toggleLoading(true);
+            const submitButton = document.getElementById('submit-account-btn');
+            
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Processing...';
+            }
 
             try {
                 const formData = new FormData(e.target);
@@ -493,6 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatedAt: new Date().toISOString()
                 };
                 
+                toggleLoading(true);
                 await saveAccount(account);
                 e.target.reset();
                 showToast('Account created successfully!');
@@ -500,6 +503,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error('Error saving account:', error);
                 showToast(error.message || 'Error saving account', 'error');
+                
+                // Re-enable submit button on error
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Add Account';
+                }
             } finally {
                 toggleLoading(false);
             }
@@ -1962,7 +1971,7 @@ function showTransferModal() {
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn-secondary" onclick="closeModal('transferModal')">Cancel</button>
-                            <button type="submit" class="btn-primary">Transfer</button>
+                            <button type="submit" id="submit-transfer-btn" class="btn-primary">Transfer</button>
                         </div>
                     </form>
                 </div>
