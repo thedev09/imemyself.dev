@@ -1,0 +1,493 @@
+/* mobile-dashboard.css with aggressive selectors */
+@media (max-width: 768px) {
+    /* Core container styles */
+    body {
+      background-color: #121212;
+    }
+    
+    .mobile-dashboard {
+      background-color: #121212;
+      min-height: 100vh;
+      padding-bottom: 80px; /* Space for bottom navigation */
+    }
+    
+    /* Hide desktop elements on mobile */
+    body.mobile-view .nav,
+    body.mobile-view #mainContent .page-container,
+    body.mobile-view #mainContent .accounts-grid,
+    body.mobile-view #mainContent .quick-actions,
+    body.mobile-view #mainContent .card {
+      display: none !important;
+    }
+    
+    /* User info at top */
+    .profile-info-mobile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+    }
+    
+    .user-avatar-mobile {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #3b82f6;
+    }
+    
+    .user-name-mobile {
+      font-weight: 600;
+      color: white;
+      font-size: 18px;
+    }
+    
+    /* ======================================= */
+    /* PORTFOLIO SUMMARY - AGGRESSIVE SELECTORS */
+    /* ======================================= */
+    #mobile-dashboard .portfolio-summary,
+    .mobile-dashboard .portfolio-summary,
+    .mobile-portfolio {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      margin: 16px !important;
+      padding: 20px !important;
+      border-radius: 16px !important;
+      background-color: #1a1a1a !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      position: relative !important;
+      z-index: 10 !important;
+      order: 0 !important;
+    }
+    
+    #mobile-dashboard .summary-header,
+    .mobile-dashboard .summary-header,
+    .mobile-portfolio .summary-header {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      margin-bottom: 16px !important;
+    }
+    
+    #mobile-dashboard .summary-title,
+    .mobile-dashboard .summary-title,
+    .mobile-portfolio .summary-title {
+      color: #94a3b8 !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+    }
+    
+    #mobile-dashboard .toggle-visibility-btn,
+    .mobile-dashboard .toggle-visibility-btn,
+    .mobile-portfolio .toggle-visibility-btn {
+      background: none !important;
+      border: none !important;
+      color: #94a3b8 !important;
+      font-size: 18px !important;
+      cursor: pointer !important;
+      padding: 4px !important;
+    }
+    
+    /* Total portfolio value - critically important element */
+    #mobile-dashboard .total-portfolio-value,
+    .mobile-dashboard .total-portfolio-value,
+    .mobile-portfolio .total-portfolio-value {
+      display: block !important;
+      font-size: 32px !important;
+      font-weight: 700 !important;
+      color: white !important;
+      margin: 16px 0 !important;
+      text-align: center !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    /* Currency section */
+    #mobile-dashboard .currency-section,
+    .mobile-dashboard .currency-section,
+    .mobile-portfolio .currency-section {
+      display: flex !important;
+      gap: 12px !important;
+      margin-top: 20px !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    #mobile-dashboard .balance-card,
+    .mobile-dashboard .balance-card,
+    .mobile-portfolio .balance-card {
+      flex: 1 !important;
+      background-color: #222222 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 12px !important;
+      padding: 16px !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    #mobile-dashboard .balance-header,
+    .mobile-dashboard .balance-header,
+    .mobile-portfolio .balance-header {
+      font-size: 13px !important;
+      color: #94a3b8 !important;
+      margin-bottom: 8px !important;
+      display: block !important;
+    }
+    
+    #mobile-dashboard .balance-amount,
+    .mobile-dashboard .balance-amount,
+    .mobile-portfolio .balance-amount {
+      font-size: 20px !important;
+      font-weight: 600 !important;
+      color: white !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    /* Quick actions */
+    .mobile-quick-actions {
+      display: flex;
+      margin: 16px;
+      gap: 16px;
+    }
+    
+    .mobile-quick-actions .quick-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 50px;
+      border-radius: 12px;
+      font-size: 14px;
+      border: none;
+      padding: 0 16px;
+    }
+    
+    .mobile-quick-actions .quick-action-btn.primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+    
+    .mobile-quick-actions .quick-action-btn.secondary {
+      background-color: #1a1a1a;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Accounts section */
+    .accounts-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      margin-top: 24px;
+      margin-bottom: 16px;
+    }
+    
+    .accounts-section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      margin: 0;
+    }
+    
+    .sort-accounts-btn, 
+    .add-account-btn {
+      background: none;
+      border: none;
+      color: #3b82f6;
+      font-size: 20px;
+      padding: 8px;
+    }
+    
+    /* Mobile accounts grid - 2x2 grid */
+    .mobile-accounts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 0 16px;
+      margin-bottom: 24px;
+    }
+    
+    /* Account cards */
+    .mobile-accounts-grid .account-card {
+      background-color: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      height: auto;
+    }
+    
+    .mobile-accounts-grid .account-type {
+      font-size: 12px;
+      border-radius: 4px;
+      padding: 4px 8px;
+      align-self: flex-start;
+      text-transform: uppercase;
+    }
+    
+    .mobile-accounts-grid .account-type.bank {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: #60a5fa;
+    }
+    
+    .mobile-accounts-grid .account-type.crypto {
+      background-color: rgba(139, 92, 246, 0.1);
+      color: #a78bfa;
+    }
+    
+    .mobile-accounts-grid .account-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 12px 0;
+      color: white;
+    }
+    
+    .mobile-accounts-grid .account-balance {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 4px 0;
+      color: white;
+    }
+    
+    /* Add account card */
+    .mobile-accounts-grid .add-account {
+      background-color: rgba(59, 130, 246, 0.1);
+      border: 1px dashed rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    
+    .mobile-accounts-grid .add-account-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #3b82f6;
+    }
+
+
+    /* Mobile Sign Out Button */
+.mobile-sign-out-btn {
+  margin-left: auto; /* Push to the right */
+  background: none;
+  border: none;
+  color: #94a3b8;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.mobile-sign-out-btn:hover, 
+.mobile-sign-out-btn:active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Adjust profile info to accommodate sign out button */
+.profile-info-mobile {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  width: 100%;
+}
+
+.user-name-mobile {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-recent-transactions {
+    background-color: #1a1a1a; /* Ensure this is the dark gray color */
+    border: 1px solid rgba(193, 22, 22, 0.1); /* Add subtle border */
+    border-radius: 12px;
+    padding: 4px;
+    margin: 0 16px 80px 16px; /* Add margins on left and right sides */
+}
+  
+  .recent-transactions-header {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .recent-transactions-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+  }
+  
+  .view-all-link {
+    color: #3b82f6;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  
+  #mobile-recent-transactions {
+    padding: 8px;
+  }
+
+
+      .transaction-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 4px;
+      }
+      
+      .transaction-title {
+        font-weight: 500;
+        color: white;
+        font-size: 15px;
+      }
+      
+      .transaction-meta {
+        display: flex;
+        flex-wrap: wrap;
+        color: #94a3b8;
+        font-size: 12px;
+        gap: 4px;
+      }
+
+      .transaction-details {
+        flex: 1;
+        min-width: 0; /* Prevent flex item from growing beyond container */
+      }
+      
+      .transaction-account, 
+      .transaction-payment {
+        max-width: 100px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+      }
+    
+    .mobile-transaction-item {
+      padding: 12px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    
+    #mobile-recent-transactions .mobile-transaction-item {
+        background-color: #262626; /* Match the modal background color */
+    }
+    
+    .mobile-transaction-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-transaction-title {
+      font-weight: 500;
+      color: white;
+    }
+    
+    .mobile-transaction-amount {
+      font-weight: 600;
+    }
+    
+    .mobile-transaction-amount.income {
+      color: #4ade80;
+    }
+    
+    .mobile-transaction-amount.expense {
+      color: #f87171;
+    }
+    
+    .mobile-transaction-amount.transfer {
+      color: #60a5fa;
+    }
+    
+    .mobile-transaction-details {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    
+    .empty-accounts {
+        padding: 32px 16px;
+        text-align: center;
+        background-color: rgba(30, 41, 59, 0.3);
+        border-radius: 12px;
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+      }
+      
+      .empty-accounts p {
+        color: #94a3b8;
+        margin-bottom: 16px;
+      }
+      
+      .add-first-account {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .add-first-account i {
+        font-size: 14px;
+      }
+
+    /* Mobile bottom navigation */
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      background-color: #1a1a1a;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 0 8px;
+      z-index: 100;
+    }
+    
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 12px;
+      padding: 8px 0;
+    }
+    
+    .mobile-nav-item.active {
+      color: #3b82f6;
+    }
+    
+    .mobile-nav-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+  }

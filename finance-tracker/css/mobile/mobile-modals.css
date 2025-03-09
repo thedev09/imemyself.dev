@@ -1,0 +1,645 @@
+/* mobile-modals.css - Completely redesigned for modern mobile UX */
+@media (max-width: 768px) {
+    /* ===== Mobile Modal Container ===== */
+    .mobile-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      display: flex;
+      align-items: flex-end; /* Makes modals slide up from bottom */
+      justify-content: center;
+      padding: 0;
+      animation: fadeIn 0.2s ease-out;
+      touch-action: none; /* Prevents background scrolling on iOS */
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal-closing {
+      animation: fadeOut 0.2s ease-out;
+    }
+    
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  
+    .mobile-modal {
+      width: 100%;
+      max-width: 100%; /* Mobile modals are full width */
+      background-color: #1a1a1a;
+      border-radius: 16px 16px 0 0; /* Rounded only at top */
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      margin-bottom: 0;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    
+    /* Account modal (special case - more detailed) */
+    .mobile-account-modal {
+      max-height: 85vh;
+    }
+    
+    /* ===== Modal Header ===== */
+    .mobile-modal-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background-color: #1a1a1a;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    
+    .mobile-modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .mobile-modal-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    .account-info-container {
+        padding-top: 16px; /* Add space from close button */
+      }
+      
+      .mobile-modal-close.light {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.15);
+      }
+    
+    /* ===== Modal Body ===== */
+    .mobile-modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* ===== Form Elements ===== */
+    .mobile-form-group {
+      margin-bottom: 20px;
+    }
+    
+    .mobile-form-group label {
+      display: block;
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-form-group input[type="text"],
+    .mobile-form-group input[type="number"],
+    .mobile-form-group input[type="password"],
+    .mobile-form-group input[type="email"],
+    .mobile-form-group textarea {
+      width: 100%;
+      padding: 14px 16px;
+      background-color: #262626;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+    }
+    
+    .mobile-form-group input:focus,
+    .mobile-form-group select:focus,
+    .mobile-form-group textarea:focus {
+      border-color: #3b82f6;
+      outline: none;
+    }
+    
+    .mobile-input-with-icon {
+      position: relative;
+    }
+    
+    .mobile-input-with-icon input {
+      padding-left: 42px;
+    }
+    
+    .mobile-currency-symbol {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      font-size: 16px;
+    }
+    
+    /* Select dropdown */
+    .mobile-select {
+      width: 100%;
+      padding: 14px 16px;
+      padding-right: 36px;
+      background-color: #262626;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 255, 255, 0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    
+    /* Segmented Controls */
+    .mobile-segmented-control {
+      display: flex;
+      width: 100%;
+      overflow: hidden;
+      background-color: #262626;
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-segmented-control input[type="radio"] {
+      display: none;
+    }
+    
+    .mobile-segmented-control label {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 0;
+      font-size: 16px;
+    }
+    
+    .mobile-segmented-control input[type="radio"]:checked + label {
+      background-color: #3b82f6;
+      color: white;
+    }
+    
+    /* Transaction Type Control (special case) */
+    .transaction-type-control input[value="income"]:checked + label {
+      background-color: #10b981; /* Green for income */
+    }
+    
+    .transaction-type-control input[value="expense"]:checked + label {
+      background-color: #ef4444; /* Red for expense */
+    }
+    
+    /* Radio Group */
+    .mobile-radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .mobile-radio-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background-color: #262626;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    
+    .mobile-radio-item input[type="radio"] {
+      margin-top: 4px;
+    }
+    
+    .mobile-radio-item label {
+      margin: 0;
+      cursor: pointer;
+      flex: 1;
+    }
+    
+    .mobile-radio-title {
+      display: block;
+      color: white;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    
+    .mobile-radio-description {
+      display: block;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: normal;
+    }
+  
+    /* ===== Buttons ===== */
+    .mobile-modal-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .mobile-btn-primary,
+    .mobile-btn-secondary,
+    .mobile-btn-danger {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      text-align: center;
+    }
+    
+    .mobile-btn-primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+    
+    .mobile-btn-secondary {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    .mobile-btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    
+    .mobile-text-btn {
+      background: none;
+      border: none;
+      color: #3b82f6;
+      padding: 0;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    /* ===== Account Details Modal ===== */
+    .mobile-account-header {
+        padding: 20px 16px;
+        background-color: #1a1a1a; /* Match website theme - dark background */
+        color: white;
+        position: relative;
+      }
+      
+      .mobile-account-header.bank {
+        background-color: #1e293b; /* Darker, more subtle blue */
+      }
+      
+      .mobile-account-header.crypto {
+        background-color: #312e81; /* Darker, more subtle purple */
+      }
+    
+    .account-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    
+    .account-balance {
+      font-size: 32px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    
+    .mobile-account-actions {
+      display: flex;
+      padding: 8px 16px;
+      background-color: #1a1a1a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-action-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 0;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 12px;
+      gap: 6px;
+      cursor: pointer;
+    }
+    
+    .mobile-action-btn i {
+      font-size: 18px;
+    }
+    
+    .mobile-action-btn:hover {
+      color: white;
+    }
+    
+    .mobile-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 16px 0 12px;
+    }
+    
+    .mobile-section-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      color: white;
+    }
+    
+    /* ===== Account Info ===== */
+    .mobile-account-info {
+      background-color: #262626;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    
+    .info-label {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    
+    .info-value {
+      color: white;
+      font-weight: 500;
+    }
+    
+    /* ===== Transactions List ===== */
+    .mobile-transactions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .mobile-transaction-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 12px;
+        background-color: #262626; /* Change from rgba(30, 41, 59, 0.3) to #262626 */
+        border-radius: 8px;
+        margin-bottom: 8px;
+        gap: 12px;
+        width: 100%;
+    }
+
+    #mobile-recent-transactions .mobile-transaction-item {
+        background-color: #262626; /* Match the modal background color */
+    }
+      
+    
+    .mobile-transaction-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      width: 100%;
+    }
+    
+    .mobile-transaction-title {
+      font-weight: 500;
+      color: white;
+    }
+    
+    .mobile-transaction-amount {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    .mobile-transaction-amount.income {
+      color: #4ade80;
+    }
+    
+    .mobile-transaction-amount.expense {
+      color: #f87171;
+    }
+    
+    .mobile-transaction-amount.transfer {
+      color: #60a5fa;
+    }
+    
+    .mobile-transaction-details {
+      font-size: 12px;
+      color: #94a3b8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .transaction-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px; /* Prevent icon from shrinking */
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      
+      .transaction-icon.income {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+      }
+      
+      .transaction-icon.expense {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+      }
+      
+      .transaction-icon.transfer {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+      }
+    
+      .transaction-details {
+        flex: 1;
+        min-width: 0; /* This is important to prevent overflow */
+        width: 100%;
+        overflow: hidden;
+      }
+    .transaction-primary {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    
+    .transaction-category {
+      color: white;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .transaction-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 4px;
+      }
+      
+      .transaction-title {
+        font-weight: 500;
+        color: white;
+        flex-shrink: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-right: 8px;
+      }
+      
+      .transaction-amount {
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+    
+    .transaction-amount.income {
+      color: #10b981;
+    }
+    
+    .transaction-amount.expense {
+      color: #ef4444;
+    }
+    
+    .transaction-amount.transfer {
+      color: #3b82f6;
+    }
+    
+    .transaction-secondary {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping for smaller screens */
+        color: #94a3b8;
+        font-size: 12px;
+        gap: 4px;
+      }
+      
+      .transaction-subtext {
+        color: #94a3b8;
+        font-size: 12px;
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      
+      .transaction-dot {
+        color: rgba(255, 255, 255, 0.2);
+      }
+    
+    .transaction-date {
+      min-width: 70px;
+    }
+    
+    .transaction-notes {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* ===== Delete Warning ===== */
+    .mobile-delete-warning {
+      text-align: center;
+      padding: 16px;
+      margin-bottom: 16px;
+      color: white;
+      background-color: rgba(239, 68, 68, 0.1);
+      border-radius: 12px;
+    }
+    
+    .mobile-delete-warning i {
+      font-size: 32px;
+      color: #ef4444;
+      margin-bottom: 12px;
+    }
+    
+    .mobile-delete-warning p {
+      margin: 8px 0;
+    }
+    
+    /* ===== Empty State ===== */
+    .mobile-empty-state {
+      text-align: center;
+      padding: 24px;
+      color: #94a3b8;
+    }
+    
+    /* Fixed bottom button */
+    .mobile-fixed-button {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      padding: 16px;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+      z-index: 100;
+    }
+    
+    /* ===== Converted Amount Display ===== */
+    .mobile-converted-amount {
+      padding: 14px 16px;
+      background-color: #1e293b;
+      border-radius: 12px;
+      color: #94a3b8;
+      font-size: 16px;
+    }
+  }
+  
+  /* Fix for iOS Safari to prevent content from being cut off */
+  @supports (-webkit-touch-callout: none) {
+    .mobile-modal-body {
+      padding-bottom: 100px;
+    }
+  }

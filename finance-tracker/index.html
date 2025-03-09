@@ -31,6 +31,13 @@
     <link rel="stylesheet" href="/finance-tracker/css/responsive.css">
     <link rel="stylesheet" href="/finance-tracker/css/settings.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Mobile-specific CSS (only loads on smaller screens) -->
+<link rel="stylesheet" href="/finance-tracker/css/mobile/mobile-base.css" media="(max-width: 768px)">
+<link rel="stylesheet" href="/finance-tracker/css/mobile/mobile-dashboard.css" media="(max-width: 768px)">
+<link rel="stylesheet" href="/finance-tracker/css/mobile/mobile-transactions.css" media="(max-width: 768px)">
+<link rel="stylesheet" href="/finance-tracker/css/mobile/mobile-analytics.css" media="(max-width: 768px)">
+<link rel="stylesheet" href="/finance-tracker/css/mobile/mobile-settings.css" media="(max-width: 768px)">
+<link rel="stylesheet" href="/finance-tracker/css/mobile/mobile-modals.css" media="(max-width: 768px)">
 </head>
 
 <!-- Loading Overlay -->
@@ -94,6 +101,101 @@
         </div>
     </div>
 </div>
+
+<div id="mobile-dashboard" class="mobile-dashboard" style="display: none;">
+    <!-- User info at top with sign out button -->
+    <div class="profile-info-mobile">
+      <img id="userAvatarMobile" class="user-avatar-mobile" alt="Profile picture">
+      <span id="userNameMobile" class="user-name-mobile"></span>
+      <!-- Sign out button -->
+      <button id="mobileSignOutBtn" class="mobile-sign-out-btn" aria-label="Sign out">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+    
+    <!-- Portfolio value card -->
+    <div class="portfolio-summary">
+      <div class="summary-header">
+        <div class="summary-title">
+          Total Portfolio Value
+          <button class="toggle-visibility-btn" onclick="togglePortfolioVisibility()">
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="total-portfolio-value" data-balance-value>₹0</div>
+      
+      <!-- Currency balances -->
+      <div class="currency-section">
+        <div class="balance-card">
+          <div class="balance-header">INR Balance</div>
+          <div class="balance-amount" data-balance-value>₹0</div>
+        </div>
+        <div class="balance-card">
+          <div class="balance-header">USD Balance</div>
+          <div class="balance-amount" data-balance-value>$0.00</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Quick actions -->
+    <div class="mobile-quick-actions">
+      <button onclick="showAddTransactionModal()" class="quick-action-btn primary">
+        <i class="fas fa-plus"></i> Add Transaction
+      </button>
+      <button onclick="showTransferModal()" class="quick-action-btn secondary">
+        <i class="fas fa-exchange-alt"></i> Transfer
+      </button>
+    </div>
+    
+    <!-- Accounts section -->
+    <div class="accounts-section-header">
+      <h2 class="accounts-section-title">Your Accounts</h2>
+      <div>
+        <button class="sort-accounts-btn">
+          <i class="fas fa-sort"></i>
+        </button>
+        <button class="add-account-btn" onclick="showAddAccountModal()">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div id="mobile-accounts-grid" class="mobile-accounts-grid">
+      <!-- Account cards will be dynamically added here -->
+    </div>
+    
+    <!-- Recent transactions for mobile -->
+    <div class="mobile-recent-transactions">
+      <div class="recent-transactions-header">
+        <h2 class="recent-transactions-title">Recent Transactions</h2>
+        <a href="#" class="view-all-link" data-view="transactions">View All</a>
+      </div>
+      <div id="mobile-recent-transactions">
+        <!-- Transactions will be added here -->
+      </div>
+    </div>
+    
+    <!-- Mobile bottom navigation -->
+    <div class="mobile-nav">
+      <a href="#" class="mobile-nav-item active" data-view="dashboard">
+        <i class="fas fa-home mobile-nav-icon"></i>
+        <span>Home</span>
+      </a>
+      <a href="#" class="mobile-nav-item" data-view="transactions">
+        <i class="fas fa-list mobile-nav-icon"></i>
+        <span>Transactions</span>
+      </a>
+      <a href="#" class="mobile-nav-item" data-view="analytics">
+        <i class="fas fa-chart-line mobile-nav-icon"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="#" class="mobile-nav-item" data-view="settings">
+        <i class="fas fa-cog mobile-nav-icon"></i>
+        <span>Settings</span>
+      </a>
+    </div>
+  </div>
 
 <!-- Main Content (hidden until login) -->
 <div id="mainContent" class="main-content bg-gradient-dark" style="display: none;">
@@ -206,6 +308,9 @@
             </div>
 
             <!-- Filters Card -->
+
+
+            
             <!-- Filters Card -->
 <div class="card filters-card">
     <div class="filters-header">
@@ -590,5 +695,7 @@
 <script src="/finance-tracker/js/app-ui.js"></script>
 <script src="/finance-tracker/js/analytics.js"></script>
 <script src="/finance-tracker/js/settings.js"></script>
+
+<script src="/finance-tracker/js/mobile/mobile-dashboard.js"></script>
 </body>
 </html>
