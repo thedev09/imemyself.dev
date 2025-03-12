@@ -1,0 +1,344 @@
+/* mobile-transactions.css - Mobile-optimized transactions page */
+@media (max-width: 768px) {
+
+    .mobile-nav {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        background-color: #1a1a1a !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 12px 0 8px !important;
+        z-index: 999 !important; /* Very high z-index to ensure it's on top */
+      }
+
+    /* Main container */
+    .mobile-transactions-view {
+        background-color: #121212;
+        min-height: 100vh;
+        padding-bottom: 90px !important;
+        position: relative;
+        z-index: 1 !important;
+      }
+
+
+      .transactions-nav {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        display: flex !important;
+        justify-content: space-around !important;
+        background-color: #1a1a1a !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 12px 0 8px !important;
+        z-index: 9999 !important; /* Even higher z-index */
+      }
+      
+      /* Hide the original nav when on transactions view */
+      body.mobile-view.transactions-active .mobile-nav:not(.transactions-nav) {
+        display: none !important;
+      }
+    
+    /* Header section */
+    .mobile-transactions-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .mobile-transactions-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .mobile-filter-toggle {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    
+    /* Stats cards */
+    .mobile-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 0 16px;
+      margin-bottom: 16px;
+    }
+    
+    .mobile-stat-card {
+      background-color: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    
+    .mobile-stat-label {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .mobile-stat-value.income {
+      color: #4ade80;
+    }
+    
+    .mobile-stat-value.expense {
+      color: #f87171;
+    }
+    
+    /* Filter section */
+    .mobile-filters-section {
+      margin: 0 16px 16px;
+      background-color: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+    
+    .mobile-filters-section.open {
+      max-height: 400px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .mobile-filter-group {
+      margin-bottom: 16px;
+    }
+    
+    .mobile-filter-label {
+      display: block;
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-filter-select {
+      width: 100%;
+      padding: 12px;
+      background-color: #262626;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.5)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+    }
+    
+    .mobile-date-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .mobile-date-input {
+      padding: 12px;
+      background-color: #262626;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+    }
+    
+    .mobile-date-input::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.7;
+    }
+    
+    .mobile-filter-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    
+    .mobile-filter-reset {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #94a3b8;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .mobile-filter-apply {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    /* Transactions list */
+    .mobile-transactions-list {
+      padding: 0 16px;
+    }
+    
+    .mobile-transaction-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background-color: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .mobile-transaction-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .mobile-transaction-icon.income {
+      background-color: rgba(74, 222, 128, 0.1);
+      color: #4ade80;
+    }
+    
+    .mobile-transaction-icon.expense {
+      background-color: rgba(248, 113, 113, 0.1);
+      color: #f87171;
+    }
+    
+    .mobile-transaction-icon.transfer {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: #60a5fa;
+    }
+    
+    .mobile-transaction-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .mobile-transaction-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    
+    .mobile-transaction-title {
+      font-weight: 500;
+      color: white;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .mobile-transaction-amount {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    .mobile-transaction-amount.income {
+      color: #4ade80;
+    }
+    
+    .mobile-transaction-amount.expense {
+      color: #f87171;
+    }
+    
+    .mobile-transaction-amount.transfer {
+      color: #60a5fa;
+    }
+    
+    .mobile-transaction-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+    
+    .mobile-transaction-separator {
+      color: rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Load more button */
+    .mobile-load-more {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      width: calc(100% - 32px);
+      margin: 0 16px 16px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    /* Empty state */
+    .mobile-empty-transactions {
+      margin: 32px 16px;
+      padding: 32px 16px;
+      text-align: center;
+      background-color: rgba(30, 41, 59, 0.3);
+      border-radius: 12px;
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-empty-transactions p {
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+    
+    .mobile-add-transaction-btn {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* Floating action button */
+    .mobile-fab {
+      position: fixed;
+      bottom: 90px; /* Above bottom navigation */
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background-color: #3b82f6;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+      border: none;
+      z-index: 90;
+    }
+  }

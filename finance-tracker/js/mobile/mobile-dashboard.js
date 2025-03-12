@@ -631,35 +631,34 @@ function showMobileAccountDetails(accountId) {
                 `<button class="mobile-text-btn" onclick="showMobileAccountTransactions('${accountId}')">View All</button>` 
                 : ''}
             </div>
-            
-            <div class="mobile-transactions-list">
-              ${transactions.length > 0 ? 
-                transactions.slice(0, 5).map(tx => {
-                  const typeClass = tx.type === 'income' ? 'income' : tx.type === 'expense' ? 'expense' : 'transfer';
-                  const prefix = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : '';
-                  const icon = tx.type === 'income' ? 'arrow-down' : tx.type === 'expense' ? 'arrow-up' : 'exchange-alt';
-                  
-                  return `
-                    <div class="mobile-transaction-item">
-                      <div class="transaction-icon ${typeClass}">
-                        <i class="fas fa-${icon}"></i>
-                      </div>
-                      <div class="transaction-details">
-                        <div class="transaction-header">
-                          <div class="transaction-title">${escapeHtml(tx.category)}</div>
-                          <div class="transaction-amount ${typeClass}">${prefix}${formatCurrency(Math.abs(tx.amount), account.currency)}</div>
-                        </div>
-                        <div class="transaction-subtext">
-                          <span>${formatDate(tx.date)}</span>
-                          ${tx.paymentMode ? `<span class="transaction-dot">•</span><span>${escapeHtml(tx.paymentMode)}</span>` : ''}
-                          ${tx.notes ? `<span class="transaction-dot">•</span><span>${escapeHtml(tx.notes)}</span>` : ''}
-                        </div>
-                      </div>
-                    </div>
-                  `;
-                }).join('') 
-                : '<div class="mobile-empty-state">No transactions for this account yet</div>'}
+<div class="mobile-transactions-list">
+  ${transactions.length > 0 ? 
+    transactions.slice(0, 5).map(tx => {
+      const typeClass = tx.type === 'income' ? 'income' : tx.type === 'expense' ? 'expense' : 'transfer';
+      const prefix = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : '';
+      const icon = tx.type === 'income' ? 'arrow-down' : tx.type === 'expense' ? 'arrow-up' : 'exchange-alt';
+      
+      return `
+        <div class="mobile-transaction-item" onclick="showMobileTransactionDetails('${tx.id}')">
+          <div class="transaction-icon ${typeClass}">
+            <i class="fas fa-${icon}"></i>
+          </div>
+          <div class="transaction-details">
+            <div class="transaction-header">
+              <div class="transaction-title">${escapeHtml(tx.category)}</div>
+              <div class="transaction-amount ${typeClass}">${prefix}${formatCurrency(Math.abs(tx.amount), account.currency)}</div>
             </div>
+            <div class="transaction-subtext">
+              <span>${formatDate(tx.date)}</span>
+              ${tx.paymentMode ? `<span class="transaction-dot">•</span><span>${escapeHtml(tx.paymentMode)}</span>` : ''}
+              ${tx.notes ? `<span class="transaction-dot">•</span><span>${escapeHtml(tx.notes)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('') 
+    : '<div class="mobile-empty-state">No transactions for this account yet</div>'}
+</div>
             
             <div class="mobile-section-header">
               <h3>Account Info</h3>
@@ -753,7 +752,7 @@ function showMobileAccountDetails(accountId) {
                   const icon = tx.type === 'income' ? 'arrow-down' : tx.type === 'expense' ? 'arrow-up' : 'exchange-alt';
                   
                   return `
-                    <div class="mobile-transaction-item">
+                    <div class="mobile-transaction-item" onclick="showMobileTransactionDetails('${tx.id}')">
                       <div class="transaction-icon ${typeClass}">
                         <i class="fas fa-${icon}"></i>
                       </div>
@@ -1435,62 +1434,61 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 });
 
-// In mobile-dashboard.js
 function renderMobileRecentTransactions() {
-    console.log("Rendering mobile recent transactions");
+  console.log("Rendering mobile recent transactions");
+  
+  const container = document.getElementById('mobile-recent-transactions');
+  if (!container) {
+    console.error("Mobile recent transactions container not found");
+    return;
+  }
+  
+  if (!state.transactions || !state.transactions.length) {
+    container.innerHTML = '<div class="no-data">No transactions found</div>';
+    return;
+  }
+  
+  // Get 5 most recent transactions
+  const recentTransactions = [...state.transactions]
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5);
+  
+  // Render transactions with contained styling and make them clickable
+  container.innerHTML = recentTransactions.map(tx => {
+    const account = state.accounts.find(a => a.id === tx.accountId);
+    const typeClass = tx.type === 'income' ? 'income' : tx.type === 'expense' ? 'expense' : 'transfer';
+    const amountPrefix = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : 
+                          (tx.notes?.toLowerCase().includes('transfer to') ? '-' : '+');
+    const icon = tx.type === 'income' ? 'arrow-down' : tx.type === 'expense' ? 'arrow-up' : 'exchange-alt';
     
-    const container = document.getElementById('mobile-recent-transactions');
-    if (!container) {
-      console.error("Mobile recent transactions container not found");
-      return;
-    }
-    
-    if (!state.transactions || !state.transactions.length) {
-      container.innerHTML = '<div class="no-data">No transactions found</div>';
-      return;
-    }
-    
-    // Get 5 most recent transactions
-    const recentTransactions = [...state.transactions]
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 5);
-    
-    // Render transactions with contained styling
-    container.innerHTML = recentTransactions.map(tx => {
-      const account = state.accounts.find(a => a.id === tx.accountId);
-      const typeClass = tx.type === 'income' ? 'income' : tx.type === 'expense' ? 'expense' : 'transfer';
-      const amountPrefix = tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : 
-                            (tx.notes?.toLowerCase().includes('transfer to') ? '-' : '+');
-      const icon = tx.type === 'income' ? 'arrow-down' : tx.type === 'expense' ? 'arrow-up' : 'exchange-alt';
-      
-      return `
-        <div class="mobile-transaction-item">
-          <div class="transaction-icon ${typeClass}">
-            <i class="fas fa-${icon}"></i>
+    return `
+      <div class="mobile-transaction-item" onclick="showMobileTransactionDetails('${tx.id}')">
+        <div class="transaction-icon ${typeClass}">
+          <i class="fas fa-${icon}"></i>
+        </div>
+        <div class="transaction-details">
+          <div class="transaction-header">
+            <div class="transaction-title">${escapeHtml(tx.category)}</div>
+            <div class="transaction-amount ${typeClass}">
+              ${amountPrefix}${formatCurrency(Math.abs(tx.amount), account?.currency)}
+            </div>
           </div>
-          <div class="transaction-details">
-            <div class="transaction-header">
-              <div class="transaction-title">${escapeHtml(tx.category)}</div>
-              <div class="transaction-amount ${typeClass}">
-                ${amountPrefix}${formatCurrency(Math.abs(tx.amount), account?.currency)}
-              </div>
-            </div>
-            <div class="transaction-subtext">
-              <span>${formatDate(tx.date)}</span>
-              ${account ? `<span class="transaction-dot">•</span><span>${escapeHtml(account.name)}</span>` : ''}
-              ${tx.paymentMode ? `<span class="transaction-dot">•</span><span>${escapeHtml(tx.paymentMode)}</span>` : ''}
-            </div>
+          <div class="transaction-subtext">
+            <span>${formatDate(tx.date)}</span>
+            ${account ? `<span class="transaction-dot">•</span><span>${escapeHtml(account.name)}</span>` : ''}
+            ${tx.paymentMode ? `<span class="transaction-dot">•</span><span>${escapeHtml(tx.paymentMode)}</span>` : ''}
           </div>
         </div>
-      `;
-    }).join('');
-    
-    // Setup "View All" link
-    const viewAllLink = document.querySelector('.view-all-link');
-    if (viewAllLink) {
-      viewAllLink.onclick = () => switchView('transactions');
-    }
+      </div>
+    `;
+  }).join('');
+  
+  // Setup "View All" link
+  const viewAllLink = document.querySelector('.view-all-link');
+  if (viewAllLink) {
+    viewAllLink.onclick = () => switchView('transactions');
   }
+}
 
 
     // Setup mobile navigation
