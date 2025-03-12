@@ -29,8 +29,7 @@ function ensureMobileNavVisible() {
       mobileNav.style.cssText = 'display: flex !important; z-index: 999 !important;';
     }
   }
-  
-  // Update your initMobileTransactions function to call this
+
   function initMobileTransactions() {
     if (!isMobile() || state.currentView !== 'transactions') {
       return;
@@ -41,20 +40,25 @@ function ensureMobileNavVisible() {
     // Force mobile navigation to be visible
     ensureMobileNavVisible();
     
-      // Show mobile view, hide desktop view
-  document.getElementById('transactions-view').style.display = 'none';
-  document.body.classList.add('mobile-view');
-  document.body.classList.add('transactions-active'); // Add this class
-  
-  // Check if mobile transactions container exists
-  let mobileTransactionsView = document.getElementById('mobile-transactions-view');
-  if (!mobileTransactionsView) {
-    console.log("Creating mobile transactions view");
-    createMobileTransactionsView();
-  }
-  
-  // Setup navigation on the transactions view
-  setupTransactionsNavigation();
+    // Check if mobile transactions container exists
+    let mobileTransactionsView = document.getElementById('mobile-transactions-view');
+    if (!mobileTransactionsView) {
+      console.log("Creating mobile transactions view");
+      createMobileTransactionsView();
+    } else {
+      // If it already exists, make sure it's visible
+      mobileTransactionsView.style.display = 'block';
+    }
+    
+    // Explicitly hide desktop view
+    document.getElementById('transactions-view').style.display = 'none';
+    
+    // Add mobile view class to body
+    document.body.classList.add('mobile-view');
+    document.body.classList.add('transactions-active');
+    
+    // Setup navigation on the transactions view
+    setupTransactionsNavigation();
     
     // Initialize filters
     initializeMobileFilters();
@@ -70,10 +74,8 @@ function ensureMobileNavVisible() {
     
     // Update active nav item
     updateMobileNavActive('transactions');
-    
-    // Ensure nav is visible one more time after everything is done
-    setTimeout(ensureMobileNavVisible, 300);
   }
+  
   
   // Add this new function to update the active nav tab
   function updateMobileNavActive(view) {
@@ -207,26 +209,23 @@ function ensureMobileNavVisible() {
   setupTransactionsNavigation();
     }
 
-    function setupTransactionsNavigation() {
-        const navItems = document.querySelectorAll('.transactions-nav .mobile-nav-item');
-        navItems.forEach(item => {
-          item.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const view = this.getAttribute('data-view');
-            if (view) {
-              console.log("Mobile transactions navigation clicked for view:", view);
-              
-              // Update active tab
-              navItems.forEach(tab => tab.classList.remove('active'));
-              this.classList.add('active');
-              
-              // Switch view
-              window.switchView(view);
-            }
-          });
-        });
-      }
+   // Update the setupTransactionsNavigation function
+function setupTransactionsNavigation() {
+    const navItems = document.querySelectorAll('#mobile-transactions-view .mobile-nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const view = this.getAttribute('data-view');
+        if (view) {
+          console.log("Mobile transactions navigation clicked for view:", view);
+          
+          // Use the main switchView function
+          window.switchView(view);
+        }
+      });
+    });
+  }
     
     // Initialize the filter dropdowns
     function initializeMobileFilters() {

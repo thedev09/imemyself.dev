@@ -1,0 +1,286 @@
+/* mobile-settings.css - Mobile-optimized settings page */
+@media (max-width: 768px) {
+    body.mobile-view > div > nav,
+    body.mobile-view .page-container > nav,
+    body.mobile-view #mainContent > nav,
+    body.mobile-view .tab-buttons,
+    body.mobile-view .desktop-only-nav {
+      display: none !important;
+    }
+    
+    /* Main container */
+    .mobile-settings-view {
+      background-color: #121212;
+      min-height: 100vh;
+      padding-bottom: 90px; /* Space for bottom navigation */
+      position: relative;
+      z-index: 1;
+    }
+    /* Header section */
+    .mobile-settings-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .mobile-settings-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    /* Profile section */
+    .mobile-profile-section {
+      margin: 0 16px 16px;
+      background-color: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .mobile-profile-header {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-profile-picture {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid #3b82f6;
+      margin-bottom: 16px;
+    }
+    
+    .mobile-profile-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 4px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .mobile-edit-name-btn {
+      background: none;
+      border: none;
+      color: #3b82f6;
+      font-size: 16px;
+      padding: 4px;
+      cursor: pointer;
+    }
+    
+    .mobile-user-email {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    
+    .mobile-auth-method {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59, 130, 246, 0.1);
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      color: #60a5fa;
+    }
+    
+    /* Name edit form */
+    .mobile-name-edit-form {
+      display: none;
+      width: 100%;
+      margin-top: 12px;
+    }
+    
+    .mobile-name-edit-form.active {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .mobile-name-input {
+      width: 100%;
+      padding: 12px;
+      background-color: #262626;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+    }
+    
+    .mobile-confirm-name-btn {
+      padding: 12px;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    
+    /* Data management section */
+    .mobile-data-section {
+      margin: 0 16px 16px;
+      background-color: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    
+    .mobile-data-section h2 {
+      color: white;
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+    
+    .mobile-data-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .mobile-export-btn,
+    .mobile-clear-transactions-btn,
+    .mobile-clear-data-btn {
+      padding: 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .mobile-export-btn {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
+    .mobile-clear-transactions-btn {
+      background-color: rgba(249, 115, 22, 0.1);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.2);
+    }
+    
+    .mobile-clear-data-btn {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    
+    /* Mobile navigation */
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      background-color: #1a1a1a;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 0 8px;
+      z-index: 999;
+    }
+    
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 12px;
+      gap: 4px;
+    }
+    
+    .mobile-nav-item.active {
+      color: #3b82f6;
+    }
+    
+    .mobile-nav-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    
+    /* Confirmation Modal for dangerous actions */
+    .mobile-confirmation-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(5px);
+      z-index: 1100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    
+    .mobile-confirmation-modal {
+      width: 100%;
+      max-width: 400px;
+      background-color: #1a1a1a;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .mobile-confirmation-header {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-confirmation-header h2 {
+      color: white;
+      font-size: 18px;
+      margin: 0;
+    }
+    
+    .mobile-confirmation-body {
+      padding: 20px 16px;
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .mobile-confirmation-icon {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 12px;
+      font-size: 32px;
+      color: #f87171;
+    }
+    
+    .mobile-confirmation-actions {
+      display: flex;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-confirm-btn,
+    .mobile-cancel-btn {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .mobile-confirm-btn {
+      background-color: #ef4444;
+    }
+    
+    .mobile-cancel-btn {
+      background-color: transparent;
+      color: #94a3b8;
+    }
+  }

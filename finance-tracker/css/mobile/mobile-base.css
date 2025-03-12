@@ -12,6 +12,22 @@
     }
     
     /* Hide desktop-specific elements when on mobile */
+    body.mobile-view .nav,
+    body.mobile-view nav:not(.mobile-nav),
+    body.mobile-view .tab-buttons,
+    body.mobile-view #mainContent > nav,
+    body.mobile-view .desktop-only-nav {
+      display: none !important;
+    }
+    
+    /* Hide top Finance Manager navigation on mobile */
+    body.mobile-view header,
+    body.mobile-view .page-header,
+    body.mobile-view .main-navigation {
+      display: none !important;
+    }
+    
+    /* Hide desktop-specific elements when on mobile */
     body.mobile-view .nav {
       display: none !important;
     }
