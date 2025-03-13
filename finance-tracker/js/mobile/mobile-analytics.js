@@ -123,6 +123,24 @@
             </div>
           </div>
           
+          <!-- Spending Analysis Period Selector -->
+          <div class="mobile-spending-period">
+            <select id="mobileSpendingPeriod" class="mobile-spending-select">
+              <option value="thisMonth">This Month</option>
+              <option value="last3">Last 3 Months</option>
+              <option value="last6">Last 6 Months</option>
+              <option value="thisYear">This Year</option>
+              <option value="all">All Time</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          
+          <!-- Custom Date Range for Spending Analysis -->
+          <div id="mobileCustomDateRange" class="mobile-custom-date-range">
+            <input type="date" id="mobileSpendingStartDate" class="mobile-date-input" placeholder="Start Date">
+            <input type="date" id="mobileSpendingEndDate" class="mobile-date-input" placeholder="End Date">
+          </div>
+          
           <!-- Spending Categories Card -->
           <div class="mobile-analytics-card">
             <div class="mobile-analytics-card-header">
@@ -237,6 +255,45 @@
         });
       }
       
+      // Setup spending period selector
+      const spendingPeriodSelect = document.getElementById('mobileSpendingPeriod');
+      const customDateRange = document.getElementById('mobileCustomDateRange');
+      if (spendingPeriodSelect) {
+        spendingPeriodSelect.addEventListener('change', function() {
+          // Show/hide custom date range
+          if (this.value === 'custom') {
+            customDateRange.classList.add('visible');
+            
+            // Set default date range (current month)
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            
+            document.getElementById('mobileSpendingStartDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('mobileSpendingEndDate').value = lastDay.toISOString().split('T')[0];
+          } else {
+            customDateRange.classList.remove('visible');
+          }
+          
+          // Update spending analysis data
+          updateMobileSpendingAnalysis();
+        });
+        
+        // Setup custom date range change handlers
+        const startDateInput = document.getElementById('mobileSpendingStartDate');
+        const endDateInput = document.getElementById('mobileSpendingEndDate');
+        
+        if (startDateInput && endDateInput) {
+          [startDateInput, endDateInput].forEach(input => {
+            input.addEventListener('change', function() {
+              if (startDateInput.value && endDateInput.value) {
+                updateMobileSpendingAnalysis();
+              }
+            });
+          });
+        }
+      }
+      
       // Setup view all categories
       const viewAllCategories = document.getElementById('viewAllCategories');
       if (viewAllCategories) {
@@ -276,11 +333,8 @@
         // Render income/expense chart and stats
         renderMobileIncomeExpenseChart();
         
-        // Render spending categories
-        renderMobileSpendingCategories();
-        
-        // Render payment methods
-        renderMobilePaymentMethods();
+        // Update spending analysis with default period
+        updateMobileSpendingAnalysis();
         
         // Render monthly breakdown
         renderMobileMonthlyBreakdown();
@@ -288,6 +342,78 @@
         console.error("Error rendering mobile analytics:", error);
         showToast("Error rendering analytics data", "error");
       }
+    }
+    
+    // Function to update spending analysis based on selected period
+    function updateMobileSpendingAnalysis() {
+      const periodSelect = document.getElementById('mobileSpendingPeriod');
+      if (!periodSelect) return;
+      
+      const period = periodSelect.value;
+      let startDate = null;
+      let endDate = null;
+      
+      if (period === 'custom') {
+        startDate = document.getElementById('mobileSpendingStartDate').value;
+        endDate = document.getElementById('mobileSpendingEndDate').value;
+        
+        if (!startDate || !endDate) {
+          console.log("Custom date range not fully specified");
+          return;
+        }
+      }
+      
+      // Filter transactions based on period
+      const filteredTransactions = filterTransactionsForAnalysis(period, startDate, endDate);
+      
+      // Render spending categories with filtered data
+      renderMobileSpendingCategories(filteredTransactions);
+      
+      // Render payment methods with filtered data
+      renderMobilePaymentMethods(filteredTransactions);
+    }
+    
+    // Filter transactions based on selected period
+    function filterTransactionsForAnalysis(period, customStartDate = null, customEndDate = null) {
+      const now = new Date();
+      let startDate;
+      let endDate = now;
+      
+      switch(period) {
+        case 'thisMonth':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'last3':
+          startDate = new Date(now);
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'last6':
+          startDate = new Date(now);
+          startDate.setMonth(now.getMonth() - 6);
+          break;
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        case 'custom':
+          if (customStartDate && customEndDate) {
+            startDate = new Date(customStartDate);
+            endDate = new Date(customEndDate);
+            endDate.setHours(23, 59, 59, 999); // End of the day
+          } else {
+            // Default to this month if custom dates are not provided
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          }
+          break;
+        case 'all':
+        default:
+          // For 'all', don't filter by date
+          return state.transactions;
+      }
+      
+      return state.transactions.filter(tx => {
+        const txDate = new Date(tx.date);
+        return txDate >= startDate && txDate <= endDate;
+      });
     }
     
     // Render net worth chart for mobile
@@ -573,31 +699,38 @@
     }
     
     // Render spending categories for mobile
-    function renderMobileSpendingCategories() {
+    function renderMobileSpendingCategories(filteredTransactions = null) {
       const container = document.getElementById('mobileCategoriesList');
       if (!container) return;
       
-      // Get last month's date
-      const lastMonthDate = new Date();
-      lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+      // Use filtered transactions if provided, otherwise use default filter
+      let transactions = filteredTransactions;
+      if (!transactions) {
+        // Default to last month
+        const lastMonthDate = new Date();
+        lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+        
+        transactions = state.transactions.filter(tx => 
+          tx.type === 'expense' && 
+          new Date(tx.date) >= lastMonthDate
+        );
+      } else {
+        // Filter for expenses only from the provided transactions
+        transactions = filteredTransactions.filter(tx => tx.type === 'expense');
+      }
       
       // Calculate spending by category
       const categorySpending = {};
       let totalSpending = 0;
       
-      state.transactions
-        .filter(tx => 
-          tx.type === 'expense' && 
-          new Date(tx.date) >= lastMonthDate
-        )
-        .forEach(tx => {
-          const amount = tx.amountInINR || tx.amount;
-          if (!categorySpending[tx.category]) {
-            categorySpending[tx.category] = 0;
-          }
-          categorySpending[tx.category] += amount;
-          totalSpending += amount;
-        });
+      transactions.forEach(tx => {
+        const amount = tx.amountInINR || tx.amount;
+        if (!categorySpending[tx.category]) {
+          categorySpending[tx.category] = 0;
+        }
+        categorySpending[tx.category] += amount;
+        totalSpending += amount;
+      });
       
       // Convert to array and sort
       const sortedCategories = Object.entries(categorySpending)
@@ -627,36 +760,52 @@
           </div>
         </div>
       `).join('');
+      
+      // Update "View All Categories" link to pass the current filter period
+      const viewAllLink = document.getElementById('viewAllCategories');
+      if (viewAllLink) {
+        viewAllLink.onclick = (e) => {
+          e.preventDefault();
+          showMobileCategoriesModal(transactions);
+        };
+      }
     }
     
     // Render payment methods for mobile
-    function renderMobilePaymentMethods() {
+    function renderMobilePaymentMethods(filteredTransactions = null) {
       const container = document.getElementById('mobilePaymentsList');
       if (!container) return;
       
-      // Get last month's date
-      const lastMonthDate = new Date();
-      lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+      // Use filtered transactions if provided, otherwise use default filter
+      let transactions = filteredTransactions;
+      if (!transactions) {
+        // Default to last month
+        const lastMonthDate = new Date();
+        lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+        
+        transactions = state.transactions.filter(tx => 
+          tx.type === 'expense' && 
+          new Date(tx.date) >= lastMonthDate
+        );
+      } else {
+        // Filter for expenses only from the provided transactions
+        transactions = filteredTransactions.filter(tx => tx.type === 'expense');
+      }
       
       // Calculate spending by payment method
       const paymentData = {};
       let totalSpending = 0;
       
-      state.transactions
-        .filter(tx => 
-          tx.type === 'expense' && 
-          new Date(tx.date) >= lastMonthDate
-        )
-        .forEach(tx => {
-          if (!tx.paymentMode) return;
-          
-          const amount = tx.amountInINR || tx.amount;
-          if (!paymentData[tx.paymentMode]) {
-            paymentData[tx.paymentMode] = 0;
-          }
-          paymentData[tx.paymentMode] += amount;
-          totalSpending += amount;
-        });
+      transactions.forEach(tx => {
+        if (!tx.paymentMode) return;
+        
+        const amount = tx.amountInINR || tx.amount;
+        if (!paymentData[tx.paymentMode]) {
+          paymentData[tx.paymentMode] = 0;
+        }
+        paymentData[tx.paymentMode] += amount;
+        totalSpending += amount;
+      });
       
       // Convert to array and sort
       const methods = Object.entries(paymentData)
@@ -686,6 +835,15 @@
           </div>
         </div>
       `).join('');
+      
+      // Update "View All Payment Methods" link to pass the current filter period
+      const viewAllLink = document.getElementById('viewAllPayments');
+      if (viewAllLink) {
+        viewAllLink.onclick = (e) => {
+          e.preventDefault();
+          showMobilePaymentMethodsModal(transactions);
+        };
+      }
     }
     
     // Render monthly breakdown for mobile
