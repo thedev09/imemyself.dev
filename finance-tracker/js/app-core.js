@@ -29,6 +29,91 @@ function validateTransaction(transaction) {
     return true;
 }
 
+// Add pull-to-refresh functionality
+function setupPullToRefresh() {
+    let touchStartY = 0;
+    let touchEndY = 0;
+    const threshold = 150; // Minimum pull distance to trigger refresh
+    let isPulling = false;
+    
+    // Create refresh indicator element
+    const refreshIndicator = document.createElement('div');
+    refreshIndicator.className = 'pull-refresh-indicator';
+    refreshIndicator.innerHTML = '<i class="fas fa-sync-alt"></i> Pull to refresh';
+    refreshIndicator.style.position = 'fixed';
+    refreshIndicator.style.top = '-60px';
+    refreshIndicator.style.left = '0';
+    refreshIndicator.style.width = '100%';
+    refreshIndicator.style.padding = '15px 0';
+    refreshIndicator.style.textAlign = 'center';
+    refreshIndicator.style.backgroundColor = '#1a1a1a';
+    refreshIndicator.style.color = '#3b82f6';
+    refreshIndicator.style.zIndex = '9999';
+    refreshIndicator.style.transition = 'top 0.2s';
+    document.body.appendChild(refreshIndicator);
+    
+    document.addEventListener('touchstart', function(e) {
+      // Only allow pull refresh at the top of the page
+      if (window.scrollY <= 0) {
+        touchStartY = e.touches[0].clientY;
+        isPulling = true;
+      }
+    });
+    
+    document.addEventListener('touchmove', function(e) {
+      if (!isPulling) return;
+      
+      touchEndY = e.touches[0].clientY;
+      const distance = touchEndY - touchStartY;
+      
+      if (distance > 0 && window.scrollY <= 0) {
+        // Show pull indicator with dynamic position based on pull distance
+        refreshIndicator.style.top = Math.min(distance / 2 - 60, 0) + 'px';
+        
+        if (distance > threshold) {
+          refreshIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Release to refresh';
+        } else {
+          refreshIndicator.innerHTML = '<i class="fas fa-sync-alt"></i> Pull to refresh';
+        }
+        
+        // Prevent default scrolling
+        e.preventDefault();
+      }
+    });
+    
+    document.addEventListener('touchend', function() {
+      if (!isPulling) return;
+      isPulling = false;
+      
+      const distance = touchEndY - touchStartY;
+      if (distance > threshold && window.scrollY <= 0) {
+        // Show loading
+        refreshIndicator.style.top = '0';
+        refreshIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing...';
+        
+        // Reload the app data
+        loadUserData(true).then(() => {
+          // Hide the indicator after refresh
+          setTimeout(() => {
+            refreshIndicator.style.top = '-60px';
+          }, 1000);
+        });
+      } else {
+        // Hide the indicator if not triggered
+        refreshIndicator.style.top = '-60px';
+      }
+    });
+  }
+  
+  // Call this function after the user is authenticated
+  document.addEventListener('DOMContentLoaded', () => {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        setupPullToRefresh();
+      }
+    });
+  });
+
 async function handleAccountDeletion(accountId) {
     const user = getCurrentUser();
     if (!user) throw new Error('Please sign in to continue');
