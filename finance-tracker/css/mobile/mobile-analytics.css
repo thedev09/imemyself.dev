@@ -1,0 +1,292 @@
+/* mobile-analytics.css - Mobile optimized analytics styles */
+@media (max-width: 768px) {
+    /* Main container styles */
+    .mobile-analytics-view {
+      background-color: #121212;
+      min-height: 100vh;
+      padding-bottom: 80px; /* Space for bottom navigation */
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Header styles */
+    .mobile-analytics-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-analytics-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    /* Period selector styles */
+    .mobile-time-filters {
+      display: flex;
+      gap: 4px;
+      padding: 0 16px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; /* Firefox */
+    }
+    
+    .mobile-time-filters::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Edge */
+    }
+    
+    .mobile-time-filter {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      font-size: 14px;
+      color: #94a3b8;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    
+    .mobile-time-filter.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    
+    /* Card styles */
+    .mobile-analytics-card {
+      background: #1a1a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      margin: 0 16px 16px;
+      overflow: hidden;
+    }
+    
+    .mobile-analytics-card-header {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .mobile-analytics-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      margin: 0;
+    }
+    
+    .mobile-analytics-card-content {
+      padding: 16px;
+    }
+    
+    /* Chart container */
+    .mobile-chart-container {
+      height: 200px;
+      position: relative;
+      margin-bottom: 16px;
+    }
+    
+    /* Stats grid */
+    .mobile-analytics-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .mobile-stat-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    
+    .mobile-stat-label {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    
+    .mobile-stat-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .mobile-stat-value.positive {
+      color: #4ade80;
+    }
+    
+    .mobile-stat-value.negative {
+      color: #f87171;
+    }
+    
+    /* Category list */
+    .mobile-category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .mobile-category-item {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+    
+    .mobile-category-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    
+    .mobile-category-name {
+      font-weight: 500;
+      color: white;
+    }
+    
+    .mobile-category-amount {
+      font-weight: 500;
+      color: white;
+    }
+    
+    .mobile-progress-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .mobile-progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: #3b82f6;
+      border-radius: 2px;
+    }
+    
+    .mobile-category-percentage {
+      position: absolute;
+      top: -18px;
+      font-size: 10px;
+      color: #94a3b8;
+      transform: translateX(-50%);
+    }
+    
+    /* Monthly breakdown table */
+    .mobile-breakdown-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .mobile-breakdown-table th,
+    .mobile-breakdown-table td {
+      padding: 12px 8px;
+      text-align: right;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-breakdown-table th:first-child,
+    .mobile-breakdown-table td:first-child {
+      text-align: left;
+      padding-left: 0;
+    }
+    
+    .mobile-breakdown-table th:last-child,
+    .mobile-breakdown-table td:last-child {
+      padding-right: 0;
+    }
+    
+    .mobile-breakdown-table th {
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    
+    .mobile-breakdown-table td {
+      color: white;
+    }
+    
+    .mobile-breakdown-table td.income {
+      color: #4ade80;
+    }
+    
+    .mobile-breakdown-table td.expense {
+      color: #f87171;
+    }
+    
+    .mobile-breakdown-table td.savings {
+      color: #60a5fa;
+    }
+    
+    /* Mobile period selector */
+    .mobile-period-selector {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    
+    .mobile-period-select {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: white;
+      padding: 8px 12px;
+      font-size: 14px;
+      max-width: 120px;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.5)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
+      padding-right: 28px;
+    }
+    
+    /* View more link */
+    .mobile-view-more {
+      color: #3b82f6;
+      font-size: 14px;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      padding: 8px 0;
+    }
+    
+    /* Empty state */
+    .mobile-empty-state {
+      text-align: center;
+      padding: 32px 0;
+      color: #94a3b8;
+    }
+    
+    /* Year selector for breakdown */
+    .mobile-year-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+    
+    .mobile-year-button {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+    
+    .mobile-year-button.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+  }
