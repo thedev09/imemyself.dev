@@ -75,6 +75,21 @@ function ensureMobileNavVisible() {
     // Update active nav item
     updateMobileNavActive('transactions');
   }
+
+  function setupFilterToggle() {
+    const filterToggle = document.getElementById('mobile-filter-toggle');
+    if (filterToggle) {
+      console.log("Setting up filter toggle button");
+      filterToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation(); // Add this line to stop event propagation
+        console.log("Filter toggle clicked");
+        toggleFilterSection();
+      });
+    } else {
+      console.log("Filter toggle button not found");
+    }
+  }
   
   
   // Add this new function to update the active nav tab
@@ -88,19 +103,19 @@ function ensureMobileNavVisible() {
     
     // Create the mobile transactions view HTML
     function createMobileTransactionsView() {
-        console.log("Creating mobile transactions view HTML");
+      console.log("Creating mobile transactions view HTML");
+      
+      const mainContent = document.getElementById('mainContent');
+      
+      const mobileTransactionsHTML = `
+        <div id="mobile-transactions-view" class="mobile-transactions-view">
+          <div class="mobile-transactions-header">
+            <h1 class="mobile-transactions-title">Transactions</h1>
+            <button class="mobile-filter-toggle" id="mobile-filter-toggle">
+              <i class="fas fa-filter"></i>
+            </button>
+          </div>
         
-        const mainContent = document.getElementById('mainContent');
-        
-        const mobileTransactionsHTML = `
-          <div id="mobile-transactions-view" class="mobile-transactions-view">
-            <div class="mobile-transactions-header">
-              <h1 class="mobile-transactions-title">Transactions</h1>
-              <button class="mobile-filter-toggle" id="mobile-filter-toggle">
-                <i class="fas fa-filter"></i>
-              </button>
-            </div>
-          
           <div class="mobile-stats-grid">
             <div class="mobile-stat-card">
               <div class="mobile-stat-label">Income</div>
@@ -169,44 +184,47 @@ function ensureMobileNavVisible() {
             </div>
           </div>
           
-          <div id="mobile-transactions-list" class="mobile-transactions-list">
-            <!-- Transactions will be rendered here -->
+          <!-- New container for the transactions list -->
+          <div class="mobile-transactions-container">
+            <div id="mobile-transactions-list" class="mobile-transactions-list">
+              <!-- Transactions will be rendered here -->
+            </div>
+            
+            <button id="mobile-load-more" class="mobile-load-more" style="display: none;">
+              Load More
+            </button>
           </div>
-          
-          <button id="mobile-load-more" class="mobile-load-more" style="display: none;">
-            Load More
-          </button>
           
           <button id="mobile-add-transaction" class="mobile-fab">
             <i class="fas fa-plus"></i>
           </button>
-
+    
           <div class="mobile-nav transactions-nav" id="transactions-mobile-nav">
-        <a href="#" class="mobile-nav-item" data-view="dashboard">
-          <i class="fas fa-home mobile-nav-icon"></i>
-          <span>Home</span>
-        </a>
-        <a href="#" class="mobile-nav-item active" data-view="transactions">
-          <i class="fas fa-list mobile-nav-icon"></i>
-          <span>Transactions</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-view="analytics">
-          <i class="fas fa-chart-line mobile-nav-icon"></i>
-          <span>Analytics</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-view="settings">
-          <i class="fas fa-cog mobile-nav-icon"></i>
-          <span>Settings</span>
-        </a>
-      </div>
+            <a href="#" class="mobile-nav-item" data-view="dashboard">
+              <i class="fas fa-home mobile-nav-icon"></i>
+              <span>Home</span>
+            </a>
+            <a href="#" class="mobile-nav-item active" data-view="transactions">
+              <i class="fas fa-list mobile-nav-icon"></i>
+              <span>Transactions</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="analytics">
+              <i class="fas fa-chart-line mobile-nav-icon"></i>
+              <span>Analytics</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="settings">
+              <i class="fas fa-cog mobile-nav-icon"></i>
+              <span>Settings</span>
+            </a>
+          </div>
         </div>
       `;
       
       // Add to the main content
       mainContent.insertAdjacentHTML('beforeend', mobileTransactionsHTML);
-  
-  // Set up event listeners for the new navigation
-  setupTransactionsNavigation();
+    
+      // Set up event listeners for the navigation
+      setupTransactionsNavigation();
     }
 
    // Update the setupTransactionsNavigation function
@@ -338,26 +356,43 @@ function setupTransactionsNavigation() {
     }
     
     // Toggle filter section visibility
-    function toggleFilterSection(show) {
-      const filterSection = document.getElementById('mobile-filters-section');
-      if (filterSection) {
-        if (show === undefined) {
-          filterSection.classList.toggle('open');
-        } else {
-          show ? filterSection.classList.add('open') : filterSection.classList.remove('open');
-        }
+    // Find this function in mobile-transactions.js
+function toggleFilterSection(show) {
+  const filterSection = document.getElementById('mobile-filters-section');
+  if (filterSection) {
+    if (show === undefined) {
+      console.log("Toggling filter section");
+      filterSection.classList.toggle('open');
+      
+      // Force a display style change too
+      if (filterSection.classList.contains('open')) {
+        filterSection.style.display = 'block';
+        filterSection.style.maxHeight = '1000px'; // Set a large enough value
+        filterSection.style.padding = '16px';
+      } else {
+        setTimeout(() => {
+          if (!filterSection.classList.contains('open')) {
+            filterSection.style.maxHeight = '0';
+            filterSection.style.padding = '0';
+          }
+        }, 300); // Match the transition time
+      }
+    } else {
+      if (show) {
+        filterSection.classList.add('open');
+        filterSection.style.display = 'block';
+        filterSection.style.maxHeight = '1000px';
+        filterSection.style.padding = '16px';
+      } else {
+        filterSection.classList.remove('open');
+        filterSection.style.maxHeight = '0';
+        filterSection.style.padding = '0';
       }
     }
-    
-    // Setup filter toggle button
-    function setupFilterToggle() {
-      const filterToggle = document.getElementById('mobile-filter-toggle');
-      if (filterToggle) {
-        filterToggle.addEventListener('click', function() {
-          toggleFilterSection();
-        });
-      }
-    }
+  } else {
+    console.log("Filter section not found");
+  }
+}
 
     // Add to your mobile-transactions.js file
 
