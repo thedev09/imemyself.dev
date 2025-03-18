@@ -71,6 +71,8 @@
       align-items: center;
       margin-bottom: 16px;
       padding: 0 16px;
+      width: 100%;
+      margin-top: 8px;
     }
     
     .mobile-spending-select {
@@ -79,6 +81,7 @@
       border-radius: 8px;
       color: white;
       padding: 8px 12px;
+      width: 100%;
       font-size: 14px;
       flex: 1;
       appearance: none;
@@ -88,17 +91,48 @@
       background-size: 12px;
       padding-right: 28px;
     }
+
+    /* Spending Analysis Card Structure */
+  .spending-analysis-card {
+    margin-bottom: 16px;
+  }
+  
+  .mobile-spending-details {
+    padding: 0;
+  }
+  
+  .mobile-spending-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .mobile-spending-section:last-child {
+    margin-bottom: 0;
+  }
+  
+  .mobile-section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    color: white;
+  }
     
-    .mobile-custom-date-range {
-      display: none;
-      gap: 8px;
-      margin-top: 8px;
-      padding: 0 16px;
-    }
-    
-    .mobile-custom-date-range.visible {
-      display: flex;
-    }
+  .mobile-custom-date-range {
+    display: none; /* This needs to be the default state */
+    padding: 0 16px 16px;
+    margin-top: 20px;
+  }
+  
+  .mobile-custom-date-range.visible {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
     
     .mobile-date-input {
       background: rgba(255, 255, 255, 0.05);

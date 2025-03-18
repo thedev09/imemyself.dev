@@ -44,6 +44,16 @@
       // Render all analytics components
       renderMobileAnalytics('3M'); // Default to 3-month view
     }
+
+    function closeMobileModal(modalId) {
+      console.log("Closing modal:", modalId);
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.remove();
+        return true;
+      }
+      return false;
+    }
     
     // Create the mobile analytics view HTML
     function createMobileAnalyticsView() {
@@ -123,49 +133,46 @@
             </div>
           </div>
           
-          <!-- Spending Analysis Period Selector -->
-          <div class="mobile-spending-period">
-            <select id="mobileSpendingPeriod" class="mobile-spending-select">
-              <option value="thisMonth">This Month</option>
-              <option value="last3">Last 3 Months</option>
-              <option value="last6">Last 6 Months</option>
-              <option value="thisYear">This Year</option>
-              <option value="all">All Time</option>
-              <option value="custom">Custom Range</option>
-            </select>
-          </div>
-          
-          <!-- Custom Date Range for Spending Analysis -->
-          <div id="mobileCustomDateRange" class="mobile-custom-date-range">
-            <input type="date" id="mobileSpendingStartDate" class="mobile-date-input" placeholder="Start Date">
-            <input type="date" id="mobileSpendingEndDate" class="mobile-date-input" placeholder="End Date">
-          </div>
-          
-          <!-- Spending Categories Card -->
-          <div class="mobile-analytics-card">
-            <div class="mobile-analytics-card-header">
-              <h2 class="mobile-analytics-card-title">Top Spending Categories</h2>
-            </div>
-            <div class="mobile-analytics-card-content">
-              <div id="mobileCategoriesList" class="mobile-category-list">
-                <!-- Will be populated by JavaScript -->
-              </div>
-              <a href="#" class="mobile-view-more" id="viewAllCategories">View All Categories</a>
-            </div>
-          </div>
-          
-          <!-- Payment Methods Card -->
-          <div class="mobile-analytics-card">
-            <div class="mobile-analytics-card-header">
-              <h2 class="mobile-analytics-card-title">Payment Methods</h2>
-            </div>
-            <div class="mobile-analytics-card-content">
-              <div id="mobilePaymentsList" class="mobile-category-list">
-                <!-- Will be populated by JavaScript -->
-              </div>
-              <a href="#" class="mobile-view-more" id="viewAllPayments">View All Payment Methods</a>
-            </div>
-          </div>
+          <div class="mobile-analytics-card spending-analysis-card">
+  <div class="mobile-analytics-card-header">
+    <h2 class="mobile-analytics-card-title">Spending Analysis</h2>
+    <div class="mobile-spending-period">
+      <select id="mobileSpendingPeriod" class="mobile-spending-select">
+        <option value="thisMonth">This Month</option>
+        <option value="last3">Last 3 Months</option>
+        <option value="last6">Last 6 Months</option>
+        <option value="thisYear">This Year</option>
+        <option value="all">All Time</option>
+        <option value="custom">Custom Range</option>
+      </select>
+    </div>
+  </div>
+  
+  <div id="mobileCustomDateRange" class="mobile-custom-date-range">
+    <input type="date" id="mobileSpendingStartDate" class="mobile-date-input">
+    <input type="date" id="mobileSpendingEndDate" class="mobile-date-input">
+  </div>
+  
+  <div class="mobile-analytics-card-content">
+    <div class="mobile-spending-details">
+      <div class="mobile-spending-section">
+        <h3 class="mobile-section-title">Top Categories</h3>
+        <div id="mobileCategoriesList" class="mobile-category-list">
+          <!-- Will be populated by JavaScript -->
+        </div>
+        <a href="#" class="mobile-view-more" id="viewAllCategories">View All Categories</a>
+      </div>
+      
+      <div class="mobile-spending-section">
+        <h3 class="mobile-section-title">Payment Methods</h3>
+        <div id="mobilePaymentsList" class="mobile-category-list">
+          <!-- Will be populated by JavaScript -->
+        </div>
+        <a href="#" class="mobile-view-more" id="viewAllPayments">View All Payment Methods</a>
+      </div>
+    </div>
+  </div>
+</div>
           
           <!-- Monthly Breakdown Card -->
           <div class="mobile-analytics-card">
@@ -932,142 +939,193 @@
     }
     
     // Show categories modal for mobile
-    function showMobileCategoriesModal() {
-      // Get last month's date
-      const lastMonthDate = new Date();
-      lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
-      
-      // Calculate spending by category
-      const categorySpending = {};
-      let totalSpending = 0;
-      
-      state.transactions
-        .filter(tx => 
-          tx.type === 'expense' && 
-          new Date(tx.date) >= lastMonthDate
-        )
-        .forEach(tx => {
-          const amount = tx.amountInINR || tx.amount;
-          if (!categorySpending[tx.category]) {
-            categorySpending[tx.category] = 0;
-          }
-          categorySpending[tx.category] += amount;
-          totalSpending += amount;
-        });
-      
-      // Convert to array and sort
-      const sortedCategories = Object.entries(categorySpending)
-        .map(([category, amount]) => ({
-          category,
-          amount,
-          percentage: ((amount / totalSpending) * 100).toFixed(1)
-        }))
-        .sort((a, b) => b.amount - a.amount);
-      
-      // Create modal HTML
-      const modalHTML = `
-        <div class="mobile-modal-overlay" id="mobileCategoriesModal">
-          <div class="mobile-modal">
-            <div class="mobile-modal-header">
-              <h2>Spending Categories</h2>
-              <button class="mobile-modal-close" onclick="closeMobileModal('mobileCategoriesModal')">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-            <div class="mobile-modal-body">
-              ${sortedCategories.length > 0 ? `
-                <div class="mobile-category-list">
-                  ${sortedCategories.map(cat => `
-                    <div class="mobile-category-item">
-                      <div class="mobile-category-header">
-                        <span class="mobile-category-name">${escapeHtml(cat.category)}</span>
-                        <span class="mobile-category-amount">${formatCurrency(cat.amount)} <small>(${cat.percentage}%)</small></span>
-                      </div>
-                      <div class="mobile-progress-bar">
-                        <div class="mobile-progress-fill" style="width: ${cat.percentage}%"></div>
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : '<div class="mobile-empty-state">No spending data available</div>'}
-            </div>
-          </div>
+    // Replace the entire showMobileCategoriesModal function
+function showMobileCategoriesModal() {
+  console.log("Showing mobile categories modal");
+  
+  // Get last month's date
+  const lastMonthDate = new Date();
+  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+  
+  // Calculate spending by category
+  const categorySpending = {};
+  let totalSpending = 0;
+  
+  state.transactions
+    .filter(tx => 
+      tx.type === 'expense' && 
+      new Date(tx.date) >= lastMonthDate
+    )
+    .forEach(tx => {
+      const amount = tx.amountInINR || tx.amount;
+      if (!categorySpending[tx.category]) {
+        categorySpending[tx.category] = 0;
+      }
+      categorySpending[tx.category] += amount;
+      totalSpending += amount;
+    });
+  
+  // Convert to array and sort
+  const sortedCategories = Object.entries(categorySpending)
+    .map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: ((amount / totalSpending) * 100).toFixed(1)
+    }))
+    .sort((a, b) => b.amount - a.amount);
+  
+  // Create modal HTML
+  const modalHTML = `
+    <div class="mobile-modal-overlay" id="mobileCategoriesModal">
+      <div class="mobile-modal">
+        <div class="mobile-modal-header">
+          <h2>Spending Categories</h2>
+          <button class="mobile-modal-close" onclick="closeMobileModal('mobileCategoriesModal')">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-      `;
-      
-      // Add modal to body
-      document.body.insertAdjacentHTML('beforeend', modalHTML);
+        <div class="mobile-modal-body">
+          ${sortedCategories.length > 0 ? `
+            <div class="mobile-category-list">
+              ${sortedCategories.map(cat => `
+                <div class="mobile-category-item">
+                  <div class="mobile-category-header">
+                    <span class="mobile-category-name">${escapeHtml(cat.category)}</span>
+                    <span class="mobile-category-amount">${formatCurrency(cat.amount)} <small>(${cat.percentage}%)</small></span>
+                  </div>
+                  <div class="mobile-progress-bar">
+                    <div class="mobile-progress-fill" style="width: ${cat.percentage}%"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<div class="mobile-empty-state">No spending data available</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove existing modal if any
+  closeMobileModal('mobileCategoriesModal');
+  
+  // Add modal to body
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Handle click outside to close
+  const modal = document.getElementById('mobileCategoriesModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeMobileModal('mobileCategoriesModal');
+      }
+    });
+  }
+  
+  // Handle Escape key to close
+  const escapeHandler = function(e) {
+    if (e.key === 'Escape') {
+      if (closeMobileModal('mobileCategoriesModal')) {
+        document.removeEventListener('keydown', escapeHandler);
+      }
     }
+  };
+  document.addEventListener('keydown', escapeHandler);
+}
     
-    // Show payment methods modal for mobile
-    function showMobilePaymentMethodsModal() {
-      // Get last month's date
-      const lastMonthDate = new Date();
-      lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+    // Replace the entire showMobilePaymentMethodsModal function
+function showMobilePaymentMethodsModal() {
+  console.log("Showing mobile payment methods modal");
+  
+  // Get last month's date
+  const lastMonthDate = new Date();
+  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+  
+  // Calculate spending by payment method
+  const paymentData = {};
+  let totalSpending = 0;
+  
+  state.transactions
+    .filter(tx => 
+      tx.type === 'expense' && 
+      new Date(tx.date) >= lastMonthDate
+    )
+    .forEach(tx => {
+      if (!tx.paymentMode) return;
       
-      // Calculate spending by payment method
-      const paymentData = {};
-      let totalSpending = 0;
-      
-      state.transactions
-        .filter(tx => 
-          tx.type === 'expense' && 
-          new Date(tx.date) >= lastMonthDate
-        )
-        .forEach(tx => {
-          if (!tx.paymentMode) return;
-          
-          const amount = tx.amountInINR || tx.amount;
-          if (!paymentData[tx.paymentMode]) {
-            paymentData[tx.paymentMode] = 0;
-          }
-          paymentData[tx.paymentMode] += amount;
-          totalSpending += amount;
-        });
-      
-      // Convert to array and sort
-      const methods = Object.entries(paymentData)
-        .map(([method, amount]) => ({
-          method,
-          amount,
-          percentage: ((amount / totalSpending) * 100).toFixed(1)
-        }))
-        .sort((a, b) => b.amount - a.amount);
-      
-      // Create modal HTML
-      const modalHTML = `
-        <div class="mobile-modal-overlay" id="mobilePaymentMethodsModal">
-          <div class="mobile-modal">
-            <div class="mobile-modal-header">
-              <h2>Payment Methods</h2>
-              <button class="mobile-modal-close" onclick="closeMobileModal('mobilePaymentMethodsModal')">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-            <div class="mobile-modal-body">
-              ${methods.length > 0 ? `
-                <div class="mobile-category-list">
-                  ${methods.map(method => `
-                    <div class="mobile-category-item">
-                      <div class="mobile-category-header">
-                        <span class="mobile-category-name">${escapeHtml(method.method)}</span>
-                        <span class="mobile-category-amount">${formatCurrency(method.amount)} <small>(${method.percentage}%)</small></span>
-                      </div>
-                      <div class="mobile-progress-bar">
-                        <div class="mobile-progress-fill" style="width: ${method.percentage}%"></div>
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
-              ` : '<div class="mobile-empty-state">No payment method data available</div>'}
-            </div>
-          </div>
+      const amount = tx.amountInINR || tx.amount;
+      if (!paymentData[tx.paymentMode]) {
+        paymentData[tx.paymentMode] = 0;
+      }
+      paymentData[tx.paymentMode] += amount;
+      totalSpending += amount;
+    });
+  
+  // Convert to array and sort
+  const methods = Object.entries(paymentData)
+    .map(([method, amount]) => ({
+      method,
+      amount,
+      percentage: ((amount / totalSpending) * 100).toFixed(1)
+    }))
+    .sort((a, b) => b.amount - a.amount);
+  
+  // Create modal HTML
+  const modalHTML = `
+    <div class="mobile-modal-overlay" id="mobilePaymentMethodsModal">
+      <div class="mobile-modal">
+        <div class="mobile-modal-header">
+          <h2>Payment Methods</h2>
+          <button class="mobile-modal-close" onclick="closeMobileModal('mobilePaymentMethodsModal')">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
-      `;
-      
-      // Add modal to body
-      document.body.insertAdjacentHTML('beforeend', modalHTML);
+        <div class="mobile-modal-body">
+          ${methods.length > 0 ? `
+            <div class="mobile-category-list">
+              ${methods.map(method => `
+                <div class="mobile-category-item">
+                  <div class="mobile-category-header">
+                    <span class="mobile-category-name">${escapeHtml(method.method)}</span>
+                    <span class="mobile-category-amount">${formatCurrency(method.amount)} <small>(${method.percentage}%)</small></span>
+                  </div>
+                  <div class="mobile-progress-bar">
+                    <div class="mobile-progress-fill" style="width: ${method.percentage}%"></div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<div class="mobile-empty-state">No payment method data available</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove existing modal if any
+  closeMobileModal('mobilePaymentMethodsModal');
+  
+  // Add modal to body
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Handle click outside to close
+  const modal = document.getElementById('mobilePaymentMethodsModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeMobileModal('mobilePaymentMethodsModal');
+      }
+    });
+  }
+  
+  // Handle Escape key to close
+  const escapeHandler = function(e) {
+    if (e.key === 'Escape') {
+      if (closeMobileModal('mobilePaymentMethodsModal')) {
+        document.removeEventListener('keydown', escapeHandler);
+      }
     }
+  };
+  document.addEventListener('keydown', escapeHandler);
+}
     
     // Close mobile modal
     function closeMobileModal(modalId) {
@@ -1128,4 +1186,5 @@
     window.showMobileCategoriesModal = showMobileCategoriesModal;
     window.showMobilePaymentMethodsModal = showMobilePaymentMethodsModal;
     window.closeMobileModal = closeMobileModal;
+  
   })();
