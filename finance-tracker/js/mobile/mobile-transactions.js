@@ -355,174 +355,183 @@ function setupTransactionsNavigation() {
       }
     }
     
-    // Toggle filter section visibility
-    // Find this function in mobile-transactions.js
-function toggleFilterSection(show) {
-  const filterSection = document.getElementById('mobile-filters-section');
-  if (filterSection) {
-    if (show === undefined) {
-      console.log("Toggling filter section");
-      filterSection.classList.toggle('open');
-      
-      // Force a display style change too
-      if (filterSection.classList.contains('open')) {
-        filterSection.style.display = 'block';
-        filterSection.style.maxHeight = '1000px'; // Set a large enough value
-        filterSection.style.padding = '16px';
-      } else {
-        setTimeout(() => {
-          if (!filterSection.classList.contains('open')) {
-            filterSection.style.maxHeight = '0';
-            filterSection.style.padding = '0';
-          }
-        }, 300); // Match the transition time
+    function toggleFilterSection(show) {
+      const filterSection = document.getElementById('mobile-filters-section');
+      if (!filterSection) {
+        console.log("Filter section not found");
+        return;
       }
-    } else {
-      if (show) {
-        filterSection.classList.add('open');
-        filterSection.style.display = 'block';
-        filterSection.style.maxHeight = '1000px';
-        filterSection.style.padding = '16px';
+      
+      if (show === undefined) {
+        console.log("Toggling filter section");
+        // Toggle class first
+        filterSection.classList.toggle('open');
+        
+        // Then apply direct styles based on class state
+        if (filterSection.classList.contains('open')) {
+          filterSection.style.display = 'block';
+          // Allow a small delay for display to take effect before setting other properties
+          setTimeout(() => {
+            filterSection.style.maxHeight = '1000px';
+            filterSection.style.padding = '16px';
+            filterSection.style.opacity = '1';
+          }, 10);
+        } else {
+          // Keep visible but start transition
+          filterSection.style.maxHeight = '0';
+          filterSection.style.padding = '0 16px';
+          filterSection.style.opacity = '0';
+          // Wait for transition to finish before hiding completely
+          setTimeout(() => {
+            if (!filterSection.classList.contains('open')) {
+              filterSection.style.display = 'none';
+            }
+          }, 300);
+        }
       } else {
-        filterSection.classList.remove('open');
-        filterSection.style.maxHeight = '0';
-        filterSection.style.padding = '0';
+        // Direct control
+        if (show) {
+          filterSection.classList.add('open');
+          filterSection.style.display = 'block';
+          // Small delay to ensure display property is applied
+          setTimeout(() => {
+            filterSection.style.maxHeight = '1000px';
+            filterSection.style.padding = '16px';
+            filterSection.style.opacity = '1';
+          }, 10);
+        } else {
+          filterSection.classList.remove('open');
+          filterSection.style.maxHeight = '0';
+          filterSection.style.padding = '0 16px';
+          filterSection.style.opacity = '0';
+          // Wait for transition to finish
+          setTimeout(() => {
+            if (!filterSection.classList.contains('open')) {
+              filterSection.style.display = 'none';
+            }
+          }, 300);
+        }
       }
     }
-  } else {
-    console.log("Filter section not found");
-  }
-}
 
-    // Add to your mobile-transactions.js file
-
-// Improved modal closing function
-function forceCloseMobileModal(modalId) {
-    console.log("Force closing mobile modal:", modalId);
-    
-    // Find the modal element
-    const modal = document.getElementById(modalId);
-    if (!modal) {
-      // Try finding any open modal with class mobile-modal-overlay
-      const openModals = document.querySelectorAll('.mobile-modal-overlay');
-      console.log("Found open modals:", openModals.length);
+    function forceCloseMobileModal(modalId) {
+      console.log("Force closing mobile modal:", modalId);
       
-      openModals.forEach(openModal => {
-        openModal.remove();
-      });
-      return;
+      // Find the modal element
+      const modal = document.getElementById(modalId);
+      if (!modal) {
+        // Try finding any open modal with class mobile-modal-overlay
+        const openModals = document.querySelectorAll('.mobile-modal-overlay');
+        console.log("Found open modals:", openModals.length);
+        
+        openModals.forEach(openModal => {
+          openModal.remove();
+        });
+        return;
+      }
+      
+      // Remove without animation for reliability
+      modal.remove();
     }
     
-    // Remove without animation for reliability
-    modal.remove();
-    
-    // Also check for any regular modals that might be open
-    const regularModals = document.querySelectorAll('.modal-overlay');
-    regularModals.forEach(regularModal => {
-      regularModal.style.display = 'none';
-      regularModal.remove();
-    });
-  }
+    // Make sure the function is globally available
+    window.forceCloseMobileModal = forceCloseMobileModal;
   
-  // Override the showMobileAddTransactionModal to use our custom version
-  window.showMobileAddTransactionModal = function(preSelectedAccountId) {
-    console.log("Showing custom mobile Add Transaction modal");
-    
-    // Create modal HTML with improved close handling
-    const modalHTML = `
-      <div class="mobile-modal-overlay" id="mobileAddTransactionModal">
-        <div class="mobile-modal">
-          <div class="mobile-modal-header">
-            <h2>Add Transaction</h2>
-            <button class="mobile-modal-close" onclick="forceCloseMobileModal('mobileAddTransactionModal')">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          
-          <!-- Rest of your add transaction form -->
-          <div class="mobile-modal-body">
-            <form id="mobileAddTransactionForm">
-              <div class="mobile-segmented-control transaction-type-control">
-                <input type="radio" id="mobileTypeExpense" name="type" value="expense" checked>
-                <label for="mobileTypeExpense">Expense</label>
-                
-                <input type="radio" id="mobileTypeIncome" name="type" value="income">
-                <label for="mobileTypeIncome">Income</label>
-              </div>
+  // Override the showMobileAddTransactionModal function for better reliability
+window.showMobileAddTransactionModal = function(preSelectedAccountId) {
+  console.log("Showing mobile Add Transaction modal");
+  
+  // First force close any existing modals
+  document.querySelectorAll('.mobile-modal-overlay').forEach(modal => {
+    modal.remove();
+  });
+  
+  // Create modal HTML
+  const modalHTML = `
+    <div class="mobile-modal-overlay" id="mobileAddTransactionModal">
+      <div class="mobile-modal">
+        <div class="mobile-modal-header">
+          <h2>Add Transaction</h2>
+          <button class="mobile-modal-close" onclick="forceCloseMobileModal('mobileAddTransactionModal')">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="mobile-modal-body">
+          <form id="mobileAddTransactionForm">
+            <div class="mobile-segmented-control transaction-type-control">
+              <input type="radio" id="mobileTypeExpense" name="type" value="expense" checked>
+              <label for="mobileTypeExpense">Expense</label>
               
-              <!-- Amount field -->
-              <div class="mobile-form-group">
-                <label>Amount</label>
-                <input type="number" name="amount" placeholder="0.00" step="0.01" min="0" required>
-              </div>
-              
-              <!-- Account field -->
-              <div class="mobile-form-group">
-                <label>Account</label>
-                <select name="account" required class="mobile-select">
-                  <option value="">Select account</option>
-                  ${state.accounts.map(acc => `
-                    <option value="${acc.id}" ${acc.id === preSelectedAccountId ? 'selected' : ''}>
-                      ${escapeHtml(acc.name)} (${formatCurrency(acc.balance, acc.currency)})
-                    </option>
-                  `).join('')}
-                </select>
-              </div>
-              
-              <!-- Category field -->
-              <div class="mobile-form-group">
-                <label>Category</label>
-                <select name="category" required class="mobile-select" id="mobileCategorySelect">
-                  <option value="">Select category</option>
-                  ${TRANSACTION_CATEGORIES.expense.map(cat => `
-                    <option value="${cat}">${cat}</option>
-                  `).join('')}
-                </select>
-              </div>
-              
-              <!-- Payment Mode field -->
-              <div class="mobile-form-group">
-                <label>Payment Mode</label>
-                <select name="paymentMode" required class="mobile-select" id="mobilePaymentModeSelect">
-                  <option value="">Select payment mode</option>
-                </select>
-              </div>
-              
-              <!-- Description field -->
-              <div class="mobile-form-group">
-                <label>Description (Optional)</label>
-                <input type="text" name="description" placeholder="What's this for?">
-              </div>
-              
-              <div class="mobile-modal-actions">
-                <button type="button" class="mobile-btn-secondary" onclick="forceCloseMobileModal('mobileAddTransactionModal')">Cancel</button>
-                <button type="submit" class="mobile-btn-primary">Add Transaction</button>
-              </div>
-            </form>
-          </div>
+              <input type="radio" id="mobileTypeIncome" name="type" value="income">
+              <label for="mobileTypeIncome">Income</label>
+            </div>
+            
+            <div class="mobile-form-group">
+              <label>Amount</label>
+              <input type="number" name="amount" placeholder="0.00" step="0.01" min="0" required>
+            </div>
+            
+            <div class="mobile-form-group">
+              <label>Account</label>
+              <select name="account" required class="mobile-select">
+                <option value="">Select account</option>
+                ${state.accounts.map(acc => `
+                  <option value="${acc.id}" ${acc.id === preSelectedAccountId ? 'selected' : ''}>
+                    ${escapeHtml(acc.name)} (${formatCurrency(acc.balance, acc.currency)})
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+            
+            <div class="mobile-form-group">
+              <label>Category</label>
+              <select name="category" required class="mobile-select" id="mobileCategorySelect">
+                <option value="">Select category</option>
+                ${TRANSACTION_CATEGORIES.expense.map(cat => `
+                  <option value="${cat}">${cat}</option>
+                `).join('')}
+              </select>
+            </div>
+            
+            <div class="mobile-form-group">
+              <label>Payment Mode</label>
+              <select name="paymentMode" required class="mobile-select" id="mobilePaymentModeSelect">
+                <option value="">Select payment mode</option>
+              </select>
+            </div>
+            
+            <div class="mobile-form-group">
+              <label>Description (Optional)</label>
+              <input type="text" name="description" placeholder="What's this for?">
+            </div>
+            
+            <div class="mobile-modal-actions">
+              <button type="button" class="mobile-btn-secondary" onclick="forceCloseMobileModal('mobileAddTransactionModal')">Cancel</button>
+              <button type="submit" class="mobile-btn-primary">Add Transaction</button>
+            </div>
+          </form>
         </div>
       </div>
-    `;
+    </div>
+  `;
+
+  // Add modal to body
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
   
-    // Remove any existing modals
-    forceCloseMobileModal('mobileAddTransactionModal');
-    
-    // Add modal to body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    // Set up event handlers
-    setupMobileTransactionForm();
-    
-    // Add click handler for outside clicks
-    const modal = document.getElementById('mobileAddTransactionModal');
-    if (modal) {
-      modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-          forceCloseMobileModal('mobileAddTransactionModal');
-        }
-      });
-    }
-  };
+  // Setup form
+  setupMobileTransactionForm();
+  
+  // Handle outside click
+  const modal = document.getElementById('mobileAddTransactionModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        forceCloseMobileModal('mobileAddTransactionModal');
+      }
+    });
+  }
+};
   
   // Override the mobile add transaction button handler
   function setupAddTransactionButton() {
