@@ -80,15 +80,31 @@ function ensureMobileNavVisible() {
     const filterToggle = document.getElementById('mobile-filter-toggle');
     if (filterToggle) {
       console.log("Setting up filter toggle button");
-      filterToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation(); // Add this line to stop event propagation
-        console.log("Filter toggle clicked");
-        toggleFilterSection();
-      });
+      
+      // Remove any existing click listeners to prevent duplicates
+      filterToggle.removeEventListener('click', handleFilterToggle);
+      
+      // Add the click listener with our handler function
+      filterToggle.addEventListener('click', handleFilterToggle);
     } else {
       console.log("Filter toggle button not found");
     }
+  }
+  
+  // Separate handler function to make it easier to remove
+  function handleFilterToggle(e) {
+    e.preventDefault();
+    e.stopPropagation(); // Stop any event bubbling
+    console.log("Filter toggle clicked");
+    
+    // Get current state of filter section
+    const filterSection = document.getElementById('mobile-filters-section');
+    const isVisible = filterSection && 
+                     (filterSection.classList.contains('open') || 
+                      filterSection.style.display === 'block');
+    
+    // Toggle to the opposite state
+    toggleFilterSection(!isVisible);
   }
   
   
@@ -362,50 +378,58 @@ function setupTransactionsNavigation() {
         return;
       }
       
+      // Clear any existing timeouts to prevent conflicts
+      if (window.filterToggleTimeout) {
+        clearTimeout(window.filterToggleTimeout);
+      }
+      
       if (show === undefined) {
         console.log("Toggling filter section");
-        // Toggle class first
-        filterSection.classList.toggle('open');
         
-        // Then apply direct styles based on class state
-        if (filterSection.classList.contains('open')) {
+        // Simply toggle based on current display state
+        const isCurrentlyVisible = filterSection.classList.contains('open');
+        
+        if (!isCurrentlyVisible) {
+          // Show it
+          filterSection.classList.add('open');
           filterSection.style.display = 'block';
-          // Allow a small delay for display to take effect before setting other properties
-          setTimeout(() => {
-            filterSection.style.maxHeight = '1000px';
-            filterSection.style.padding = '16px';
-            filterSection.style.opacity = '1';
-          }, 10);
+          filterSection.style.maxHeight = '1000px';
+          filterSection.style.padding = '16px';
+          filterSection.style.opacity = '1';
         } else {
-          // Keep visible but start transition
+          // Hide it
+          filterSection.classList.remove('open');
           filterSection.style.maxHeight = '0';
           filterSection.style.padding = '0 16px';
           filterSection.style.opacity = '0';
-          // Wait for transition to finish before hiding completely
-          setTimeout(() => {
+          
+          // Set a timeout to hide it completely after transition
+          window.filterToggleTimeout = setTimeout(() => {
             if (!filterSection.classList.contains('open')) {
               filterSection.style.display = 'none';
             }
           }, 300);
         }
       } else {
-        // Direct control
+        // Direct show/hide control
         if (show) {
           filterSection.classList.add('open');
           filterSection.style.display = 'block';
-          // Small delay to ensure display property is applied
-          setTimeout(() => {
+          
+          // Delay properties for a frame to ensure display takes effect
+          requestAnimationFrame(() => {
             filterSection.style.maxHeight = '1000px';
             filterSection.style.padding = '16px';
             filterSection.style.opacity = '1';
-          }, 10);
+          });
         } else {
           filterSection.classList.remove('open');
           filterSection.style.maxHeight = '0';
           filterSection.style.padding = '0 16px';
           filterSection.style.opacity = '0';
-          // Wait for transition to finish
-          setTimeout(() => {
+          
+          // Set a timeout to hide it completely after transition
+          window.filterToggleTimeout = setTimeout(() => {
             if (!filterSection.classList.contains('open')) {
               filterSection.style.display = 'none';
             }
