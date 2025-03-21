@@ -30,11 +30,15 @@ function validateTransaction(transaction) {
 }
 
 // Add pull-to-refresh functionality
+// Add pull-to-refresh functionality with improved reliability
 function setupPullToRefresh() {
     let touchStartY = 0;
     let touchEndY = 0;
     const threshold = 150; // Minimum pull distance to trigger refresh
     let isPulling = false;
+    let pullStartScroll = 0;
+    let pullDistance = 0;
+    let touchIdentifier = null;
     
     // Create refresh indicator element
     const refreshIndicator = document.createElement('div');
@@ -53,66 +57,148 @@ function setupPullToRefresh() {
     document.body.appendChild(refreshIndicator);
     
     document.addEventListener('touchstart', function(e) {
-      // Only allow pull refresh at the top of the page
-      if (window.scrollY <= 0) {
+      // Only start pulling if we're at the top of the page
+      if (window.scrollY <= 5) { // Allow a small margin
         touchStartY = e.touches[0].clientY;
+        touchIdentifier = e.touches[0].identifier;
+        pullStartScroll = window.scrollY;
         isPulling = true;
+        pullDistance = 0;
       }
-    });
+    }, { passive: false });
     
     document.addEventListener('touchmove', function(e) {
+      // Only track the finger that started the pull
       if (!isPulling) return;
       
-      touchEndY = e.touches[0].clientY;
-      const distance = touchEndY - touchStartY;
+      // Find the initial touch point
+      let touchPoint = null;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchIdentifier) {
+          touchPoint = e.changedTouches[i];
+          break;
+        }
+      }
       
-      if (distance > 0 && window.scrollY <= 0) {
+      if (!touchPoint) return;
+      
+      touchEndY = touchPoint.clientY;
+      pullDistance = touchEndY - touchStartY;
+      
+      // Only consider downward pull when at the top
+      if (pullDistance > 10 && window.scrollY <= 5) {
         // Show pull indicator with dynamic position based on pull distance
-        refreshIndicator.style.top = Math.min(distance / 2 - 60, 0) + 'px';
+        refreshIndicator.style.top = Math.min(pullDistance / 3 - 60, 0) + 'px';
         
-        if (distance > threshold) {
+        if (pullDistance > threshold) {
           refreshIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Release to refresh';
         } else {
           refreshIndicator.innerHTML = '<i class="fas fa-sync-alt"></i> Pull to refresh';
         }
         
-        // Prevent default scrolling
-        e.preventDefault();
+        // Prevent default scrolling only for significant pulls
+        if (pullDistance > 30) {
+          e.preventDefault();
+        }
       }
-    });
+    }, { passive: false });
     
-    document.addEventListener('touchend', function() {
+    document.addEventListener('touchend', function(e) {
+      // Only process the touch point that started the pull
       if (!isPulling) return;
-      isPulling = false;
       
-      const distance = touchEndY - touchStartY;
-      if (distance > threshold && window.scrollY <= 0) {
+      let touchPoint = null;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchIdentifier) {
+          touchPoint = e.changedTouches[i];
+          break;
+        }
+      }
+      
+      if (!touchPoint) {
+        // Reset if we couldn't find the touch point
+        isPulling = false;
+        refreshIndicator.style.top = '-60px';
+        return;
+      }
+      
+      touchEndY = touchPoint.clientY;
+      const finalPullDistance = touchEndY - touchStartY;
+      
+      // Reset pulling state
+      isPulling = false;
+      touchIdentifier = null;
+      
+      // Only trigger refresh for significant pulls when at the top
+      if (finalPullDistance > threshold && window.scrollY <= 5) {
         // Show loading
         refreshIndicator.style.top = '0';
         refreshIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Refreshing...';
         
-        // Reload the app data
-        loadUserData(true).then(() => {
-          // Hide the indicator after refresh
-          setTimeout(() => {
+        // Add a short delay before reloading to prevent accidental multiple refreshes
+        setTimeout(() => {
+          // Reload the app data
+          loadUserData(true).then(() => {
+            // Hide the indicator after refresh
+            setTimeout(() => {
+              refreshIndicator.style.top = '-60px';
+            }, 1000);
+          }).catch(() => {
+            // Hide the indicator if there's an error
             refreshIndicator.style.top = '-60px';
-          }, 1000);
-        });
+          });
+        }, 300);
       } else {
         // Hide the indicator if not triggered
         refreshIndicator.style.top = '-60px';
       }
+    }, { passive: false });
+
+    // Add handling for touch cancel events
+    document.addEventListener('touchcancel', function() {
+      isPulling = false;
+      touchIdentifier = null;
+      refreshIndicator.style.top = '-60px';
+    }, { passive: true });
+  }
+
+
+
+// Prevent pull-to-refresh on interactive elements
+function preventPullToRefreshOnElements() {
+    // Add no-pull-refresh class to interactive elements
+    const interactiveElements = document.querySelectorAll('button, a, input, select, .card, .modal-content, .transaction-item, .account-card');
+    interactiveElements.forEach(element => {
+      element.classList.add('no-pull-refresh');
+      
+      // Add touchstart event listener to prevent pull-to-refresh
+      element.addEventListener('touchstart', function(e) {
+        // Don't prevent default here, just stop propagation to parent elements
+        e.stopPropagation();
+      }, { passive: true });
     });
   }
   
-  // Call this function after the user is authenticated
+  // Call this function after DOM content is loaded and whenever the view changes
   document.addEventListener('DOMContentLoaded', () => {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         setupPullToRefresh();
+        preventPullToRefreshOnElements();
+        
+        // Re-apply prevention after any dynamic content changes
+        const observer = new MutationObserver(() => {
+          setTimeout(preventPullToRefreshOnElements, 300);
+        });
+        
+        observer.observe(document.body, { 
+          childList: true, 
+          subtree: true 
+        });
       }
     });
   });
+
 
 async function handleAccountDeletion(accountId) {
     const user = getCurrentUser();

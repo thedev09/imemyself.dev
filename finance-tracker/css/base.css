@@ -41,6 +41,11 @@
     font-weight: 500;
   }
 
+  .no-pull-refresh {
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
 .page-container {
     width: 75%;
     margin: 0 auto;

@@ -316,6 +316,9 @@ function switchView(view) {
     else if (view === 'settings') {
         initializeSettings();
     }
+
+    // Add this line to prevent pull-to-refresh on interactive elements after view change
+    setTimeout(preventPullToRefreshOnElements, 300);
 }
 
 function initializeSelfTransfer() {

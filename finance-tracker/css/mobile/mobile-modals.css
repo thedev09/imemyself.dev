@@ -15,7 +15,7 @@
       justify-content: center;
       padding: 0;
       animation: fadeIn 0.2s ease-out;
-      touch-action: none; /* Prevents background scrolling on iOS */
+      touch-action: none !important;
     }
     
     @keyframes fadeIn {
@@ -44,6 +44,7 @@
       display: flex;
       flex-direction: column;
       animation: slideUp 0.3s ease-out;
+      touch-action: pan-x pan-y !important;
     }
     
     @keyframes slideUp {
