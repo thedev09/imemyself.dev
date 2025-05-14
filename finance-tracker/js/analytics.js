@@ -287,28 +287,30 @@ window.addEventListener('resize', () => {
 
     // Update renderIncomeExpenseChart function
     function renderIncomeExpenseChart() {
-        const ctx = document.getElementById('incomeExpenseChart')?.getContext('2d');
-        if (!ctx) return;
+    const ctx = document.getElementById('incomeExpenseChart')?.getContext('2d');
+    if (!ctx) return;
 
-        const periodSelect = document.getElementById('trend-period');
-        const yearSelect = document.getElementById('trend-year');
-        
-        // Initialize year select if not already done
-        if (yearSelect && yearSelect.options.length === 0) {
-            const currentYear = new Date().getFullYear();
-            const years = Array.from({length: 5}, (_, i) => currentYear - i);
-            yearSelect.innerHTML = years.map(year => `
-                <option value="${year}">${year}</option>
-            `).join('');
-        }
+    const periodSelect = document.getElementById('trend-period');
+    const yearSelect = document.getElementById('trend-year');
+    
+    // Initialize year select if not already done
+    if (yearSelect && yearSelect.options.length === 0) {
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({length: 5}, (_, i) => currentYear - i);
+        yearSelect.innerHTML = years.map(year => `
+            <option value="${year}">${year}</option>
+        `).join('');
+    }
 
-        const viewType = periodSelect?.value || 'monthly';
-        const selectedYear = parseInt(yearSelect?.value || new Date().getFullYear());
+    const viewType = periodSelect?.value || 'monthly';
+    const selectedYear = parseInt(yearSelect?.value || new Date().getFullYear());
 
-        // Process transactions
-        const monthlyData = {};
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        
+    // Process transactions
+    const monthlyData = {};
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Initialize data structures based on viewType
+    if (viewType === 'monthly') {
         // Initialize all months with zero values
         months.forEach(month => {
             monthlyData[month] = {
@@ -318,7 +320,7 @@ window.addEventListener('resize', () => {
             };
         });
 
-        // Filter and aggregate transactions
+        // Filter and aggregate transactions for monthly view
         state.transactions
             .filter(tx => {
                 const txDate = new Date(tx.date);
@@ -336,114 +338,175 @@ window.addEventListener('resize', () => {
                     monthlyData[month].net -= amount;
                 }
             });
+    } else if (viewType === 'yearly') {
+        // For yearly view, we need different data structure and labels
+        const currentYear = new Date().getFullYear();
+        const startYear = currentYear - 4; // Show 5 years including current
+        
+        // Initialize yearly data
+        for (let year = startYear; year <= currentYear; year++) {
+            const yearKey = year.toString();
+            monthlyData[yearKey] = {
+                income: 0,
+                expense: 0,
+                net: 0
+            };
+        }
+        
+        // Filter and aggregate transactions for yearly view
+        state.transactions
+            .filter(tx => tx.type !== 'transfer')
+            .forEach(tx => {
+                const year = new Date(tx.date).getFullYear();
+                const yearKey = year.toString();
+                
+                // Skip if outside our year range
+                if (year < startYear || year > currentYear) return;
+                
+                const amount = tx.amountInINR || tx.amount;
+                
+                if (tx.type === 'income') {
+                    monthlyData[yearKey].income += amount;
+                    monthlyData[yearKey].net += amount;
+                } else if (tx.type === 'expense') {
+                    monthlyData[yearKey].expense += amount;
+                    monthlyData[yearKey].net -= amount;
+                }
+            });
+    }
 
-        // Calculate totals for display
-        const totals = Object.values(monthlyData).reduce((acc, curr) => ({
-            income: acc.income + curr.income,
-            expense: acc.expense + curr.expense,
-            net: acc.income - acc.expense // This ensures correct negative/positive value
-        }), { income: 0, expense: 0, net: 0 });
+    // Calculate totals for display
+    const totals = Object.values(monthlyData).reduce((acc, curr) => ({
+        income: acc.income + curr.income,
+        expense: acc.expense + curr.expense,
+        net: acc.net + curr.net
+    }), { income: 0, expense: 0, net: 0 });
 
-        // Update summary stats
-        document.getElementById('total-income').textContent = formatCurrency(totals.income);
-        document.getElementById('total-expenses').textContent = formatCurrency(totals.expense);
-        document.getElementById('net-savings').textContent = formatCurrency(Math.abs(totals.net));
-document.getElementById('net-savings').style.color = totals.net >= 0 ? '#4ade80' : '#f87171';
-if (totals.net < 0) {
-    document.getElementById('net-savings').textContent = '-' + document.getElementById('net-savings').textContent;
-}
+    // Update summary stats
+    document.getElementById('total-income').textContent = formatCurrency(totals.income);
+    document.getElementById('total-expenses').textContent = formatCurrency(totals.expense);
+    document.getElementById('net-savings').textContent = formatCurrency(Math.abs(totals.net));
+    document.getElementById('net-savings').style.color = totals.net >= 0 ? '#4ade80' : '#f87171';
+    if (totals.net < 0) {
+        document.getElementById('net-savings').textContent = '-' + document.getElementById('net-savings').textContent;
+    }
 
-        // Prepare chart data
-        const chartData = {
-            labels: months,
+    // Prepare chart data based on view type
+    let labels, incomeData, expenseData, netData;
+    
+    if (viewType === 'monthly') {
+        labels = months;
+        incomeData = months.map(m => monthlyData[m].income);
+        expenseData = months.map(m => monthlyData[m].expense);
+        netData = months.map(m => monthlyData[m].net);
+    } else {
+        // For yearly view
+        const years = Object.keys(monthlyData).sort();
+        labels = years;
+        incomeData = years.map(y => monthlyData[y].income);
+        expenseData = years.map(y => monthlyData[y].expense);
+        netData = years.map(y => monthlyData[y].net);
+    }
+
+    // Create chart
+    if (chartInstances.incomeExpense) {
+        chartInstances.incomeExpense.destroy();
+    }
+
+    chartInstances.incomeExpense = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
             datasets: [
                 {
                     type: 'bar',
                     label: 'Income',
-                    data: months.map(m => monthlyData[m].income),
+                    data: incomeData,
                     backgroundColor: 'rgba(74, 222, 128, 0.8)',
                     order: 2
                 },
                 {
                     type: 'bar',
                     label: 'Expenses',
-                    data: months.map(m => monthlyData[m].expense),
+                    data: expenseData,
                     backgroundColor: 'rgba(248, 113, 113, 0.8)',
                     order: 2
                 },
                 {
                     type: 'line',
                     label: 'Net Savings',
-                    data: months.map(m => monthlyData[m].net),
+                    data: netData,
                     borderColor: '#60a5fa',
                     tension: 0.4,
                     fill: false,
                     order: 1
                 }
             ]
-        };
-
-        // Create chart
-        if (chartInstances.incomeExpense) {
-            chartInstances.incomeExpense.destroy();
-        }
-
-        chartInstances.incomeExpense = new Chart(ctx, {
-            type: 'bar',
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            callback: value => formatCurrency(value),
-                            color: '#94a3b8'
-                        }
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
                     },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: '#94a3b8'
-                        }
+                    ticks: {
+                        callback: value => formatCurrency(value),
+                        color: '#94a3b8'
                     }
                 },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#94a3b8'
-                        }
+                x: {
+                    grid: {
+                        display: false
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + formatCurrency(context.raw);
-                            }
+                    ticks: {
+                        color: '#94a3b8'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#94a3b8'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + formatCurrency(context.raw);
                         }
                     }
                 }
             }
-        });
-
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const periodSelect = document.getElementById('trend-period');
-        const yearSelect = document.getElementById('trend-year');
-
-        if (periodSelect) {
-            periodSelect.addEventListener('change', renderIncomeExpenseChart);
-        }
-        if (yearSelect) {
-            yearSelect.addEventListener('change', renderIncomeExpenseChart);
         }
     });
+}
+
+// Make sure this code exists in your analytics.js file
+document.addEventListener('DOMContentLoaded', () => {
+    const periodSelect = document.getElementById('trend-period');
+    const yearSelect = document.getElementById('trend-year');
+
+    if (periodSelect) {
+        periodSelect.addEventListener('change', renderIncomeExpenseChart);
+    }
+    if (yearSelect) {
+        yearSelect.addEventListener('change', renderIncomeExpenseChart);
+    }
+
+    // Add this code to your event listener for periodSelect
+if (periodSelect) {
+    periodSelect.addEventListener('change', () => {
+        const yearSelect = document.getElementById('trend-year');
+        if (yearSelect) {
+            yearSelect.style.display = periodSelect.value === 'monthly' ? 'block' : 'none';
+        }
+        renderIncomeExpenseChart();
+    });
+}
+});
 
     // Make sure these are globally available
     window.initializeAnalytics = initializeAnalytics;
