@@ -552,158 +552,211 @@
     }
     
     // Render income/expense chart for mobile
-    function renderMobileIncomeExpenseChart() {
-      const ctx = document.getElementById('mobileIncomeExpenseChart')?.getContext('2d');
-      if (!ctx) return;
-      
-      const periodSelect = document.getElementById('mobileTrendPeriod');
-      const viewType = periodSelect?.value || 'monthly';
-      const selectedYear = new Date().getFullYear();
-      
-      // Process transactions
-      const monthlyData = {};
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      // Initialize all months with zero values
-      months.forEach(month => {
-        monthlyData[month] = {
-          income: 0,
-          expense: 0,
-          net: 0
-        };
+    // Update this function in mobile-analytics.js
+function renderMobileIncomeExpenseChart() {
+  const ctx = document.getElementById('mobileIncomeExpenseChart')?.getContext('2d');
+  if (!ctx) return;
+  
+  const periodSelect = document.getElementById('mobileTrendPeriod');
+  const viewType = periodSelect?.value || 'monthly';
+  const selectedYear = new Date().getFullYear();
+  
+  // Process transactions
+  const chartData = {};
+  
+  if (viewType === 'monthly') {
+    // Monthly view logic
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Initialize all months with zero values
+    months.forEach(month => {
+      chartData[month] = {
+        income: 0,
+        expense: 0,
+        net: 0
+      };
+    });
+    
+    // Filter and aggregate transactions
+    state.transactions
+      .filter(tx => {
+        const txDate = new Date(tx.date);
+        return txDate.getFullYear() === selectedYear && tx.type !== 'transfer';
+      })
+      .forEach(tx => {
+        const month = months[new Date(tx.date).getMonth()];
+        const amount = tx.amountInINR || tx.amount;
+        
+        if (tx.type === 'income') {
+          chartData[month].income += amount;
+          chartData[month].net += amount;
+        } else if (tx.type === 'expense') {
+          chartData[month].expense += amount;
+          chartData[month].net -= amount;
+        }
       });
       
-      // Filter and aggregate transactions
-      state.transactions
-        .filter(tx => {
-          const txDate = new Date(tx.date);
-          return txDate.getFullYear() === selectedYear && tx.type !== 'transfer';
-        })
-        .forEach(tx => {
-          const month = months[new Date(tx.date).getMonth()];
-          const amount = tx.amountInINR || tx.amount;
-          
-          if (tx.type === 'income') {
-            monthlyData[month].income += amount;
-            monthlyData[month].net += amount;
-          } else if (tx.type === 'expense') {
-            monthlyData[month].expense += amount;
-            monthlyData[month].net -= amount;
-          }
-        });
-      
-      // Calculate totals for display
-      const totals = Object.values(monthlyData).reduce((acc, curr) => ({
-        income: acc.income + curr.income,
-        expense: acc.expense + curr.expense,
-        net: acc.income - acc.expense
-      }), { income: 0, expense: 0, net: 0 });
-      
-      // Update summary stats
-      document.getElementById('mobile-total-income').textContent = formatCurrency(totals.income);
-      document.getElementById('mobile-total-expenses').textContent = formatCurrency(totals.expense);
-      
-      const netSavingsElement = document.getElementById('mobile-net-savings');
-      netSavingsElement.textContent = formatCurrency(Math.abs(totals.net));
-      netSavingsElement.style.color = totals.net >= 0 ? '#4ade80' : '#f87171';
-      if (totals.net < 0) {
-        netSavingsElement.textContent = '-' + netSavingsElement.textContent;
-      }
-      
-      const savingsRate = totals.income > 0 ? (totals.net / totals.income * 100) : 0;
-      document.getElementById('mobile-savings-rate').textContent = `${savingsRate.toFixed(1)}%`;
-      
-      // Prepare chart data
-      const chartData = {
-        labels: months,
-        datasets: [
-          {
-            type: 'bar',
-            label: 'Income',
-            data: months.map(m => monthlyData[m].income),
-            backgroundColor: 'rgba(74, 222, 128, 0.8)',
-            order: 2
-          },
-          {
-            type: 'bar',
-            label: 'Expenses',
-            data: months.map(m => monthlyData[m].expense),
-            backgroundColor: 'rgba(248, 113, 113, 0.8)',
-            order: 2
-          },
-          {
-            type: 'line',
-            label: 'Net',
-            data: months.map(m => monthlyData[m].net),
-            borderColor: '#60a5fa',
-            tension: 0.4,
-            fill: false,
-            order: 1
-          }
-        ]
+    var labels = months;
+    var incomeData = months.map(m => chartData[m].income);
+    var expenseData = months.map(m => chartData[m].expense);
+    var netData = months.map(m => chartData[m].net);
+    
+  } else {
+    // Yearly view logic
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 4; // Show 5 years including current
+    
+    // Initialize yearly data
+    const years = [];
+    for (let year = startYear; year <= currentYear; year++) {
+      const yearKey = year.toString();
+      years.push(yearKey);
+      chartData[yearKey] = {
+        income: 0,
+        expense: 0,
+        net: 0
       };
+    }
+    
+    // Filter and aggregate transactions for yearly view
+    state.transactions
+      .filter(tx => tx.type !== 'transfer')
+      .forEach(tx => {
+        const year = new Date(tx.date).getFullYear();
+        const yearKey = year.toString();
+        
+        // Skip if outside our year range
+        if (year < startYear || year > currentYear) return;
+        
+        const amount = tx.amountInINR || tx.amount;
+        
+        if (tx.type === 'income') {
+          chartData[yearKey].income += amount;
+          chartData[yearKey].net += amount;
+        } else if (tx.type === 'expense') {
+          chartData[yearKey].expense += amount;
+          chartData[yearKey].net -= amount;
+        }
+      });
       
-      // Create/update chart
-      if (mobileChartInstances.incomeExpense) {
-        mobileChartInstances.incomeExpense.destroy();
-      }
-      
-      mobileChartInstances.incomeExpense = new Chart(ctx, {
-        type: 'bar',
-        data: chartData,
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              labels: {
-                boxWidth: 12,
-                font: {
-                  size: 10
-                },
-                color: '#94a3b8'
-              }
+    var labels = years;
+    var incomeData = years.map(y => chartData[y].income);
+    var expenseData = years.map(y => chartData[y].expense);
+    var netData = years.map(y => chartData[y].net);
+  }
+  
+  // Calculate totals for display
+  const totals = Object.values(chartData).reduce((acc, curr) => ({
+    income: acc.income + curr.income,
+    expense: acc.expense + curr.expense,
+    net: acc.net + curr.net
+  }), { income: 0, expense: 0, net: 0 });
+  
+  // Update summary stats
+  document.getElementById('mobile-total-income').textContent = formatCurrency(totals.income);
+  document.getElementById('mobile-total-expenses').textContent = formatCurrency(totals.expense);
+  
+  const netSavingsElement = document.getElementById('mobile-net-savings');
+  netSavingsElement.textContent = formatCurrency(Math.abs(totals.net));
+  netSavingsElement.style.color = totals.net >= 0 ? '#4ade80' : '#f87171';
+  if (totals.net < 0) {
+    netSavingsElement.textContent = '-' + netSavingsElement.textContent;
+  }
+  
+  const savingsRate = totals.income > 0 ? (totals.net / totals.income * 100) : 0;
+  document.getElementById('mobile-savings-rate').textContent = `${savingsRate.toFixed(1)}%`;
+  
+  // Prepare chart data for rendering
+  const chartDatasets = [
+    {
+      type: 'bar',
+      label: 'Income',
+      data: incomeData,
+      backgroundColor: 'rgba(74, 222, 128, 0.8)',
+      order: 2
+    },
+    {
+      type: 'bar',
+      label: 'Expenses',
+      data: expenseData,
+      backgroundColor: 'rgba(248, 113, 113, 0.8)',
+      order: 2
+    },
+    {
+      type: 'line',
+      label: 'Net',
+      data: netData,
+      borderColor: '#60a5fa',
+      tension: 0.4,
+      fill: false,
+      order: 1
+    }
+  ];
+  
+  // Create/update chart
+  if (mobileChartInstances.incomeExpense) {
+    mobileChartInstances.incomeExpense.destroy();
+  }
+  
+  mobileChartInstances.incomeExpense = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: chartDatasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            boxWidth: 12,
+            font: {
+              size: 10
             },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return context.dataset.label + ': ' + formatCurrency(context.raw);
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
-              },
-              ticks: {
-                callback: value => formatCurrency(value),
-                color: '#94a3b8',
-                font: {
-                  size: 10
-                }
-              }
-            },
-            x: {
-              grid: {
-                display: false
-              },
-              ticks: {
-                color: '#94a3b8',
-                maxRotation: 0,
-                font: {
-                  size: 10
-                }
-              }
+            color: '#94a3b8'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + formatCurrency(context.raw);
             }
           }
         }
-      });
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          ticks: {
+            callback: value => formatCurrency(value),
+            color: '#94a3b8',
+            font: {
+              size: 10
+            }
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: '#94a3b8',
+            maxRotation: 0,
+            font: {
+              size: 10
+            }
+          }
+        }
+      }
     }
+  });
+}
     
     // Render spending categories for mobile
     function renderMobileSpendingCategories(filteredTransactions = null) {
