@@ -67,6 +67,19 @@
                 <button id="add-account-btn" class="add-btn">+ Add New Account</button>
             </div>
             
+            <!-- Summary Stats Section -->
+            <div id="summary-stats" class="summary-section"></div>
+            
+            <!-- Filter Pills -->
+            <div class="filter-section">
+                <div class="filter-pills">
+                    <button class="filter-pill active" data-filter="all">All</button>
+                    <button class="filter-pill" data-filter="funded">Funded</button>
+                    <button class="filter-pill" data-filter="phase1">Phase 1</button>
+                    <button class="filter-pill" data-filter="phase2">Phase 2</button>
+                </div>
+            </div>
+            
             <div id="accounts-list"></div>
         </div>
     </div>
@@ -84,7 +97,7 @@
                             <option value="">Select Prop Firm</option>
                             <option value="FundingPips">FundingPips</option>
                             <option value="The5%ers">The5%ers</option>
-                            <option value="Alpha Capital Group">Alpha Capital Group</option>
+                            <option value="Alpha Capital">Alpha Capital</option>
                             <option value="FunderPro">FunderPro</option>
                             <option value="ThinkCapital">ThinkCapital</option>
                             <option value="BrightFunded">BrightFunded</option>
@@ -108,7 +121,7 @@
                             <option value="10000">$10,000</option>
                             <option value="25000">$25,000</option>
                             <option value="50000">$50,000</option>
-                            <option value="100000">$100,000</option>
+                            <option value="100000" selected>$100,000</option>
                             <option value="200000">$200,000</option>
                             <option value="custom">Custom</option>
                         </select>
@@ -121,7 +134,7 @@
                     
                     <div class="form-group">
                         <label for="current-balance">Current Balance:</label>
-                        <input type="number" id="current-balance" step="0.01" required placeholder="100000" min="0">
+                        <input type="number" id="current-balance" step="0.01" required placeholder="100000" value="100000" min="0">
                     </div>
                     
                     <div class="form-group">
@@ -146,7 +159,7 @@
 
                     <div class="form-group" id="profit-share-group" style="display: none;">
                         <label for="profit-share">Profit Share (%):</label>
-                        <input type="number" id="profit-share" step="0.1" placeholder="80" min="0" max="100">
+                        <input type="number" id="profit-share" step="0.1" placeholder="80" value="80" min="0" max="100">
                     </div>
 
                     <div class="form-group">
@@ -158,11 +171,10 @@
                         <label for="platform">Platform:</label>
                         <select id="platform" required>
                             <option value="">Select Platform</option>
-                            <option value="MT4">MT4</option>
                             <option value="MT5">MT5</option>
                             <option value="cTrader">cTrader</option>
                             <option value="TradeLocker">TradeLocker</option>
-                            <option value="TradingView">TradingView</option>
+                            <option value="TradingView/ThinkTrader">TradingView/ThinkTrader</option>
                         </select>
                     </div>
                 </div>

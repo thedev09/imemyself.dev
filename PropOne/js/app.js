@@ -48,6 +48,8 @@ const profitShareGroup = document.getElementById('profit-share-group');
 
 let currentUser = null;
 let editingAccountId = null;
+let currentFilter = 'all';
+let allAccounts = []; // Store all accounts for filtering
 
 // Updated prop firm templates with your specifications
 const propFirmTemplates = {
@@ -67,7 +69,7 @@ const propFirmTemplates = {
         phase2Target: 5,
         platform: 'MT5'
     },
-    'Alpha Capital Group': {
+    'Alpha Capital': {
         accountSizes: [25000, 50000, 100000, 200000],
         dailyDrawdown: 5,
         maxDrawdown: 10,
@@ -89,7 +91,7 @@ const propFirmTemplates = {
         maxDrawdown: 8,
         phase1Target: 8,
         phase2Target: 5,
-        platform: 'MT4'
+        platform: 'TradingView/ThinkTrader'
     },
     'BrightFunded': {
         accountSizes: [10000, 25000, 50000, 100000, 200000],
@@ -105,7 +107,7 @@ const propFirmTemplates = {
         maxDrawdown: 10,
         phase1Target: 9,
         phase2Target: 6,
-        platform: 'MT4'
+        platform: 'MT5'
     },
     'FundedNext': {
         accountSizes: [5000, 10000, 25000, 50000, 100000, 200000],
@@ -201,13 +203,22 @@ function resetModal() {
     if (profitShareGroup) profitShareGroup.style.display = 'none';
     if (profitTargetGroup) profitTargetGroup.style.display = 'block';
     
+    // Set default values - 100k account size and current balance
+    if (accountSizeSelect) accountSizeSelect.value = '100000';
+    const currentBalanceInput = document.getElementById('current-balance');
+    if (currentBalanceInput) currentBalanceInput.value = '100000';
+    
+    // Set default profit share to 80%
+    const profitShareInput = document.getElementById('profit-share');
+    if (profitShareInput) profitShareInput.value = '80';
+    
     // Reset firm select to original options and enable it
     if (firmSelect) {
         firmSelect.innerHTML = `
             <option value="">Select Prop Firm</option>
             <option value="FundingPips">FundingPips</option>
             <option value="The5%ers">The5%ers</option>
-            <option value="Alpha Capital Group">Alpha Capital Group</option>
+            <option value="Alpha Capital">Alpha Capital</option>
             <option value="FunderPro">FunderPro</option>
             <option value="ThinkCapital">ThinkCapital</option>
             <option value="BrightFunded">BrightFunded</option>
@@ -268,8 +279,13 @@ function applyTemplate(firmName) {
     const template = propFirmTemplates[firmName];
     if (!template) return;
     
-    // Set account size to first available option
-    if (accountSizeSelect) accountSizeSelect.value = template.accountSizes[0].toString();
+    // Set account size to 100k if available, else first available option
+    const targetSize = template.accountSizes.includes(100000) ? '100000' : template.accountSizes[0].toString();
+    if (accountSizeSelect) accountSizeSelect.value = targetSize;
+    
+    // Update current balance to match account size
+    const currentBalanceInput = document.getElementById('current-balance');
+    if (currentBalanceInput) currentBalanceInput.value = targetSize;
     
     // Set template values
     const dailyDrawdown = document.getElementById('daily-drawdown');
@@ -347,6 +363,9 @@ if (accountSizeSelect) {
                 customSizeInput.removeAttribute('required');
                 customSizeInput.value = '';
             }
+            // Update current balance to match selected account size
+            const currentBalanceInput = document.getElementById('current-balance');
+            if (currentBalanceInput) currentBalanceInput.value = e.target.value;
         }
         calculateTargetAmount();
     });
@@ -453,11 +472,198 @@ async function loadAccounts() {
         );
         
         const querySnapshot = await getDocs(q);
-        displayAccounts(querySnapshot.docs);
+        allAccounts = querySnapshot.docs; // Store for filtering
+        
+        // FIXED SORTING: Funded > Phase 2 > Phase 1, then by balance (highest to lowest within each phase)
+        allAccounts.sort((a, b) => {
+            const accountA = a.data();
+            const accountB = b.data();
+            
+            // Define sorting order: Funded=0, Phase 2=1, Phase 1=2
+            const getPhaseOrder = (phase) => {
+                if (phase === 'Funded') return 0;
+                if (phase === 'Challenge Phase 2') return 1;
+                if (phase === 'Challenge Phase 1') return 2;
+                return 3; // Any other phases
+            };
+            
+            const phaseOrderA = getPhaseOrder(accountA.phase);
+            const phaseOrderB = getPhaseOrder(accountB.phase);
+            
+            // If different phases, sort by phase priority
+            if (phaseOrderA !== phaseOrderB) {
+                return phaseOrderA - phaseOrderB;
+            }
+            
+            // If same phase, sort by balance (highest first)
+            return accountB.accountSize - accountA.accountSize;
+        });
+        
+        generateSummaryStats(allAccounts);
+        displayAccounts(getFilteredAccounts());
+        setupFilters();
         
     } catch (error) {
         console.error('Error loading accounts:', error);
     }
+}
+
+function generateSummaryStats(accounts) {
+    const summaryContainer = document.getElementById('summary-stats');
+    if (!summaryContainer) return;
+    
+    // Calculate stats by phase
+    const stats = {
+        funded: { count: 0, totalFunding: 0, totalProfit: 0, totalPotential: 0 },
+        phase1: { count: 0, totalFunding: 0, nearTarget: 0 },
+        phase2: { count: 0, totalFunding: 0, nearTarget: 0 }
+    };
+    
+    accounts.forEach(doc => {
+        const account = doc.data();
+        const currentPnL = account.currentBalance - account.accountSize;
+        
+        if (account.phase === 'Funded') {
+            stats.funded.count++;
+            stats.funded.totalFunding += account.accountSize;
+            stats.funded.totalPotential += account.accountSize; // Potential to trade
+            if (currentPnL > 0) {
+                // Calculate "your share" of profit
+                const yourShare = currentPnL * (account.profitShare || 80) / 100;
+                stats.funded.totalProfit += yourShare;
+            }
+        } else if (account.phase === 'Challenge Phase 1') {
+            stats.phase1.count++;
+            stats.phase1.totalFunding += account.accountSize;
+            // Check if near target (>75% complete)
+            if (account.profitTargetAmount > 0) {
+                const progress = (currentPnL / account.profitTargetAmount) * 100;
+                if (progress >= 75) {
+                    stats.phase1.nearTarget++;
+                }
+            }
+        } else if (account.phase === 'Challenge Phase 2') {
+            stats.phase2.count++;
+            stats.phase2.totalFunding += account.accountSize;
+            // Check if near target (>75% complete)
+            if (account.profitTargetAmount > 0) {
+                const progress = (currentPnL / account.profitTargetAmount) * 100;
+                if (progress >= 75) {
+                    stats.phase2.nearTarget++;
+                }
+            }
+        }
+    });
+    
+    // Generate summary HTML with better metrics
+    const summaryHTML = `
+        <div class="summary-card funded">
+            <h3>Funded Accounts</h3>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Accounts</div>
+                    <div class="summary-stat-value">${stats.funded.count}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Total Funding</div>
+                    <div class="summary-stat-value">$${stats.funded.totalFunding.toLocaleString()}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Your Profit</div>
+                    <div class="summary-stat-value ${stats.funded.totalProfit >= 0 ? 'positive' : 'negative'}">$${stats.funded.totalProfit.toLocaleString()}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Profit Rate</div>
+                    <div class="summary-stat-value">${stats.funded.totalFunding > 0 ? ((stats.funded.totalProfit / stats.funded.totalFunding) * 100).toFixed(1) : '0'}%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="summary-card phase1">
+            <h3>Phase 1 Accounts</h3>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Accounts</div>
+                    <div class="summary-stat-value">${stats.phase1.count}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Total Capital</div>
+                    <div class="summary-stat-value">$${stats.phase1.totalFunding.toLocaleString()}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Near Target</div>
+                    <div class="summary-stat-value">${stats.phase1.nearTarget}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Success Rate</div>
+                    <div class="summary-stat-value">${stats.phase1.count > 0 ? ((stats.phase1.nearTarget / stats.phase1.count) * 100).toFixed(0) : '0'}%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="summary-card phase2">
+            <h3>Phase 2 Accounts</h3>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Accounts</div>
+                    <div class="summary-stat-value">${stats.phase2.count}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Total Capital</div>
+                    <div class="summary-stat-value">$${stats.phase2.totalFunding.toLocaleString()}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Near Target</div>
+                    <div class="summary-stat-value">${stats.phase2.nearTarget}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Completion Rate</div>
+                    <div class="summary-stat-value">${stats.phase2.count > 0 ? ((stats.phase2.nearTarget / stats.phase2.count) * 100).toFixed(0) : '0'}%</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    summaryContainer.innerHTML = summaryHTML;
+}
+
+function setupFilters() {
+    const filterPills = document.querySelectorAll('.filter-pill');
+    
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            // Update active state
+            filterPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            
+            // Update current filter
+            currentFilter = pill.dataset.filter;
+            
+            // Display filtered accounts
+            displayAccounts(getFilteredAccounts());
+        });
+    });
+}
+
+function getFilteredAccounts() {
+    if (currentFilter === 'all') {
+        return allAccounts;
+    }
+    
+    return allAccounts.filter(doc => {
+        const account = doc.data();
+        
+        switch (currentFilter) {
+            case 'funded':
+                return account.phase === 'Funded';
+            case 'phase1':
+                return account.phase === 'Challenge Phase 1';
+            case 'phase2':
+                return account.phase === 'Challenge Phase 2';
+            default:
+                return true;
+        }
+    });
 }
 
 function displayAccounts(accounts) {
@@ -509,15 +715,15 @@ function displayAccounts(accounts) {
         if (account.phase === 'Funded') {
             // Funded account stats
             stat1Label = 'Balance';
-            stat1Value = `${account.currentBalance.toLocaleString()}`;
+            stat1Value = `$${account.currentBalance.toLocaleString()}`;
             stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
+            stat2Value = `${currentPnL >= 0 ? '+' : ''}$${currentPnL.toLocaleString()}`;
             stat3Label = 'Profit Share';
             stat3Value = `${account.profitShare || 80}%`;
             stat4Label = 'Your Share';
             if (currentPnL > 0) {
                 const yourShare = currentPnL * (account.profitShare || 80) / 100;
-                stat4Value = `${yourShare.toLocaleString()}`;
+                stat4Value = `$${yourShare.toLocaleString()}`;
             } else {
                 stat4Value = '$0';
             }
@@ -532,11 +738,11 @@ function displayAccounts(accounts) {
             const remainingTarget = Math.max(0, account.profitTargetAmount - currentPnL);
             
             stat1Label = 'Balance';
-            stat1Value = `${account.currentBalance.toLocaleString()}`;
+            stat1Value = `$${account.currentBalance.toLocaleString()}`;
             stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
+            stat2Value = `${currentPnL >= 0 ? '+' : ''}$${currentPnL.toLocaleString()}`;
             stat3Label = 'Target Remaining';
-            stat3Value = `${remainingTarget.toLocaleString()}`;
+            stat3Value = `$${remainingTarget.toLocaleString()}`;
             stat4Label = 'Max DD';
             stat4Value = `${account.maxDrawdown}%`;
             
@@ -572,10 +778,10 @@ function displayAccounts(accounts) {
         const phaseClass = isBreached ? 'phase-badge breached' : 
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
-        // Fixed layout: breach warning on left, buttons on right
+        // Fixed layout: breach warning on left, buttons on right with better sizing
         const breachAndActionsHtml = isBreached ? `
             <div class="bottom-row">
-                <div class="breach-warning">⚠️ ACCOUNT BREACHED</div>
+                <div class="breach-warning">⚠️ BREACHED</div>
                 <div class="account-actions">
                     ${upgradeButtonHtml}
                     <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
