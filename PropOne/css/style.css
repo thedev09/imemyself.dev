@@ -449,6 +449,27 @@ header h1 {
     background: linear-gradient(90deg, #ffa502 0%, #ff6348 100%);
 }
 
+/* Bottom row for breach warning and actions */
+.bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.breach-warning {
+    color: #ff4757;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    background: rgba(255, 71, 87, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .account-actions {
     display: flex;
     gap: 8px;
@@ -463,6 +484,7 @@ header h1 {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .upgrade-btn {
@@ -486,16 +508,7 @@ header h1 {
     transform: translateY(-1px);
 }
 
-.breach-warning {
-    text-align: center;
-    color: #ff4757;
-    font-weight: 600;
-    font-size: 0.8rem;
-    margin-top: 12px;
-    padding: 8px;
-    background: rgba(255, 71, 87, 0.1);
-    border-radius: 8px;
-}
+/* Remove old breach warning styles since we have new layout */
 
 /* Compact Modal */
 .modal {

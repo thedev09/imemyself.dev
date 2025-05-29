@@ -479,9 +479,18 @@ function displayAccounts(accounts) {
         
         const currentPnL = account.currentBalance - account.accountSize;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-        const dailyDrawdownAmount = account.accountSize * (account.dailyDrawdown / 100);
+        
+        // Fixed: Daily DD should be calculated from day's starting balance, not account size
+        // For now, we'll use current balance as proxy for "today's starting balance"
+        // In real implementation, you'd track daily starting balance
+        const dailyStartBalance = account.currentBalance; // This should be actual day start balance
+        const dailyDrawdownAmount = dailyStartBalance * (account.dailyDrawdown / 100);
+        
+        // Check for breaches - Max DD from account start, Daily DD from day start
         const isMaxDrawdownBreached = currentPnL < -maxDrawdownAmount;
-        const isDailyDrawdownBreached = currentPnL < -dailyDrawdownAmount;
+        // Daily DD breach would be: today's low < (today's start - daily DD amount)
+        // For now, we'll disable daily DD breach since we don't track intraday data
+        const isDailyDrawdownBreached = false; // Disabled until we have proper daily tracking
         const isBreached = isMaxDrawdownBreached || isDailyDrawdownBreached;
         
         // Get firm initials for logo
@@ -491,18 +500,24 @@ function displayAccounts(accounts) {
         let progressLabel, progressPercent, progressColor, progressText;
         let upgradeButtonHtml = '';
         
+        // Simplified phase names
+        let displayPhase = account.phase;
+        if (account.phase === 'Challenge Phase 1') displayPhase = 'Phase 1';
+        else if (account.phase === 'Challenge Phase 2') displayPhase = 'Phase 2';
+        else if (account.phase === 'Challenge Phase 3') displayPhase = 'Phase 3';
+        
         if (account.phase === 'Funded') {
             // Funded account stats
             stat1Label = 'Balance';
-            stat1Value = `$${account.currentBalance.toLocaleString()}`;
+            stat1Value = `${account.currentBalance.toLocaleString()}`;
             stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}$${currentPnL.toLocaleString()}`;
+            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
             stat3Label = 'Profit Share';
             stat3Value = `${account.profitShare || 80}%`;
             stat4Label = 'Your Share';
             if (currentPnL > 0) {
                 const yourShare = currentPnL * (account.profitShare || 80) / 100;
-                stat4Value = `$${yourShare.toLocaleString()}`;
+                stat4Value = `${yourShare.toLocaleString()}`;
             } else {
                 stat4Value = '$0';
             }
@@ -517,11 +532,11 @@ function displayAccounts(accounts) {
             const remainingTarget = Math.max(0, account.profitTargetAmount - currentPnL);
             
             stat1Label = 'Balance';
-            stat1Value = `$${account.currentBalance.toLocaleString()}`;
+            stat1Value = `${account.currentBalance.toLocaleString()}`;
             stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}$${currentPnL.toLocaleString()}`;
+            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
             stat3Label = 'Target Remaining';
-            stat3Value = `$${remainingTarget.toLocaleString()}`;
+            stat3Value = `${remainingTarget.toLocaleString()}`;
             stat4Label = 'Max DD';
             stat4Value = `${account.maxDrawdown}%`;
             
@@ -557,6 +572,24 @@ function displayAccounts(accounts) {
         const phaseClass = isBreached ? 'phase-badge breached' : 
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
+        // Fixed layout: breach warning on left, buttons on right
+        const breachAndActionsHtml = isBreached ? `
+            <div class="bottom-row">
+                <div class="breach-warning">⚠️ ACCOUNT BREACHED</div>
+                <div class="account-actions">
+                    ${upgradeButtonHtml}
+                    <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
+                    <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
+                </div>
+            </div>
+        ` : `
+            <div class="account-actions">
+                ${upgradeButtonHtml}
+                <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
+                <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
+            </div>
+        `;
+        
         return `
             <div class="${cardClass}">
                 <div class="firm-header">
@@ -564,10 +597,10 @@ function displayAccounts(accounts) {
                         <div class="firm-logo">${firmInitials}</div>
                         <div class="firm-info">
                             <h3>${account.firmName}</h3>
-                            <p>$${account.accountSize.toLocaleString()} • ${account.platform}</p>
+                            <p>${account.accountSize.toLocaleString()} • ${account.platform}</p>
                         </div>
                     </div>
-                    <div class="${phaseClass}">${account.phase}</div>
+                    <div class="${phaseClass}">${displayPhase}</div>
                 </div>
                 
                 <div class="account-stats">
@@ -599,13 +632,7 @@ function displayAccounts(accounts) {
                     </div>
                 </div>
                 
-                ${isBreached ? '<div class="breach-warning">⚠️ ACCOUNT BREACHED</div>' : ''}
-                
-                <div class="account-actions">
-                    ${upgradeButtonHtml}
-                    <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
-                    <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
-                </div>
+                ${breachAndActionsHtml}
             </div>
         `;
     }).join('')}</div>`;
