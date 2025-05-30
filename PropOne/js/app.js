@@ -1,3 +1,4 @@
+// Complete app.js - Main application 
 import { auth, db } from './firebase-config.js';
 import { 
     signOut, 
@@ -48,10 +49,10 @@ const profitShareGroup = document.getElementById('profit-share-group');
 
 let currentUser = null;
 let editingAccountId = null;
-let currentFilter = 'active'; // Changed default to 'active'
-let allAccounts = []; // Store all accounts for filtering
+let currentFilter = 'active';
+let allAccounts = [];
 
-// Updated prop firm templates with correct platforms
+// Prop firm templates
 const propFirmTemplates = {
     'FundingPips': {
         accountSizes: [10000, 25000, 50000, 100000, 200000],
@@ -158,7 +159,6 @@ if (profileBtn) {
     });
 }
 
-// Close dropdown when clicking outside
 document.addEventListener('click', (e) => {
     if (profileBtn && profileDropdown && !profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
         profileDropdown.classList.remove('show');
@@ -168,7 +168,7 @@ document.addEventListener('click', (e) => {
 if (settingsBtn) {
     settingsBtn.addEventListener('click', () => {
         profileDropdown.classList.remove('show');
-        alert('Settings feature coming soon!');
+        window.location.href = 'pages/settings.html';
     });
 }
 
@@ -203,16 +203,13 @@ function resetModal() {
     if (profitShareGroup) profitShareGroup.style.display = 'none';
     if (profitTargetGroup) profitTargetGroup.style.display = 'block';
     
-    // Set default values - 100k account size and current balance
     if (accountSizeSelect) accountSizeSelect.value = '100000';
     const currentBalanceInput = document.getElementById('current-balance');
     if (currentBalanceInput) currentBalanceInput.value = '100000';
     
-    // Set default profit share to 80%
     const profitShareInput = document.getElementById('profit-share');
     if (profitShareInput) profitShareInput.value = '80';
     
-    // Reset firm select to original options and enable it
     if (firmSelect) {
         firmSelect.innerHTML = `
             <option value="">Select Prop Firm</option>
@@ -279,15 +276,12 @@ function applyTemplate(firmName) {
     const template = propFirmTemplates[firmName];
     if (!template) return;
     
-    // Set account size to 100k if available, else first available option
     const targetSize = template.accountSizes.includes(100000) ? '100000' : template.accountSizes[0].toString();
     if (accountSizeSelect) accountSizeSelect.value = targetSize;
     
-    // Update current balance to match account size
     const currentBalanceInput = document.getElementById('current-balance');
     if (currentBalanceInput) currentBalanceInput.value = targetSize;
     
-    // Set template values
     const dailyDrawdown = document.getElementById('daily-drawdown');
     const maxDrawdown = document.getElementById('max-drawdown');
     const platform = document.getElementById('platform');
@@ -296,7 +290,6 @@ function applyTemplate(firmName) {
     if (maxDrawdown) maxDrawdown.value = template.maxDrawdown;
     if (platform) platform.value = template.platform;
     
-    // Set profit target based on current phase
     updateProfitTargetFromTemplate(template);
     calculateTargetAmount();
 }
@@ -342,7 +335,6 @@ if (phaseSelect) {
             const profitShare = document.getElementById('profit-share');
             if (profitShare) profitShare.removeAttribute('required');
             
-            // Update profit target based on selected firm and phase
             const selectedFirm = firmSelect.value;
             if (propFirmTemplates[selectedFirm]) {
                 updateProfitTargetFromTemplate(propFirmTemplates[selectedFirm]);
@@ -363,7 +355,6 @@ if (accountSizeSelect) {
                 customSizeInput.removeAttribute('required');
                 customSizeInput.value = '';
             }
-            // Update current balance to match selected account size
             const currentBalanceInput = document.getElementById('current-balance');
             if (currentBalanceInput) currentBalanceInput.value = e.target.value;
         }
@@ -433,8 +424,8 @@ if (addAccountForm) {
                 maxDrawdown,
                 dailyDrawdown,
                 platform,
-                status: 'active', // New field for account status
-                upgradedFrom: null, // Track upgrade relationships
+                status: 'active',
+                upgradedFrom: null,
                 upgradedTo: null,
                 createdAt: editingAccountId ? undefined : new Date(),
                 updatedAt: new Date()
@@ -450,14 +441,12 @@ if (addAccountForm) {
                 
                 const submitBtn = document.querySelector('#add-account-form button[type="submit"]');
                 if (submitBtn?.dataset.upgradeFrom) {
-                    // Mark old account as upgraded and link to new account
                     await updateDoc(doc(db, 'accounts', submitBtn.dataset.upgradeFrom), {
                         status: 'upgraded',
                         upgradedTo: docRef.id,
                         updatedAt: new Date()
                     });
                     
-                    // Link new account to old account
                     await updateDoc(doc(db, 'accounts', docRef.id), {
                         upgradedFrom: submitBtn.dataset.upgradeFrom
                     });
@@ -488,30 +477,26 @@ async function loadAccounts() {
         );
         
         const querySnapshot = await getDocs(q);
-        allAccounts = querySnapshot.docs; // Store for filtering
+        allAccounts = querySnapshot.docs;
         
-        // FIXED SORTING: Funded > Phase 2 > Phase 1, then by balance (highest to lowest within each phase)
         allAccounts.sort((a, b) => {
             const accountA = a.data();
             const accountB = b.data();
             
-            // Define sorting order: Funded=0, Phase 2=1, Phase 1=2
             const getPhaseOrder = (phase) => {
                 if (phase === 'Funded') return 0;
                 if (phase === 'Challenge Phase 2') return 1;
                 if (phase === 'Challenge Phase 1') return 2;
-                return 3; // Any other phases
+                return 3;
             };
             
             const phaseOrderA = getPhaseOrder(accountA.phase);
             const phaseOrderB = getPhaseOrder(accountB.phase);
             
-            // If different phases, sort by phase priority
             if (phaseOrderA !== phaseOrderB) {
                 return phaseOrderA - phaseOrderB;
             }
             
-            // If same phase, sort by balance (highest first)
             return accountB.accountSize - accountA.accountSize;
         });
         
@@ -528,7 +513,6 @@ function generateSummaryStats(accounts) {
     const summaryContainer = document.getElementById('summary-stats');
     if (!summaryContainer) return;
     
-    // Calculate stats with new structure
     const stats = {
         funded: { count: 0, totalFunding: 0, totalProfit: 0 },
         challenge: { 
@@ -552,7 +536,6 @@ function generateSummaryStats(accounts) {
         const isBreached = currentPnL < -maxDrawdownAmount;
         
         if (account.status === 'active' && !isBreached) {
-            // Active accounts
             if (account.phase === 'Funded') {
                 stats.funded.count++;
                 stats.funded.totalFunding += account.accountSize;
@@ -568,7 +551,6 @@ function generateSummaryStats(accounts) {
                 stats.challenge.phase2Capital += account.accountSize;
             }
         } else if (account.status === 'breached' || (account.status === 'active' && isBreached)) {
-            // Breached accounts
             if (account.phase === 'Challenge Phase 1') {
                 stats.inactive.phase1Breached++;
             } else if (account.phase === 'Challenge Phase 2') {
@@ -577,15 +559,12 @@ function generateSummaryStats(accounts) {
                 stats.inactive.fundedBreached++;
             }
         } else if (account.status === 'upgraded') {
-            // Count upgraded accounts as passed
             stats.inactive.totalPassed++;
         }
     });
     
-    // Add currently funded accounts to passed count (they passed challenges)
     stats.inactive.totalPassed += stats.funded.count;
     
-    // Generate updated summary HTML
     const summaryHTML = `
         <div class="summary-card funded">
             <h3>Funded Accounts</h3>
@@ -661,7 +640,6 @@ function setupFilters() {
     const filterContainer = document.querySelector('.filter-pills');
     if (!filterContainer) return;
     
-    // Update filter pills with new structure
     filterContainer.innerHTML = `
         <button class="filter-pill active" data-filter="active">Active</button>
         <button class="filter-pill" data-filter="funded">Funded</button>
@@ -676,14 +654,9 @@ function setupFilters() {
     
     filterPills.forEach(pill => {
         pill.addEventListener('click', () => {
-            // Update active state
             filterPills.forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
-            
-            // Update current filter
             currentFilter = pill.dataset.filter;
-            
-            // Display filtered accounts
             displayAccounts(getFilteredAccounts());
         });
     });
@@ -710,7 +683,7 @@ function getFilteredAccounts() {
             case 'upgraded':
                 return account.status === 'upgraded';
             case 'all':
-                return true; // Show everything
+                return true;
             default:
                 return account.status === 'active' && !isBreached;
         }
@@ -746,20 +719,13 @@ function displayAccounts(accounts) {
         const currentPnL = account.currentBalance - account.accountSize;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
         
-        // Fixed: Daily DD should be calculated from day's starting balance, not account size
-        // For now, we'll use current balance as proxy for "today's starting balance"
-        // In real implementation, you'd track daily starting balance
-        const dailyStartBalance = account.currentBalance; // This should be actual day start balance
+        const dailyStartBalance = account.currentBalance;
         const dailyDrawdownAmount = dailyStartBalance * (account.dailyDrawdown / 100);
         
-        // Check for breaches - Max DD from account start, Daily DD from day start
         const isMaxDrawdownBreached = currentPnL < -maxDrawdownAmount;
-        // Daily DD breach would be: today's low < (today's start - daily DD amount)
-        // For now, we'll disable daily DD breach since we don't track intraday data
-        const isDailyDrawdownBreached = false; // Disabled until we have proper daily tracking
+        const isDailyDrawdownBreached = false;
         const isBreached = isMaxDrawdownBreached || isDailyDrawdownBreached;
         
-        // Get firm initials for logo
         const firmInitials = account.firmName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
         
         let stat1Label, stat1Value, stat2Label, stat2Value, stat3Label, stat3Value, stat4Label, stat4Value;
@@ -767,20 +733,17 @@ function displayAccounts(accounts) {
         let upgradeButtonHtml = '';
         let statusBadgeHtml = '';
         
-        // Simplified phase names
         let displayPhase = account.phase;
         if (account.phase === 'Challenge Phase 1') displayPhase = 'Phase 1';
         else if (account.phase === 'Challenge Phase 2') displayPhase = 'Phase 2';
         else if (account.phase === 'Challenge Phase 3') displayPhase = 'Phase 3';
         
-        // Add status badges for upgraded accounts
         if (account.status === 'upgraded') {
             const nextPhase = account.phase === 'Challenge Phase 1' ? 'Phase 2' : 'Funded';
             statusBadgeHtml = `<div class="status-badge upgraded">Upgraded to ${nextPhase}</div>`;
         }
         
         if (account.phase === 'Funded') {
-            // Funded account stats
             stat1Label = 'Balance';
             stat1Value = `${account.currentBalance.toLocaleString()}`;
             stat2Label = 'Daily P&L';
@@ -801,7 +764,6 @@ function displayAccounts(accounts) {
             progressColor = currentPnL >= 0 ? 'profit' : 'loss';
             
         } else {
-            // Challenge phase stats
             const remainingTarget = Math.max(0, account.profitTargetAmount - currentPnL);
             
             stat1Label = 'Balance';
@@ -841,7 +803,6 @@ function displayAccounts(accounts) {
             }
         }
         
-        // Determine card class based on status and breach
         let cardClass = 'account-card';
         if (account.status === 'breached' || isBreached) {
             cardClass += ' breached';
@@ -853,7 +814,6 @@ function displayAccounts(accounts) {
                          account.status === 'upgraded' ? 'phase-badge upgraded' :
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
-        // Fixed layout: breach warning on left, buttons on right with better sizing
         let bottomRowHtml = '';
         
         if (account.status === 'breached' || isBreached) {
@@ -945,7 +905,6 @@ window.editAccount = async function(accountId) {
         
         const account = docSnap.data();
         
-        // Don't allow editing of upgraded accounts
         if (account.status === 'upgraded') {
             alert('Cannot edit upgraded accounts. This account has been superseded by a newer version.');
             return;
@@ -957,14 +916,11 @@ window.editAccount = async function(accountId) {
         document.querySelector('#add-account-modal h2').textContent = 'Edit Account';
         document.querySelector('#add-account-form button[type="submit"]').textContent = 'Update Account';
         
-        // Fill form with existing data - FIRM NAME IS READ-ONLY WHEN EDITING
         const firmNameCleaned = account.firmName;
         
-        // Display firm name but make it uneditable
         firmSelect.innerHTML = `<option value="${firmNameCleaned}" selected>${firmNameCleaned}</option>`;
         firmSelect.disabled = true;
         
-        // Set account size
         if ([5000, 10000, 25000, 50000, 100000, 200000].includes(account.accountSize)) {
             accountSizeSelect.value = account.accountSize.toString();
         } else {
@@ -1003,7 +959,6 @@ window.editAccount = async function(accountId) {
 };
 
 window.deleteAccount = async function(accountId) {
-    // Create custom delete modal
     const deleteModal = document.createElement('div');
     deleteModal.className = 'modal';
     deleteModal.innerHTML = `
@@ -1022,7 +977,6 @@ window.deleteAccount = async function(accountId) {
     document.body.appendChild(deleteModal);
     deleteModal.style.display = 'block';
     
-    // Handle mark as breached
     deleteModal.querySelector('#mark-breached-btn').addEventListener('click', async () => {
         try {
             await updateDoc(doc(db, 'accounts', accountId), {
@@ -1038,7 +992,6 @@ window.deleteAccount = async function(accountId) {
         }
     });
     
-    // Handle permanent delete
     deleteModal.querySelector('#delete-permanent-btn').addEventListener('click', async () => {
         if (confirm('Are you absolutely sure? This will permanently delete the account and cannot be undone.')) {
             try {
@@ -1060,19 +1013,14 @@ window.upgradeAccount = function(accountId, firmName, accountSize, currentPhase)
     
     document.querySelector('#add-account-modal h2').textContent = 'Upgrade to Next Phase';
     
-    // Set firm name and apply template
     firmSelect.value = firmName;
     if (propFirmTemplates[firmName]) {
         applyTemplate(firmName);
     }
     
-    // Set account size
     accountSizeSelect.value = accountSize.toString();
-    
-    // Set current balance to account size (starting fresh for new phase)
     document.getElementById('current-balance').value = accountSize;
     
-    // Determine next phase
     let nextPhase;
     if (currentPhase === 'Challenge Phase 1') {
         nextPhase = 'Challenge Phase 2';
@@ -1085,13 +1033,11 @@ window.upgradeAccount = function(accountId, firmName, accountSize, currentPhase)
     phaseSelect.value = nextPhase;
     phaseSelect.dispatchEvent(new Event('change'));
     
-    // Apply template for the new phase
     if (propFirmTemplates[firmName]) {
         updateProfitTargetFromTemplate(propFirmTemplates[firmName]);
         calculateTargetAmount();
     }
     
-    // Change button text and store upgrade info
     const submitBtn = document.querySelector('#add-account-form button[type="submit"]');
     submitBtn.textContent = 'Create Upgraded Account';
     submitBtn.dataset.upgradeFrom = accountId;

@@ -1,0 +1,422 @@
+/* settings.css - Dedicated CSS for Settings Page */
+
+/* Settings Page Specific Styles */
+.settings-header {
+    margin-bottom: 40px;
+}
+
+.header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: #ccc;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.settings-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.settings-section {
+    margin-bottom: 40px;
+}
+
+.settings-section.danger-zone {
+    border-top: 2px solid rgba(255, 71, 87, 0.3);
+    padding-top: 30px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.section-icon {
+    width: 24px;
+    height: 24px;
+    color: #667eea;
+}
+
+.settings-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.settings-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.danger-card {
+    border-color: rgba(255, 71, 87, 0.3);
+    background: rgba(255, 71, 87, 0.05);
+}
+
+/* Profile Info Section */
+.profile-info-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.profile-avatar-large svg {
+    width: 40px;
+    height: 40px;
+}
+
+.profile-details-large {
+    flex: 1;
+    display: grid;
+    gap: 15px;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.profile-field label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.profile-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.profile-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Data Stats */
+.data-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.data-stat {
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.data-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 4px;
+}
+
+.data-stat-label {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.data-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Preferences Grid */
+.preferences-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.preference-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.preference-item label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.preference-input {
+    padding: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.preference-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.preference-input option {
+    background: #2a2a46;
+    color: #fff;
+}
+
+.preferences-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Danger Zone */
+.danger-warning {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid rgba(255, 71, 87, 0.3);
+    border-radius: 12px;
+}
+
+.warning-icon {
+    width: 24px;
+    height: 24px;
+    color: #ff4757;
+    flex-shrink: 0;
+}
+
+.warning-text h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ff4757;
+    margin-bottom: 4px;
+}
+
+.warning-text p {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin: 0;
+}
+
+.danger-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+/* Enhanced Notifications */
+.notification {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    max-width: 400px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.notification.hidden {
+    opacity: 0;
+    transform: translateX(100%);
+    visibility: hidden;
+}
+
+.notification.success {
+    background: rgba(46, 213, 115, 0.2);
+    border: 1px solid rgba(46, 213, 115, 0.4);
+    color: #2ed573;
+}
+
+.notification.error {
+    background: rgba(255, 71, 87, 0.2);
+    border: 1px solid rgba(255, 71, 87, 0.4);
+    color: #ff4757;
+}
+
+.notification.warning {
+    background: rgba(255, 165, 2, 0.2);
+    border: 1px solid rgba(255, 165, 2, 0.4);
+    color: #ffa502;
+}
+
+.notification.info {
+    background: rgba(52, 152, 219, 0.2);
+    border: 1px solid rgba(52, 152, 219, 0.4);
+    color: #3498db;
+}
+
+/* Delete Modal Enhancements */
+.delete-modal {
+    text-align: center;
+    max-width: 400px;
+}
+
+.delete-options {
+    display: flex;
+    gap: 15px;
+    margin: 25px 0;
+    justify-content: center;
+}
+
+.delete-options .btn {
+    flex: 1;
+    padding: 12px 20px;
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, #ffa502 0%, #ff6348 100%);
+    color: white;
+}
+
+/* Button Icon */
+.btn-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Responsive Design for Settings */
+@media (max-width: 768px) {
+    .header-nav {
+        flex-direction: column;
+        gap: 20px;
+        align-items: stretch;
+    }
+    
+    .back-btn {
+        justify-content: center;
+    }
+    
+    .profile-info-section {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-details-large {
+        grid-template-columns: 1fr;
+    }
+    
+    .preferences-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .data-actions,
+    .danger-actions {
+        flex-direction: column;
+    }
+    
+    .notification {
+        top: 20px;
+        right: 20px;
+        left: 20px;
+        max-width: none;
+    }
+    
+    .data-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-content {
+        padding: 0 10px;
+    }
+    
+    .settings-card {
+        padding: 20px;
+    }
+    
+    .data-stat {
+        padding: 15px;
+    }
+}
+/* Add this to css/settings.css if notifications aren't showing */
+.notification {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    max-width: 400px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.notification.hidden {
+    opacity: 0;
+    transform: translateX(100%);
+    visibility: hidden;
+}
+
+.notification.success {
+    background: rgba(46, 213, 115, 0.2);
+    border: 1px solid rgba(46, 213, 115, 0.4);
+    color: #2ed573;
+}
+
+.notification.error {
+    background: rgba(255, 71, 87, 0.2);
+    border: 1px solid rgba(255, 71, 87, 0.4);
+    color: #ff4757;
+}

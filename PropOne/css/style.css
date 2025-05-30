@@ -23,13 +23,44 @@ header {
     margin-bottom: 40px;
 }
 
-header h1 {
+/* Main logo for landing page */
+.main-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* Reduced gap */
+}
+
+.main-logo-icon {
+    width: 70px;
+    height: 56px;
+}
+
+.main-logo-text {
     font-size: 3.5rem;
     font-weight: 700;
-    margin-bottom: 10px;
+    margin: 0;
     background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+/* Portfolio header logo */
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Reduced gap */
+}
+
+.header-logo-icon {
+    width: 50px;
+    height: 40px;
+}
+
+.portfolio-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
 }
 
 /* Auth Section for Landing */
@@ -246,11 +277,6 @@ header h1 {
     align-items: center;
     margin-bottom: 30px;
     margin-top: 20px;
-}
-
-.portfolio-title {
-    font-size: 2rem;
-    font-weight: 700;
 }
 
 .add-btn {
