@@ -586,19 +586,19 @@ header h1 {
     background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
 }
 
-/* Summary card icons/badges */
+/* Summary card icons/badges - Updated for new card structure */
 .summary-card.funded h3::before {
     content: "💰";
     font-size: 1.2rem;
 }
 
-.summary-card.phase1 h3::before {
+.summary-card.challenge h3::before {
     content: "🎯";
     font-size: 1.2rem;
 }
 
-.summary-card.phase2 h3::before {
-    content: "🚀";
+.summary-card.inactive h3::before {
+    content: "📊";
     font-size: 1.2rem;
 }
 
@@ -682,7 +682,7 @@ header h1 {
 
 .modal-content.compact {
     background: linear-gradient(135deg, #2a2a46 0%, #1e1e3a 50%, #1a1a2e 100%);
-    margin: 2% auto;
+    margin: 5% auto; /* Changed from 2% to 5% for better centering */
     padding: 25px;
     border-radius: 20px;
     width: 90%;
@@ -692,6 +692,36 @@ header h1 {
     border: 2px solid rgba(102, 126, 234, 0.2);
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
     position: relative;
+    /* Center the modal properly */
+    transform: translateY(-50px);
+}
+
+/* Custom delete modal styles */
+.modal-content.delete-modal {
+    max-width: 400px;
+    text-align: center;
+}
+
+.delete-options {
+    display: flex;
+    gap: 15px;
+    margin: 25px 0;
+    justify-content: center;
+}
+
+.delete-options .btn {
+    flex: 1;
+    padding: 12px 20px;
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, #ffa502 0%, #ff6348 100%);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(45deg, #ff4757 0%, #ff3838 100%);
+    color: white;
 }
 
 .close {
