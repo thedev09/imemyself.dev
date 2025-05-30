@@ -295,7 +295,7 @@ header h1 {
     }
 }
 
-/* Account Cards - Smaller for 4-column layout */
+/* Account Cards - Enhanced with new status states */
 .account-card {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 16px;
@@ -316,6 +316,12 @@ header h1 {
 .account-card.breached {
     border-color: #ff4757;
     background: rgba(255, 71, 87, 0.1);
+}
+
+.account-card.upgraded {
+    border-color: #ffa502;
+    background: rgba(255, 165, 2, 0.05);
+    opacity: 0.8;
 }
 
 .firm-header {
@@ -371,6 +377,26 @@ header h1 {
 
 .phase-badge.breached {
     background: linear-gradient(45deg, #ff4757 0%, #ff3838 100%);
+}
+
+.phase-badge.upgraded {
+    background: linear-gradient(45deg, #ffa502 0%, #ff6348 100%);
+}
+
+/* Status Badge for Upgraded Accounts */
+.status-badge {
+    margin-bottom: 12px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.status-badge.upgraded {
+    background: rgba(255, 165, 2, 0.2);
+    color: #ffa502;
+    border: 1px solid rgba(255, 165, 2, 0.3);
 }
 
 .account-stats {
@@ -513,7 +539,7 @@ header h1 {
     color: #ff4757;
 }
 
-/* Filter Pills */
+/* Filter Pills - Enhanced with new filter options */
 .filter-section {
     margin-bottom: 25px;
 }
@@ -545,6 +571,19 @@ header h1 {
     background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-color: transparent;
+}
+
+/* Special filter pill colors */
+.filter-pill[data-filter="breached"].active {
+    background: linear-gradient(45deg, #ff4757 0%, #ff3838 100%);
+}
+
+.filter-pill[data-filter="upgraded"].active {
+    background: linear-gradient(45deg, #ffa502 0%, #ff6348 100%);
+}
+
+.filter-pill[data-filter="active"].active {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
 }
 
 /* Summary card icons/badges */
@@ -807,5 +846,18 @@ header h1 {
         width: 95%;
         margin: 5% auto;
         padding: 20px;
+    }
+    
+    .filter-pills {
+        justify-content: center;
+    }
+    
+    .filter-pill {
+        font-size: 0.8rem;
+        padding: 6px 16px;
+    }
+    
+    .summary-section {
+        grid-template-columns: 1fr;
     }
 }

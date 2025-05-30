@@ -48,10 +48,10 @@ const profitShareGroup = document.getElementById('profit-share-group');
 
 let currentUser = null;
 let editingAccountId = null;
-let currentFilter = 'all';
+let currentFilter = 'active'; // Changed default to 'active'
 let allAccounts = []; // Store all accounts for filtering
 
-// Updated prop firm templates with your specifications
+// Updated prop firm templates with Alpha Capital fix
 const propFirmTemplates = {
     'FundingPips': {
         accountSizes: [10000, 25000, 50000, 100000, 200000],
@@ -69,7 +69,7 @@ const propFirmTemplates = {
         phase2Target: 5,
         platform: 'MT5'
     },
-    'Alpha Capital': {
+    'Alpha Capital': { // Fixed name
         accountSizes: [25000, 50000, 100000, 200000],
         dailyDrawdown: 5,
         maxDrawdown: 10,
@@ -431,6 +431,9 @@ if (addAccountForm) {
                 maxDrawdown,
                 dailyDrawdown,
                 platform,
+                status: 'active', // New field for account status
+                upgradedFrom: null, // Track upgrade relationships
+                upgradedTo: null,
                 createdAt: editingAccountId ? undefined : new Date(),
                 updatedAt: new Date()
             };
@@ -440,13 +443,24 @@ if (addAccountForm) {
                 await updateDoc(doc(db, 'accounts', editingAccountId), accountData);
                 console.log('Account updated successfully!');
             } else {
-                await addDoc(collection(db, 'accounts'), accountData);
+                const docRef = await addDoc(collection(db, 'accounts'), accountData);
                 console.log('Account added successfully!');
                 
                 const submitBtn = document.querySelector('#add-account-form button[type="submit"]');
                 if (submitBtn?.dataset.upgradeFrom) {
-                    await deleteDoc(doc(db, 'accounts', submitBtn.dataset.upgradeFrom));
-                    console.log('Old account removed after upgrade');
+                    // Mark old account as upgraded and link to new account
+                    await updateDoc(doc(db, 'accounts', submitBtn.dataset.upgradeFrom), {
+                        status: 'upgraded',
+                        upgradedTo: docRef.id,
+                        updatedAt: new Date()
+                    });
+                    
+                    // Link new account to old account
+                    await updateDoc(doc(db, 'accounts', docRef.id), {
+                        upgradedFrom: submitBtn.dataset.upgradeFrom
+                    });
+                    
+                    console.log('Old account marked as upgraded');
                 }
             }
             
@@ -512,15 +526,19 @@ function generateSummaryStats(accounts) {
     const summaryContainer = document.getElementById('summary-stats');
     if (!summaryContainer) return;
     
-    // Calculate stats by phase
+    // Calculate stats by phase for ACTIVE accounts only
     const stats = {
         funded: { count: 0, totalFunding: 0, totalProfit: 0, totalPotential: 0 },
-        phase1: { count: 0, totalFunding: 0, nearTarget: 0 },
-        phase2: { count: 0, totalFunding: 0, nearTarget: 0 }
+        phase2: { count: 0, totalFunding: 0, nearTarget: 0 }, // Changed from phase1
+        phase1: { count: 0, totalFunding: 0, nearTarget: 0 }  // Changed from phase2
     };
     
     accounts.forEach(doc => {
         const account = doc.data();
+        
+        // Only count active accounts in summary
+        if (account.status !== 'active') return;
+        
         const currentPnL = account.currentBalance - account.accountSize;
         
         if (account.phase === 'Funded') {
@@ -555,7 +573,7 @@ function generateSummaryStats(accounts) {
         }
     });
     
-    // Generate summary HTML with better metrics
+    // Generate summary HTML with corrected order: Funded > Phase 2 > Phase 1
     const summaryHTML = `
         <div class="summary-card funded">
             <h3>Funded Accounts</h3>
@@ -575,28 +593,6 @@ function generateSummaryStats(accounts) {
                 <div class="summary-stat">
                     <div class="summary-stat-label">Profit Rate</div>
                     <div class="summary-stat-value">${stats.funded.totalFunding > 0 ? ((stats.funded.totalProfit / stats.funded.totalFunding) * 100).toFixed(1) : '0'}%</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="summary-card phase1">
-            <h3>Phase 1 Accounts</h3>
-            <div class="summary-stats">
-                <div class="summary-stat">
-                    <div class="summary-stat-label">Accounts</div>
-                    <div class="summary-stat-value">${stats.phase1.count}</div>
-                </div>
-                <div class="summary-stat">
-                    <div class="summary-stat-label">Total Capital</div>
-                    <div class="summary-stat-value">$${stats.phase1.totalFunding.toLocaleString()}</div>
-                </div>
-                <div class="summary-stat">
-                    <div class="summary-stat-label">Near Target</div>
-                    <div class="summary-stat-value">${stats.phase1.nearTarget}</div>
-                </div>
-                <div class="summary-stat">
-                    <div class="summary-stat-label">Success Rate</div>
-                    <div class="summary-stat-value">${stats.phase1.count > 0 ? ((stats.phase1.nearTarget / stats.phase1.count) * 100).toFixed(0) : '0'}%</div>
                 </div>
             </div>
         </div>
@@ -622,12 +618,48 @@ function generateSummaryStats(accounts) {
                 </div>
             </div>
         </div>
+        
+        <div class="summary-card phase1">
+            <h3>Phase 1 Accounts</h3>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Accounts</div>
+                    <div class="summary-stat-value">${stats.phase1.count}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Total Capital</div>
+                    <div class="summary-stat-value">$${stats.phase1.totalFunding.toLocaleString()}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Near Target</div>
+                    <div class="summary-stat-value">${stats.phase1.nearTarget}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Success Rate</div>
+                    <div class="summary-stat-value">${stats.phase1.count > 0 ? ((stats.phase1.nearTarget / stats.phase1.count) * 100).toFixed(0) : '0'}%</div>
+                </div>
+            </div>
+        </div>
     `;
     
     summaryContainer.innerHTML = summaryHTML;
 }
 
 function setupFilters() {
+    const filterContainer = document.querySelector('.filter-pills');
+    if (!filterContainer) return;
+    
+    // Update filter pills with new structure
+    filterContainer.innerHTML = `
+        <button class="filter-pill active" data-filter="active">Active</button>
+        <button class="filter-pill" data-filter="funded">Funded</button>
+        <button class="filter-pill" data-filter="phase2">Phase 2</button>
+        <button class="filter-pill" data-filter="phase1">Phase 1</button>
+        <button class="filter-pill" data-filter="breached">Breached</button>
+        <button class="filter-pill" data-filter="upgraded">Upgraded</button>
+        <button class="filter-pill" data-filter="all">All</button>
+    `;
+    
     const filterPills = document.querySelectorAll('.filter-pill');
     
     filterPills.forEach(pill => {
@@ -646,22 +678,29 @@ function setupFilters() {
 }
 
 function getFilteredAccounts() {
-    if (currentFilter === 'all') {
-        return allAccounts;
-    }
-    
     return allAccounts.filter(doc => {
         const account = doc.data();
+        const currentPnL = account.currentBalance - account.accountSize;
+        const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
+        const isBreached = currentPnL < -maxDrawdownAmount;
         
         switch (currentFilter) {
+            case 'active':
+                return account.status === 'active' && !isBreached;
             case 'funded':
-                return account.phase === 'Funded';
+                return account.phase === 'Funded' && account.status === 'active' && !isBreached;
             case 'phase1':
-                return account.phase === 'Challenge Phase 1';
+                return account.phase === 'Challenge Phase 1' && account.status === 'active' && !isBreached;
             case 'phase2':
-                return account.phase === 'Challenge Phase 2';
+                return account.phase === 'Challenge Phase 2' && account.status === 'active' && !isBreached;
+            case 'breached':
+                return isBreached && account.status === 'active';
+            case 'upgraded':
+                return account.status === 'upgraded';
+            case 'all':
+                return true; // Show everything
             default:
-                return true;
+                return account.status === 'active' && !isBreached;
         }
     });
 }
@@ -670,10 +709,19 @@ function displayAccounts(accounts) {
     if (!accountsList) return;
     
     if (accounts.length === 0) {
+        let emptyMessage = 'No accounts found.';
+        if (currentFilter === 'active') {
+            emptyMessage = 'No active accounts yet. Add your first prop firm account to get started!';
+        } else if (currentFilter === 'breached') {
+            emptyMessage = 'No breached accounts - great job maintaining your rules!';
+        } else if (currentFilter === 'upgraded') {
+            emptyMessage = 'No upgraded accounts yet.';
+        }
+        
         accountsList.innerHTML = `
             <div class="empty-state">
-                <h3>No accounts yet</h3>
-                <p>Add your first prop firm account to get started tracking your trading progress.</p>
+                <h3>No accounts found</h3>
+                <p>${emptyMessage}</p>
             </div>
         `;
         return;
@@ -705,6 +753,7 @@ function displayAccounts(accounts) {
         let stat1Label, stat1Value, stat2Label, stat2Value, stat3Label, stat3Value, stat4Label, stat4Value;
         let progressLabel, progressPercent, progressColor, progressText;
         let upgradeButtonHtml = '';
+        let statusBadgeHtml = '';
         
         // Simplified phase names
         let displayPhase = account.phase;
@@ -712,18 +761,24 @@ function displayAccounts(accounts) {
         else if (account.phase === 'Challenge Phase 2') displayPhase = 'Phase 2';
         else if (account.phase === 'Challenge Phase 3') displayPhase = 'Phase 3';
         
+        // Add status badges for upgraded accounts
+        if (account.status === 'upgraded') {
+            const nextPhase = account.phase === 'Challenge Phase 1' ? 'Phase 2' : 'Funded';
+            statusBadgeHtml = `<div class="status-badge upgraded">Upgraded to ${nextPhase}</div>`;
+        }
+        
         if (account.phase === 'Funded') {
             // Funded account stats
             stat1Label = 'Balance';
-            stat1Value = `$${account.currentBalance.toLocaleString()}`;
+            stat1Value = `${account.currentBalance.toLocaleString()}`;
             stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}$${currentPnL.toLocaleString()}`;
+            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
             stat3Label = 'Profit Share';
             stat3Value = `${account.profitShare || 80}%`;
             stat4Label = 'Your Share';
             if (currentPnL > 0) {
                 const yourShare = currentPnL * (account.profitShare || 80) / 100;
-                stat4Value = `$${yourShare.toLocaleString()}`;
+                stat4Value = `${yourShare.toLocaleString()}`;
             } else {
                 stat4Value = '$0';
             }
@@ -738,11 +793,11 @@ function displayAccounts(accounts) {
             const remainingTarget = Math.max(0, account.profitTargetAmount - currentPnL);
             
             stat1Label = 'Balance';
-            stat1Value = `$${account.currentBalance.toLocaleString()}`;
+            stat1Value = `${account.currentBalance.toLocaleString()}`;
             stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}$${currentPnL.toLocaleString()}`;
+            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
             stat3Label = 'Target Remaining';
-            stat3Value = `$${remainingTarget.toLocaleString()}`;
+            stat3Value = `${remainingTarget.toLocaleString()}`;
             stat4Label = 'Max DD';
             stat4Value = `${account.maxDrawdown}%`;
             
@@ -753,7 +808,7 @@ function displayAccounts(accounts) {
                     progressColor = 'profit';
                     progressLabel = 'Target Progress';
                     progressText = 'Target Reached!';
-                    if (!isBreached) {
+                    if (!isBreached && account.status === 'active') {
                         upgradeButtonHtml = `<button class="action-btn upgrade-btn" onclick="upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
                     }
                 } else if (currentPnL < 0) {
@@ -774,27 +829,46 @@ function displayAccounts(accounts) {
             }
         }
         
-        const cardClass = isBreached ? 'account-card breached' : 'account-card';
+        // Determine card class based on status and breach
+        let cardClass = 'account-card';
+        if (isBreached) {
+            cardClass += ' breached';
+        } else if (account.status === 'upgraded') {
+            cardClass += ' upgraded';
+        }
+        
         const phaseClass = isBreached ? 'phase-badge breached' : 
+                         account.status === 'upgraded' ? 'phase-badge upgraded' :
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
         // Fixed layout: breach warning on left, buttons on right with better sizing
-        const breachAndActionsHtml = isBreached ? `
-            <div class="bottom-row">
-                <div class="breach-warning">⚠️ BREACHED</div>
+        let bottomRowHtml = '';
+        
+        if (isBreached) {
+            bottomRowHtml = `
+                <div class="bottom-row">
+                    <div class="breach-warning">⚠️ BREACHED</div>
+                    <div class="account-actions">
+                        <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
+                        <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        } else if (account.status === 'upgraded') {
+            bottomRowHtml = `
+                <div class="account-actions">
+                    <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
+                </div>
+            `;
+        } else {
+            bottomRowHtml = `
                 <div class="account-actions">
                     ${upgradeButtonHtml}
                     <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
                     <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
                 </div>
-            </div>
-        ` : `
-            <div class="account-actions">
-                ${upgradeButtonHtml}
-                <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
-                <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
-            </div>
-        `;
+            `;
+        }
         
         return `
             <div class="${cardClass}">
@@ -808,6 +882,8 @@ function displayAccounts(accounts) {
                     </div>
                     <div class="${phaseClass}">${displayPhase}</div>
                 </div>
+                
+                ${statusBadgeHtml}
                 
                 <div class="account-stats">
                     <div class="stat-item">
@@ -838,7 +914,7 @@ function displayAccounts(accounts) {
                     </div>
                 </div>
                 
-                ${breachAndActionsHtml}
+                ${bottomRowHtml}
             </div>
         `;
     }).join('')}</div>`;
@@ -856,6 +932,13 @@ window.editAccount = async function(accountId) {
         }
         
         const account = docSnap.data();
+        
+        // Don't allow editing of upgraded accounts
+        if (account.status === 'upgraded') {
+            alert('Cannot edit upgraded accounts. This account has been superseded by a newer version.');
+            return;
+        }
+        
         editingAccountId = accountId;
         
         addAccountModal.style.display = 'block';
