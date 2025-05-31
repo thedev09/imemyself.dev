@@ -969,3 +969,449 @@ header {
         height: 26px;
     }
 }
+
+/* Enhanced Progress Bar Styles - Add to style.css */
+
+/* Enhanced Progress Container */
+.progress-container {
+    margin-bottom: 16px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+/* Progress Scale Indicators */
+.progress-scale {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    color: #666;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+.scale-left {
+    color: #ff4757; /* Red for max DD */
+    font-weight: 600;
+}
+
+.scale-center {
+    color: #888; /* Gray for account size */
+    font-weight: 600;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.scale-right {
+    color: #2ed573; /* Green for target/profit */
+    font-weight: 600;
+}
+
+/* Enhanced Progress Bar */
+.progress-bar.enhanced {
+    height: 8px;
+    background: linear-gradient(90deg, 
+        rgba(255, 71, 87, 0.3) 0%, 
+        rgba(255, 255, 255, 0.1) 45%, 
+        rgba(255, 255, 255, 0.15) 50%, 
+        rgba(255, 255, 255, 0.1) 55%, 
+        rgba(46, 213, 115, 0.3) 100%);
+    border-radius: 4px;
+    overflow: visible;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Center line indicator */
+.center-line {
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.4);
+    transform: translateX(-50%);
+    border-radius: 1px;
+}
+
+.center-line::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.center-line::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Enhanced Progress Fill */
+.progress-bar.enhanced .progress-fill {
+    height: 100%;
+    transition: width 0.8s ease;
+    border-radius: 3px;
+    position: relative;
+    min-width: 2px;
+}
+
+.progress-bar.enhanced .progress-fill.profit {
+    background: linear-gradient(90deg, #2ed573 0%, #1e90ff 100%);
+    box-shadow: 0 0 10px rgba(46, 213, 115, 0.4);
+}
+
+.progress-bar.enhanced .progress-fill.loss {
+    background: linear-gradient(90deg, #ff4757 0%, #ff3838 100%);
+    box-shadow: 0 0 10px rgba(255, 71, 87, 0.4);
+}
+
+.progress-bar.enhanced .progress-fill.target {
+    background: linear-gradient(90deg, #ffa502 0%, #ff6348 100%);
+    box-shadow: 0 0 10px rgba(255, 165, 2, 0.4);
+}
+
+/* Current position indicator */
+.progress-bar.enhanced .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: white;
+    border-radius: 1px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover effects */
+.account-card:hover .progress-bar.enhanced {
+    transform: scaleY(1.2);
+    transition: transform 0.3s ease;
+}
+
+.account-card:hover .progress-scale {
+    color: #fff;
+    transition: color 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .progress-scale {
+        font-size: 0.6rem;
+    }
+    
+    .scale-center {
+        position: static;
+        transform: none;
+    }
+    
+    .progress-bar.enhanced {
+        height: 6px;
+    }
+    
+    .center-line {
+        width: 1px;
+    }
+    
+    .center-line::before,
+    .center-line::after {
+        border-left-width: 2px;
+        border-right-width: 2px;
+        border-top-width: 2px;
+        border-bottom-width: 2px;
+    }
+}
+
+/* Animation for progress fill */
+@keyframes progressFill {
+    0% {
+        width: 0%;
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.progress-bar.enhanced .progress-fill {
+    animation: progressFill 1.2s ease-out;
+}
+
+/* Improved Summary Stats */
+.summary-stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.summary-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.summary-stat-value.positive {
+    color: #2ed573;
+}
+
+.summary-stat-value.negative {
+    color: #ff4757;
+}
+
+/* Enhanced tooltip for progress bars */
+.progress-container {
+    position: relative;
+}
+
+.progress-container:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 10;
+    margin-bottom: 5px;
+}
+
+.progress-container:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid rgba(0, 0, 0, 0.9);
+    margin-bottom: -5px;
+}
+
+/* Summary card enhancements for funded accounts */
+.summary-card.funded .summary-stat:last-child .summary-stat-value {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 1.2rem;
+    font-weight: 800;
+}
+
+/* Simplified Progress Bar CSS - Add to style.css */
+
+/* Enhanced Progress Container */
+.progress-container {
+    margin-bottom: 16px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+/* Simplified Progress Scale (Only Percentages) */
+.progress-scale {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    color: #666;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+.scale-left {
+    color: #ff4757; /* Red for max DD */
+    font-weight: 600;
+}
+
+.scale-right {
+    color: #2ed573; /* Green for target/profit */
+    font-weight: 600;
+}
+
+/* Remove center scale indicator since we only want the line */
+.scale-center {
+    display: none;
+}
+
+/* Enhanced Progress Bar */
+.progress-bar.enhanced {
+    height: 8px;
+    background: linear-gradient(90deg, 
+        rgba(255, 71, 87, 0.3) 0%, 
+        rgba(255, 255, 255, 0.1) 45%, 
+        rgba(255, 255, 255, 0.15) 50%, 
+        rgba(255, 255, 255, 0.1) 55%, 
+        rgba(46, 213, 115, 0.3) 100%);
+    border-radius: 4px;
+    overflow: visible;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Center line indicator (only neutral line, no dollar amounts) */
+.center-line {
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.6);
+    transform: translateX(-50%);
+    border-radius: 1px;
+}
+
+.center-line::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 3px solid rgba(255, 255, 255, 0.6);
+}
+
+.center-line::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.6);
+}
+
+/* Enhanced Progress Fill */
+.progress-bar.enhanced .progress-fill {
+    height: 100%;
+    transition: width 0.8s ease;
+    border-radius: 3px;
+    position: relative;
+    min-width: 2px;
+}
+
+.progress-bar.enhanced .progress-fill.profit {
+    background: linear-gradient(90deg, #2ed573 0%, #1e90ff 100%);
+    box-shadow: 0 0 10px rgba(46, 213, 115, 0.4);
+}
+
+.progress-bar.enhanced .progress-fill.loss {
+    background: linear-gradient(90deg, #ff4757 0%, #ff3838 100%);
+    box-shadow: 0 0 10px rgba(255, 71, 87, 0.4);
+}
+
+.progress-bar.enhanced .progress-fill.target {
+    background: linear-gradient(90deg, #ffa502 0%, #ff6348 100%);
+    box-shadow: 0 0 10px rgba(255, 165, 2, 0.4);
+}
+
+/* Current position indicator */
+.progress-bar.enhanced .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: white;
+    border-radius: 1px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover effects */
+.account-card:hover .progress-bar.enhanced {
+    transform: scaleY(1.2);
+    transition: transform 0.3s ease;
+}
+
+.account-card:hover .progress-scale {
+    color: #fff;
+    transition: color 0.3s ease;
+}
+
+.account-card:hover .scale-left {
+    color: #ff6b7a;
+}
+
+.account-card:hover .scale-right {
+    color: #4ee88c;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .progress-scale {
+        font-size: 0.65rem;
+    }
+    
+    .progress-bar.enhanced {
+        height: 6px;
+    }
+    
+    .center-line {
+        width: 1px;
+    }
+    
+    .center-line::before,
+    .center-line::after {
+        border-left-width: 2px;
+        border-right-width: 2px;
+        border-top-width: 2px;
+        border-bottom-width: 2px;
+    }
+}
+
+/* Animation for progress fill */
+@keyframes progressFill {
+    0% {
+        width: 0%;
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.progress-bar.enhanced .progress-fill {
+    animation: progressFill 1.2s ease-out;
+}

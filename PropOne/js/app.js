@@ -1,4 +1,4 @@
-// Complete app.js - Main application 
+// Complete app.js - Main application (CLEAN VERSION)
 import { auth, db } from './firebase-config.js';
 import { 
     signOut, 
@@ -47,6 +47,10 @@ const profitTargetPercent = document.getElementById('profit-target-percent');
 const phaseSelect = document.getElementById('phase');
 const profitTargetGroup = document.getElementById('profit-target-group');
 const profitShareGroup = document.getElementById('profit-share-group');
+
+// Trade modal elements
+const tradeModal = document.getElementById('trade-modal');
+const tradeForm = document.getElementById('trade-form');
 
 let currentUser = null;
 let editingAccountId = null;
@@ -188,11 +192,7 @@ if (logoutBtn) {
     });
 }
 
-// Add this to your existing modal elements section
-const tradeModal = document.getElementById('trade-modal');
-const tradeForm = document.getElementById('trade-form');
-
-// Add this to your existing modal functions
+// Trade modal functions
 function showTradeModal(accountId, currentBalance, firmName) {
     if (!tradeModal) return;
     
@@ -221,7 +221,7 @@ function hideTradeModal() {
     if (tradeForm) tradeForm.reset();
 }
 
-// Add trade form submission handler
+// Trade form submission handler
 if (tradeForm) {
     tradeForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -271,19 +271,18 @@ if (tradeForm) {
     });
 }
 
-// Add to your existing modal close handlers
+// Trade modal close handlers
 const tradeModalClose = document.querySelector('#trade-modal .close');
 const tradeCancelBtn = document.getElementById('trade-cancel-btn');
 
 if (tradeModalClose) tradeModalClose.addEventListener('click', hideTradeModal);
 if (tradeCancelBtn) tradeCancelBtn.addEventListener('click', hideTradeModal);
 
-
 // Make functions global for onclick handlers
 window.showTradeModal = showTradeModal;
 window.hideTradeModal = hideTradeModal;
 
-// Modal functions
+// Account modal functions
 if (addAccountBtn) {
     addAccountBtn.addEventListener('click', () => {
         resetModal();
@@ -605,12 +604,13 @@ async function loadAccounts() {
     }
 }
 
+// Enhanced generateSummaryStats function with "Your Share" and correct Est. Payout
 function generateSummaryStats(accounts) {
     const summaryContainer = document.getElementById('summary-stats');
     if (!summaryContainer) return;
     
     const stats = {
-        funded: { count: 0, totalFunding: 0, totalProfit: 0 },
+        funded: { count: 0, totalFunding: 0, totalYourShare: 0, totalEstPayout: 0 },
         challenge: { 
             phase1Active: 0, 
             phase1Capital: 0, 
@@ -635,10 +635,19 @@ function generateSummaryStats(accounts) {
             if (account.phase === 'Funded') {
                 stats.funded.count++;
                 stats.funded.totalFunding += account.accountSize;
+                
+                // Calculate YOUR SHARE from profitable accounts
                 if (currentPnL > 0) {
                     const yourShare = currentPnL * (account.profitShare || 80) / 100;
-                    stats.funded.totalProfit += yourShare;
+                    stats.funded.totalYourShare += yourShare;
                 }
+                
+                // Calculate estimated payout: available drawdown + current profit
+                const availableDrawdown = maxDrawdownAmount - Math.abs(Math.min(0, currentPnL));
+                const currentProfit = Math.max(0, currentPnL);
+                const estimatedPayout = availableDrawdown + currentProfit;
+                stats.funded.totalEstPayout += estimatedPayout;
+                
             } else if (account.phase === 'Challenge Phase 1') {
                 stats.challenge.phase1Active++;
                 stats.challenge.phase1Capital += account.accountSize;
@@ -659,6 +668,7 @@ function generateSummaryStats(accounts) {
         }
     });
     
+    // Add currently funded accounts to passed count
     stats.inactive.totalPassed += stats.funded.count;
     
     const summaryHTML = `
@@ -674,12 +684,12 @@ function generateSummaryStats(accounts) {
                     <div class="summary-stat-value">${stats.funded.totalFunding.toLocaleString()}</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">Your Profit</div>
-                    <div class="summary-stat-value ${stats.funded.totalProfit >= 0 ? 'positive' : 'negative'}">${stats.funded.totalProfit.toLocaleString()}</div>
+                    <div class="summary-stat-label">Your Share</div>
+                    <div class="summary-stat-value ${stats.funded.totalYourShare >= 0 ? 'positive' : 'negative'}">${stats.funded.totalYourShare.toLocaleString()}</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">Profit Rate</div>
-                    <div class="summary-stat-value">${stats.funded.totalFunding > 0 ? ((stats.funded.totalProfit / stats.funded.totalFunding) * 100).toFixed(1) : '0'}%</div>
+                    <div class="summary-stat-label">Est. Payout</div>
+                    <div class="summary-stat-value positive">${stats.funded.totalEstPayout.toLocaleString()}</div>
                 </div>
             </div>
         </div>
@@ -730,6 +740,116 @@ function generateSummaryStats(accounts) {
     `;
     
     summaryContainer.innerHTML = summaryHTML;
+}
+
+// FIXED progress bar calculation
+function calculateEnhancedProgress(account) {
+    const currentPnL = account.currentBalance - account.accountSize;
+    const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
+    
+    // Define the range - FIXED to make center line the neutral point
+    const leftLimit = -maxDrawdownAmount; // e.g., -10k for 10% max DD
+    let rightLimit;
+    
+    if (account.phase === 'Funded') {
+        rightLimit = account.accountSize * 0.2; // 20% for funded accounts
+    } else {
+        rightLimit = account.profitTargetAmount || (account.accountSize * 0.1);
+    }
+    
+    // FIXED: Make the total range symmetrical around the starting balance (0 P&L)
+    // Use the larger of leftLimit or rightLimit to create equal ranges
+    const maxRange = Math.max(Math.abs(leftLimit), Math.abs(rightLimit));
+    const symmetricalLeft = -maxRange;
+    const symmetricalRight = maxRange;
+    const totalRange = symmetricalRight - symmetricalLeft;
+    
+    // Calculate position - now the center (50%) represents starting balance
+    const distanceFromLeft = currentPnL - symmetricalLeft;
+    const progressPercent = Math.max(0, Math.min(100, (distanceFromLeft / totalRange) * 100));
+    
+    // For account at starting balance:
+    // currentPnL = 0
+    // distanceFromLeft = 0 - (-maxRange) = maxRange
+    // progressPercent = maxRange / (2 * maxRange) * 100 = 50% ✅ (CENTER!)
+    
+    // Determine color based on position
+    let progressColor;
+    if (currentPnL < 0) {
+        progressColor = 'loss';
+    } else if (account.phase === 'Funded') {
+        progressColor = 'profit';
+    } else {
+        progressColor = 'target';
+    }
+    
+    // Generate progress text
+    let progressText;
+    if (account.phase === 'Funded') {
+        if (currentPnL >= 0) {
+            progressText = currentPnL === 0 ? '+$0 profit' : `+$${currentPnL.toLocaleString()} profit`;
+        } else {
+            progressText = `$${Math.abs(currentPnL).toLocaleString()} drawdown`;
+        }
+    } else {
+        const targetRemaining = Math.max(0, account.profitTargetAmount - currentPnL);
+        if (currentPnL >= account.profitTargetAmount) {
+            progressText = 'Target Reached!';
+        } else if (currentPnL < 0) {
+            progressText = `$${Math.abs(currentPnL).toLocaleString()} drawdown`;
+        } else {
+            progressText = `$${targetRemaining.toLocaleString()} to target`;
+        }
+    }
+    
+    return {
+        progressPercent,
+        progressColor,
+        progressText,
+        leftLimit: symmetricalLeft,  // Use symmetrical range for display
+        rightLimit: symmetricalRight,
+        centerPoint: 0
+    };
+}
+
+// Enhanced progress bar HTML with simplified scale (percentages only)
+function generateProgressBarHTML(account) {
+    const progress = calculateEnhancedProgress(account);
+    
+    // Calculate percentage labels
+    const leftPercent = `-${account.maxDrawdown}%`;
+    const rightPercent = account.phase === 'Funded' ? '+20%' : `+${account.profitTargetPercent || 10}%`;
+    
+    return `
+        <div class="progress-container">
+            <div class="progress-label">
+                <span>${account.phase === 'Funded' ? 'Account Health' : 'Progress to Target'}</span>
+                <span>${progress.progressText}</span>
+            </div>
+            <div class="progress-scale">
+                <span class="scale-left">${leftPercent}</span>
+                <span class="scale-right">${rightPercent}</span>
+            </div>
+            <div class="progress-bar enhanced">
+                <div class="progress-fill ${progress.progressColor}" style="width: ${Math.max(2, progress.progressPercent)}%;"></div>
+                <div class="center-line"></div>
+            </div>
+        </div>
+    `;
+}
+
+// Helper function to generate tooltip data
+function generateTooltipData(account) {
+    const currentPnL = account.currentBalance - account.accountSize;
+    const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
+    const availableDrawdown = maxDrawdownAmount + currentPnL;
+    
+    if (account.phase === 'Funded') {
+        return `Balance: ${account.currentBalance.toLocaleString()} | Available DD: ${availableDrawdown.toLocaleString()} | Current P&L: ${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
+    } else {
+        const targetRemaining = Math.max(0, account.profitTargetAmount - currentPnL);
+        return `Balance: ${account.currentBalance.toLocaleString()} | Target: ${targetRemaining.toLocaleString()} | Available DD: ${availableDrawdown.toLocaleString()}`;
+    }
 }
 
 function setupFilters() {
@@ -786,8 +906,7 @@ function getFilteredAccounts() {
     });
 }
 
-// Replace your existing displayAccounts function with this updated version:
-
+// Enhanced displayAccounts function with fixed progress bars and "Your Share"
 function displayAccounts(accounts) {
     if (!accountsList) return;
     
@@ -817,17 +936,12 @@ function displayAccounts(accounts) {
         const currentPnL = account.currentBalance - account.accountSize;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
         
-        const dailyStartBalance = account.currentBalance;
-        const dailyDrawdownAmount = dailyStartBalance * (account.dailyDrawdown / 100);
-        
         const isMaxDrawdownBreached = currentPnL < -maxDrawdownAmount;
-        const isDailyDrawdownBreached = false;
-        const isBreached = isMaxDrawdownBreached || isDailyDrawdownBreached;
+        const isBreached = isMaxDrawdownBreached;
         
         const firmInitials = account.firmName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
         
         let stat1Label, stat1Value, stat2Label, stat2Value, stat3Label, stat3Value, stat4Label, stat4Value;
-        let progressLabel, progressPercent, progressColor, progressText;
         let upgradeButtonHtml = '';
         let statusBadgeHtml = '';
         
@@ -849,17 +963,14 @@ function displayAccounts(accounts) {
             stat3Label = 'Profit Share';
             stat3Value = `${account.profitShare || 80}%`;
             stat4Label = 'Your Share';
+            
+            // Calculate actual profit share correctly
             if (currentPnL > 0) {
                 const yourShare = currentPnL * (account.profitShare || 80) / 100;
                 stat4Value = `${yourShare.toLocaleString()}`;
             } else {
                 stat4Value = '$0';
             }
-            
-            progressLabel = 'Account Health';
-            progressText = currentPnL >= 0 ? 'Profitable' : 'In Drawdown';
-            progressPercent = Math.max(20, Math.min(100, 100 - Math.abs(currentPnL / maxDrawdownAmount) * 100));
-            progressColor = currentPnL >= 0 ? 'profit' : 'loss';
             
         } else {
             const remainingTarget = Math.max(0, account.profitTargetAmount - currentPnL);
@@ -873,31 +984,8 @@ function displayAccounts(accounts) {
             stat4Label = 'Max DD';
             stat4Value = `${account.maxDrawdown}%`;
             
-            if (account.profitTargetAmount > 0) {
-                progressPercent = Math.max(0, Math.min(100, (currentPnL / account.profitTargetAmount) * 100));
-                
-                if (currentPnL >= account.profitTargetAmount) {
-                    progressColor = 'profit';
-                    progressLabel = 'Target Progress';
-                    progressText = 'Target Reached!';
-                    if (!isBreached && account.status === 'active') {
-                        upgradeButtonHtml = `<button class="action-btn upgrade-btn" onclick="upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
-                    }
-                } else if (currentPnL < 0) {
-                    progressColor = 'loss';
-                    progressLabel = 'Drawdown Risk';
-                    progressText = `${Math.abs((currentPnL / maxDrawdownAmount) * 100).toFixed(1)}% of Max DD`;
-                    progressPercent = Math.abs(currentPnL / maxDrawdownAmount) * 100;
-                } else {
-                    progressColor = 'target';
-                    progressLabel = 'Target Progress';
-                    progressText = `${progressPercent.toFixed(1)}% Complete`;
-                }
-            } else {
-                progressPercent = 0;
-                progressColor = 'target';
-                progressLabel = 'Target Progress';
-                progressText = 'No Target Set';
+            if (account.profitTargetAmount > 0 && currentPnL >= account.profitTargetAmount && !isBreached && account.status === 'active') {
+                upgradeButtonHtml = `<button class="action-btn upgrade-btn" onclick="upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
             }
         }
         
@@ -912,8 +1000,14 @@ function displayAccounts(accounts) {
                          account.status === 'upgraded' ? 'phase-badge upgraded' :
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
-        // Use the getBottomRowHtml function here
+        // Generate enhanced progress bar
+        const progressBarHtml = generateProgressBarHTML(account);
+        
+        // Use the getBottomRowHtml function
         const bottomRowHtml = getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml);
+        
+        // Add tooltip data for progress bar
+        const tooltipData = generateTooltipData(account);
         
         return `
             <div class="${cardClass}" onclick="openAccountDashboard('${accountId}')" style="cursor: pointer;">
@@ -949,14 +1043,8 @@ function displayAccounts(accounts) {
                     </div>
                 </div>
                 
-                <div class="progress-container">
-                    <div class="progress-label">
-                        <span>${progressLabel}</span>
-                        <span>${progressText}</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill ${progressColor}" style="width: ${Math.max(2, progressPercent)}%;"></div>
-                    </div>
+                <div data-tooltip="${tooltipData}">
+                    ${progressBarHtml}
                 </div>
                 
                 ${bottomRowHtml}
