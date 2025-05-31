@@ -575,25 +575,27 @@ async function loadAccounts() {
         allAccounts = querySnapshot.docs;
         
         allAccounts.sort((a, b) => {
-            const accountA = a.data();
-            const accountB = b.data();
-            
-            const getPhaseOrder = (phase) => {
-                if (phase === 'Funded') return 0;
-                if (phase === 'Challenge Phase 2') return 1;
-                if (phase === 'Challenge Phase 1') return 2;
-                return 3;
-            };
-            
-            const phaseOrderA = getPhaseOrder(accountA.phase);
-            const phaseOrderB = getPhaseOrder(accountB.phase);
-            
-            if (phaseOrderA !== phaseOrderB) {
-                return phaseOrderA - phaseOrderB;
-            }
-            
-            return accountB.accountSize - accountA.accountSize;
-        });
+    const accountA = a.data();
+    const accountB = b.data();
+    
+    const getPhaseOrder = (phase) => {
+        if (phase === 'Funded') return 0;
+        if (phase === 'Challenge Phase 2') return 1;
+        if (phase === 'Challenge Phase 1') return 2;
+        return 3;
+    };
+    
+    const phaseOrderA = getPhaseOrder(accountA.phase);
+    const phaseOrderB = getPhaseOrder(accountB.phase);
+    
+    // First sort by phase
+    if (phaseOrderA !== phaseOrderB) {
+        return phaseOrderA - phaseOrderB;
+    }
+    
+    // Within same phase, sort by current balance (highest first)
+    return accountB.currentBalance - accountA.currentBalance;
+});
         
         generateSummaryStats(allAccounts);
         displayAccounts(getFilteredAccounts());
