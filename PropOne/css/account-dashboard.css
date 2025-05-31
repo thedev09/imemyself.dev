@@ -1,0 +1,1185 @@
+/* Account Dashboard Specific Styles */
+
+/* Header */
+.account-header {
+    margin-bottom: 30px;
+}
+
+.header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: #ccc;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.back-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.trade-btn-main {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trade-btn-main:hover {
+    background: linear-gradient(45deg, #26c965 0%, #1a7edc 100%);
+    transform: translateY(-1px);
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* Account Info Header */
+.account-info-header {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.account-basic-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.account-logo {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: white;
+    margin-right: 20px;
+}
+
+.account-details {
+    flex: 1;
+}
+
+.account-details h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.account-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.separator {
+    color: #666;
+}
+
+.account-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.phase-badge {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.phase-badge.funded {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
+}
+
+.status-badge {
+    background: rgba(46, 213, 115, 0.2);
+    color: #2ed573;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.status-badge.breached {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+    border-color: rgba(255, 71, 87, 0.3);
+}
+
+/* Key Metrics */
+.key-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.metric-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.metric-value.positive {
+    color: #2ed573;
+}
+
+.metric-value.negative {
+    color: #ff4757;
+}
+
+/* Chart Section */
+.chart-section {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.chart-controls select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+.dd-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 250px;
+}
+
+.dd-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dd-indicator-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+}
+
+.daily-dd-color {
+    background: #ffa502;
+}
+
+.max-dd-color {
+    background: #ff4757;
+}
+
+.dd-indicator-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dd-indicator-label span:first-child {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.dd-indicator-label span:last-child {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.content-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.section-action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #ccc;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.section-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+/* Trades List */
+.trades-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.trade-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.trade-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.trade-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.trade-pnl {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.trade-pnl.positive {
+    color: #2ed573;
+}
+
+.trade-pnl.negative {
+    color: #ff4757;
+}
+
+.trade-details {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.trade-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.trade-action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #ccc;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.trade-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.trade-action-btn.delete {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+    border-color: rgba(255, 71, 87, 0.3);
+}
+
+.trade-action-btn.delete:hover {
+    background: rgba(255, 71, 87, 0.3);
+}
+
+/* Trading Statistics */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.stat-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.stat-value.positive {
+    color: #2ed573;
+}
+
+.stat-value.negative {
+    color: #ff4757;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.empty-state p {
+    margin: 0;
+}
+
+/* Current Balance Info in Modal */
+.current-balance-info {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* Custom scrollbar for trades list */
+.trades-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.trades-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.trades-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.trades-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .chart-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .dd-indicators {
+        flex-direction: row;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-nav {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .header-actions {
+        justify-content: center;
+    }
+    
+    .account-basic-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .account-status {
+        align-items: center;
+        flex-direction: row;
+    }
+    
+    .key-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-wrapper {
+        height: 300px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dd-indicators {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .account-info-header {
+        padding: 20px;
+    }
+    
+    .account-details h1 {
+        font-size: 1.5rem;
+    }
+    
+    .key-metrics {
+        grid-template-columns: 1fr;
+    }
+    
+    .metric-item {
+        padding: 15px;
+    }
+    
+    .content-section {
+        padding: 20px;
+    }
+    
+    .chart-container {
+        padding: 20px;
+    }
+    
+    .chart-wrapper {
+        height: 250px;
+    }
+}
+
+/* Add these styles to your existing account-dashboard.css */
+
+/* Fixed Content Grid Heights */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start; /* Prevent stretching */
+}
+
+.content-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: fit-content; /* Prevent unnecessary stretching */
+}
+
+/* Upgrade Button in Status Area */
+.upgrade-btn-status {
+    background: linear-gradient(45deg, #ffa502 0%, #ff6348 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.upgrade-btn-status:hover {
+    background: linear-gradient(45deg, #e6940a 0%, #e55039 100%);
+    transform: translateY(-1px);
+}
+
+.upgrade-btn-status svg {
+    transition: transform 0.3s ease;
+}
+
+.upgrade-btn-status:hover svg {
+    transform: translateY(-2px);
+}
+
+/* Fixed Trading Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    min-height: 200px; /* Ensure minimum height */
+}
+
+/* View All Trades Button */
+.section-action-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #ccc;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.section-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* Fixed Trades List Height */
+.trades-list {
+    max-height: 300px; /* Fixed height */
+    overflow-y: auto;
+    min-height: 200px; /* Minimum height to prevent shrinking */
+}
+
+/* All Trades Modal Scrollbar */
+.modal .trades-list {
+    max-height: 60vh;
+}
+
+/* Better Modal Content */
+.modal-content {
+    background: linear-gradient(135deg, #2a2a46 0%, #1e1e3a 50%, #1a1a2e 100%);
+    margin: 5% auto;
+    padding: 25px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+/* Account Status Container */
+.account-status {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+/* Better Phase Badge in Header */
+.account-basic-info .phase-badge {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.account-basic-info .phase-badge.funded {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .account-basic-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .account-status {
+        align-items: center;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .content-section {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .key-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Add these styles to your account-dashboard.css */
+
+/* Fixed Account Status Layout - Horizontal Buttons */
+.account-status {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.status-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    justify-content: center;
+}
+
+.action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.upgrade-btn-main {
+    background: linear-gradient(45deg, #ffa502 0%, #ff6348 100%);
+    color: white;
+}
+
+.upgrade-btn-main:hover {
+    background: linear-gradient(45deg, #e6940a 0%, #e55039 100%);
+    transform: translateY(-1px);
+}
+
+.trade-btn-secondary {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
+    color: white;
+}
+
+.trade-btn-secondary:hover {
+    background: linear-gradient(45deg, #26c965 0%, #1a7edc 100%);
+    transform: translateY(-1px);
+}
+
+.edit-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.edit-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* Enhanced Header Action Buttons */
+.header-actions .action-btn {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+}
+
+/* Fixed Content Grid - Equal Heights */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+
+.content-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 400px; /* Fixed minimum height */
+    display: flex;
+    flex-direction: column;
+}
+
+.section-header {
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.trades-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.stats-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    align-content: start;
+}
+
+/* Enhanced Sidebar with More Info */
+.dd-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 280px;
+}
+
+.dd-indicators h4 {
+    margin: 0 0 15px 0;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dd-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dd-indicator-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.daily-dd-color {
+    background: #ffa502;
+}
+
+.max-dd-color {
+    background: #ff4757;
+}
+
+.profit-target-color {
+    background: #2ed573;
+}
+
+.reset-color {
+    background: #667eea;
+}
+
+.dd-indicator-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.dd-indicator-label span:first-child {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.dd-indicator-label span:last-child {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+#reset-countdown {
+    color: #667eea !important;
+    font-weight: 700;
+}
+
+/* Better Trade Items */
+.trade-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.trade-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+}
+
+/* Empty State Improvements */
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #888;
+    text-align: center;
+    flex: 1;
+}
+
+/* Chart Container Adjustments */
+.chart-section {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.chart-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+/* View All Trades Modal Enhancements */
+.modal-content {
+    background: linear-gradient(135deg, #2a2a46 0%, #1e1e3a 50%, #1a1a2e 100%);
+    margin: 3% auto;
+    padding: 30px;
+    border-radius: 20px;
+    width: 95%;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+/* Section Action Button Improvements */
+.section-action-btn {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.section-action-btn:hover {
+    background: linear-gradient(45deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+}
+
+/* Stats Grid Improvements */
+.stat-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.stat-value.positive {
+    color: #2ed573;
+}
+
+.stat-value.negative {
+    color: #ff4757;
+}
+
+/* Responsive Design Enhancements */
+@media (max-width: 1200px) {
+    .chart-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .dd-indicators {
+        min-width: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+    
+    .dd-indicator {
+        min-width: calc(50% - 8px);
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .account-basic-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .account-status {
+        align-items: center;
+    }
+    
+    .action-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .action-btn {
+        min-width: 70px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .header-actions .action-btn {
+        width: 100%;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .content-section {
+        padding: 20px;
+        min-height: 300px;
+    }
+    
+    .chart-wrapper {
+        height: 300px;
+    }
+    
+    .dd-indicators {
+        flex-direction: column;
+    }
+    
+    .dd-indicator {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .account-info-header {
+        padding: 20px;
+    }
+    
+    .account-details h1 {
+        font-size: 1.5rem;
+    }
+    
+    .key-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .metric-item {
+        padding: 15px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .action-btn {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-wrapper {
+        height: 250px;
+    }
+    
+    .content-section {
+        min-height: 250px;
+    }
+}

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Dashboard - PropOne</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/account-dashboard.css">
+    <!-- Chart.js for balance chart -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAxMjAgMTAwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0ibG9nb0dyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6IzY2N2VlYSIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6Izc2NGJhMiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxsaW5lIHgxPSIxMCIgeTE9IjUwIiB4Mj0iMTEwIiB5Mj0iNTAiIHN0cm9rZT0idXJsKCNsb2dvR3JhZGllbnQpIiBzdHJva2Utd2lkdGg9IjIuNSIgb3BhY2l0eT0iMC44Ii8+PHJlY3QgeD0iMTYiIHk9IjM1IiB3aWR0aD0iOCIgaGVpZ2h0PSIxNSIgZmlsbD0idXJsKCNsb2dvR3JhZGllbnQpIiByeD0iMSIvPjxyZWN0IHg9IjE2IiB5PSI1MCIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0idXJsKCNsb2dvR3JhZGllbnQpIiByeD0iMSIgb3BhY2l0eT0iMC43Ii8+PHJlY3QgeD0iMzIiIHk9IjIwIiB3aWR0aD0iOCIgaGVpZ2h0PSIzMCIgZmlsbD0idXJsKCNsb2dvR3JhZGllbnQpIiByeD0iMSIvPjxyZWN0IHg9IjMyIiB5PSI1MCIgd2lkdGg9IjgiIGhlaWdodD0iNSIgZmlsbD0idXJsKCNsb2dvR3JhZGllbnQpIiByeD0iMSIgb3BhY2l0eT0iMC43Ii8+PHJlY3QgeD0iNDgiIHk9IjQ1IiB3aWR0aD0iOCIgaGVpZ2h0PSI1IiBmaWxsPSJ1cmwoI2xvZ29HcmFkaWVudCkiIHJ4PSIxIiBvcGFjaXR5PSIwLjciLz48cmVjdCB4PSI0OCIgeT0iNTAiIHdpZHRoPSI4IiBoZWlnaHQ9IjIwIiBmaWxsPSJ1cmwoI2xvZ29HcmFkaWVudCkiIHJ4PSIxIi8+PHJlY3QgeD0iNjQiIHk9IjQwIiB3aWR0aD0iOCIgaGVpZ2h0PSIxMCIgZmlsbD0idXJsKCNsb2dvR3JhZGllbnQpIiByeD0iMSIvPjxyZWN0IHg9IjY0IiB5PSI1MCIgd2lkdGg9IjgiIGhlaWdodD0iMTUiIGZpbGw9InVybCgjbG9nb0dyYWRpZW50KSIgcng9IjEiIG9wYWNpdHk9IjAuNyIvPjxyZWN0IHg9IjgwIiB5PSIxNSIgd2lkdGg9IjgiIGhlaWdodD0iMzUiIGZpbGw9InVybCgjbG9nb0dyYWRpZW50KSIgcng9IjEiLz48cmVjdCB4PSI4MCIgeT0iNTAiIHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9InVybCgjbG9nb0dyYWRpZW50KSIgcng9IjEiIG9wYWNpdHk9IjAuNyIvPjxyZWN0IHg9Ijk2IiB5PSI0MiIgd2lkdGg9IjgiIGhlaWdodD0iOCIgZmlsbD0idXJsKCNsb2dvR3JhZGllbnQpIiByeD0iMSIgb3BhY2l0eT0iMC43Ii8+PHJlY3QgeD0iOTYiIHk9IjUwIiB3aWR0aD0iOCIgaGVpZ2h0PSIyNSIgZmlsbD0idXJsKCNsb2dvR3JhZGllbnQpIiByeD0iMSIvPjwvc3ZnPg==">
+</head>
+<body>
+    <div class="container">
+        <!-- Header with navigation -->
+        <header class="account-header">
+            <div class="header-nav">
+                <button class="back-btn" onclick="window.location.href='../index.html'">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                    Back to Dashboard
+                </button>
+                
+                <div class="header-actions">
+                    <button class="action-btn trade-btn-main" id="add-trade-btn">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        Add Trade
+                    </button>
+                    <button class="action-btn edit-btn" id="edit-account-btn">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                        Edit Account
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Account Information Header -->
+        <div class="account-info-header">
+            <div class="account-basic-info">
+                <div class="account-logo">
+                    <span id="account-initials">FP</span>
+                </div>
+                <div class="account-details">
+                    <h1 id="account-title">FundingPips - Phase 2</h1>
+                    <div class="account-meta">
+                        <span id="account-size">$100,000</span>
+                        <span class="separator">•</span>
+                        <span id="account-platform">cTrader</span>
+                        <span class="separator">•</span>
+                        <span id="account-created">Created Jan 15, 2025</span>
+                    </div>
+                </div>
+                <div class="account-status">
+                    <div class="phase-badge" id="account-phase">Phase 2</div>
+                    <div class="status-badge" id="account-status">Active</div>
+                </div>
+            </div>
+            
+            <!-- Key Metrics -->
+            <div class="key-metrics">
+                <div class="metric-item">
+                    <div class="metric-label">Current Balance</div>
+                    <div class="metric-value" id="current-balance-display">$100,000</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Total P&L</div>
+                    <div class="metric-value" id="total-pnl-display">+$0</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Daily DD Level</div>
+                    <div class="metric-value" id="daily-dd-display">$95,000</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Max DD Level</div>
+                    <div class="metric-value" id="max-dd-display">$90,000</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="chart-section">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3>Balance Chart</h3>
+                    <div class="chart-controls">
+                        <select id="chart-timeframe">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="all">All time</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="balance-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- DD Level Indicators -->
+            <div class="dd-indicators">
+                <div class="dd-indicator">
+                    <div class="dd-indicator-color daily-dd-color"></div>
+                    <div class="dd-indicator-label">
+                        <span>Daily DD Level</span>
+                        <span id="daily-dd-value">$95,000</span>
+                    </div>
+                </div>
+                <div class="dd-indicator">
+                    <div class="dd-indicator-color max-dd-color"></div>
+                    <div class="dd-indicator-label">
+                        <span>Max DD Level</span>
+                        <span id="max-dd-value">$90,000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Trades Section -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h3>Recent Trades</h3>
+                    <button class="section-action-btn" id="view-all-trades">View All</button>
+                </div>
+                <div class="trades-list" id="trades-list">
+                    <!-- Trades will be populated by JavaScript -->
+                    <div class="empty-state">
+                        <p>No trades yet. Click "Add Trade" to get started!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h3>Trading Statistics</h3>
+                </div>
+                <div class="stats-grid" id="trading-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Total Trades</div>
+                        <div class="stat-value">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Win Rate</div>
+                        <div class="stat-value">0%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Avg Win</div>
+                        <div class="stat-value">$0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Avg Loss</div>
+                        <div class="stat-value">$0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Largest Win</div>
+                        <div class="stat-value">$0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Largest Loss</div>
+                        <div class="stat-value">$0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trade Modal -->
+    <div id="trade-modal" class="modal">
+        <div class="modal-content compact">
+            <span class="close">&times;</span>
+            <h2>Add Trade</h2>
+            <div class="current-balance-info">
+                <span id="current-balance-display-modal"></span>
+            </div>
+            
+            <form id="trade-form">
+                <input type="hidden" id="trade-account-id">
+                <input type="hidden" id="trade-old-balance">
+                
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="trade-new-balance">New Balance:</label>
+                        <input type="number" id="trade-new-balance" step="0.01" required placeholder="Enter new balance" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="trade-instrument">Instrument (Optional):</label>
+                        <input type="text" id="trade-instrument" placeholder="e.g., EURUSD, GOLD" maxlength="20">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="trade-type">Trade Type:</label>
+                        <select id="trade-type">
+                            <option value="">Select Type</option>
+                            <option value="buy">Buy</option>
+                            <option value="sell">Sell</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="trade-notes">Notes (Optional):</label>
+                        <input type="text" id="trade-notes" placeholder="Trade description or notes" maxlength="100">
+                    </div>
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="button" id="trade-cancel-btn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Trade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Trade Modal -->
+    <div id="edit-trade-modal" class="modal">
+        <div class="modal-content compact">
+            <span class="close">&times;</span>
+            <h2>Edit Trade</h2>
+            
+            <form id="edit-trade-form">
+                <input type="hidden" id="edit-trade-id">
+                <input type="hidden" id="edit-trade-account-id">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="edit-trade-old-balance">Old Balance:</label>
+                        <input type="number" id="edit-trade-old-balance" step="0.01" required readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-trade-new-balance">New Balance:</label>
+                        <input type="number" id="edit-trade-new-balance" step="0.01" required min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-trade-instrument">Instrument:</label>
+                        <input type="text" id="edit-trade-instrument" placeholder="e.g., EURUSD, GOLD" maxlength="20">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-trade-type">Trade Type:</label>
+                        <select id="edit-trade-type">
+                            <option value="">Select Type</option>
+                            <option value="buy">Buy</option>
+                            <option value="sell">Sell</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="edit-trade-notes">Notes:</label>
+                        <input type="text" id="edit-trade-notes" placeholder="Trade description or notes" maxlength="100">
+                    </div>
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="button" id="edit-trade-cancel-btn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Trade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="../js/account-dashboard.js"></script>
+</body>
+</html>

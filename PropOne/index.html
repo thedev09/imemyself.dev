@@ -216,7 +216,7 @@
                             <option value="MT5">MT5</option>
                             <option value="cTrader">cTrader</option>
                             <option value="TradeLocker">TradeLocker</option>
-                            <option value="TradingView/ThinkTrader">TradingView/ThinkTrader</option>
+                            <option value="TradingView">TradingView</option>
                         </select>
                     </div>
                 </div>
@@ -228,6 +228,55 @@
             </form>
         </div>
     </div>
+
+    <!-- Add this Trade Modal after your existing add-account-modal in index.html -->
+
+<!-- Trade Modal -->
+<div id="trade-modal" class="modal">
+    <div class="modal-content compact">
+        <span class="close">&times;</span>
+        <h2>Add Trade</h2>
+        <div class="current-balance-info">
+            <span id="current-balance-display"></span>
+        </div>
+        
+        <form id="trade-form">
+            <input type="hidden" id="trade-account-id">
+            <input type="hidden" id="trade-old-balance">
+            
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="trade-new-balance">New Balance:</label>
+                    <input type="number" id="trade-new-balance" step="0.01" required placeholder="Enter new balance" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="trade-instrument">Instrument (Optional):</label>
+                    <input type="text" id="trade-instrument" placeholder="e.g., EURUSD, GOLD" maxlength="20">
+                </div>
+                
+                <div class="form-group">
+                    <label for="trade-type">Trade Type:</label>
+                    <select id="trade-type">
+                        <option value="">Select Type</option>
+                        <option value="buy">Buy</option>
+                        <option value="sell">Sell</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="trade-notes">Notes (Optional):</label>
+                    <input type="text" id="trade-notes" placeholder="Trade description or notes" maxlength="100">
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="button" id="trade-cancel-btn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Trade</button>
+            </div>
+        </form>
+    </div>
+</div>
 
     <script type="module" src="js/app.js"></script>
 </body>

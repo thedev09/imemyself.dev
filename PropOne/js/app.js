@@ -16,6 +16,7 @@ import {
     deleteDoc,
     getDoc
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import tradeManager from './trade-manager.js';
 
 // DOM elements
 const authSection = document.getElementById('auth-section');
@@ -92,7 +93,7 @@ const propFirmTemplates = {
         maxDrawdown: 8,
         phase1Target: 8,
         phase2Target: 5,
-        platform: 'TradingView/ThinkTrader'
+        platform: 'TradingView'
     },
     'BrightFunded': {
         accountSizes: [10000, 25000, 50000, 100000, 200000],
@@ -186,6 +187,101 @@ if (logoutBtn) {
         });
     });
 }
+
+// Add this to your existing modal elements section
+const tradeModal = document.getElementById('trade-modal');
+const tradeForm = document.getElementById('trade-form');
+
+// Add this to your existing modal functions
+function showTradeModal(accountId, currentBalance, firmName) {
+    if (!tradeModal) return;
+    
+    // Reset form
+    if (tradeForm) tradeForm.reset();
+    
+    // Set account info in modal
+    const modalTitle = document.querySelector('#trade-modal h2');
+    const currentBalanceDisplay = document.getElementById('current-balance-display');
+    
+    if (modalTitle) modalTitle.textContent = `Add Trade - ${firmName}`;
+    if (currentBalanceDisplay) currentBalanceDisplay.textContent = `Current: $${currentBalance.toLocaleString()}`;
+    
+    // Store account data in form
+    const accountIdInput = document.getElementById('trade-account-id');
+    const oldBalanceInput = document.getElementById('trade-old-balance');
+    
+    if (accountIdInput) accountIdInput.value = accountId;
+    if (oldBalanceInput) oldBalanceInput.value = currentBalance;
+    
+    tradeModal.style.display = 'block';
+}
+
+function hideTradeModal() {
+    if (tradeModal) tradeModal.style.display = 'none';
+    if (tradeForm) tradeForm.reset();
+}
+
+// Add trade form submission handler
+if (tradeForm) {
+    tradeForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!currentUser) {
+            alert('You must be logged in');
+            return;
+        }
+        
+        try {
+            const accountId = document.getElementById('trade-account-id').value;
+            const oldBalance = parseFloat(document.getElementById('trade-old-balance').value);
+            const newBalance = parseFloat(document.getElementById('trade-new-balance').value);
+            const instrument = document.getElementById('trade-instrument').value.trim();
+            const tradeType = document.getElementById('trade-type').value;
+            const notes = document.getElementById('trade-notes').value.trim();
+            
+            if (!newBalance || newBalance < 0) {
+                alert('Please enter a valid new balance');
+                return;
+            }
+            
+            const tradeData = {
+                accountId,
+                oldBalance,
+                newBalance,
+                timestamp: new Date(),
+                instrument: instrument || null,
+                tradeType: tradeType || null,
+                notes: notes || null
+            };
+            
+            const result = await tradeManager.addTrade(tradeData);
+            
+            if (result.success) {
+                console.log('Trade added successfully!');
+                hideTradeModal();
+                loadAccounts(); // Refresh the account display
+            } else {
+                alert('Error adding trade: ' + result.error);
+            }
+            
+        } catch (error) {
+            console.error('Error adding trade:', error);
+            alert('Error adding trade: ' + error.message);
+        }
+    });
+}
+
+// Add to your existing modal close handlers
+const tradeModalClose = document.querySelector('#trade-modal .close');
+const tradeCancelBtn = document.getElementById('trade-cancel-btn');
+
+if (tradeModalClose) tradeModalClose.addEventListener('click', hideTradeModal);
+if (tradeCancelBtn) tradeCancelBtn.addEventListener('click', hideTradeModal);
+
+
+// Make functions global for onclick handlers
+window.showTradeModal = showTradeModal;
+window.hideTradeModal = hideTradeModal;
 
 // Modal functions
 if (addAccountBtn) {
@@ -690,6 +786,8 @@ function getFilteredAccounts() {
     });
 }
 
+// Replace your existing displayAccounts function with this updated version:
+
 function displayAccounts(accounts) {
     if (!accountsList) return;
     
@@ -814,36 +912,11 @@ function displayAccounts(accounts) {
                          account.status === 'upgraded' ? 'phase-badge upgraded' :
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
-        let bottomRowHtml = '';
-        
-        if (account.status === 'breached' || isBreached) {
-            bottomRowHtml = `
-                <div class="bottom-row">
-                    <div class="breach-warning">⚠️ BREACHED</div>
-                    <div class="account-actions">
-                        <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
-                        <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
-                    </div>
-                </div>
-            `;
-        } else if (account.status === 'upgraded') {
-            bottomRowHtml = `
-                <div class="account-actions">
-                    <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
-                </div>
-            `;
-        } else {
-            bottomRowHtml = `
-                <div class="account-actions">
-                    ${upgradeButtonHtml}
-                    <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
-                    <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
-                </div>
-            `;
-        }
+        // Use the getBottomRowHtml function here
+        const bottomRowHtml = getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml);
         
         return `
-            <div class="${cardClass}">
+            <div class="${cardClass}" onclick="openAccountDashboard('${accountId}')" style="cursor: pointer;">
                 <div class="firm-header">
                     <div class="firm-info-container">
                         <div class="firm-logo">${firmInitials}</div>
@@ -890,6 +963,41 @@ function displayAccounts(accounts) {
             </div>
         `;
     }).join('')}</div>`;
+}
+
+// Add this function to handle account card clicks
+window.openAccountDashboard = function(accountId) {
+    window.location.href = `pages/account-dashboard.html?id=${accountId}`;
+}
+
+// Update the getBottomRowHtml function to prevent event bubbling
+function getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml) {
+    if (account.status === 'breached' || isBreached) {
+        return `
+            <div class="bottom-row" onclick="event.stopPropagation()">
+                <div class="breach-warning">⚠️ BREACHED</div>
+                <div class="account-actions">
+                    <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
+                    <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
+                </div>
+            </div>
+        `;
+    } else if (account.status === 'upgraded') {
+        return `
+            <div class="account-actions" onclick="event.stopPropagation()">
+                <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
+            </div>
+        `;
+    } else {
+        return `
+            <div class="account-actions" onclick="event.stopPropagation()">
+                ${upgradeButtonHtml}
+                <button class="action-btn trade-btn" onclick="showTradeModal('${accountId}', ${account.currentBalance}, '${account.firmName}')">Trade</button>
+                <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
+                <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
+            </div>
+        `;
+    }
 }
 
 // Global functions for buttons

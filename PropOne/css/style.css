@@ -918,3 +918,54 @@ header {
         grid-template-columns: 1fr;
     }
 }
+
+/* Add these styles to your existing style.css */
+
+/* Trade Button Styles */
+.trade-btn {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
+    color: white;
+    border: 1px solid transparent;
+}
+
+.trade-btn:hover {
+    background: linear-gradient(45deg, #26c965 0%, #1a7edc 100%);
+    transform: translateY(-1px);
+}
+
+/* Trade Modal Specific Styles */
+.current-balance-info {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #667eea;
+}
+
+#trade-new-balance {
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+#trade-new-balance:focus {
+    border-color: #2ed573;
+    background: rgba(46, 213, 115, 0.1);
+}
+
+/* Responsive adjustments for trade button */
+@media (max-width: 768px) {
+    .account-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .action-btn {
+        font-size: 0.65rem;
+        padding: 3px 8px;
+        height: 26px;
+    }
+}

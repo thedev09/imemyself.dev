@@ -108,7 +108,7 @@ class DataValidator {
         }
 
         // Platform validation
-        const validPlatforms = ['MT5', 'cTrader', 'TradeLocker', 'TradingView/ThinkTrader'];
+        const validPlatforms = ['MT5', 'cTrader', 'TradeLocker', 'TradingView'];
         if (!this.rules.required(accountData.platform)) {
             errors.push('Platform is required');
         } else if (!this.rules.oneOf(validPlatforms)(accountData.platform)) {
