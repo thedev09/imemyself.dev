@@ -18,6 +18,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import tradeManager from './trade-manager.js';
 import dailyTracker from './daily-tracker.js';
+import activityLogger from './activity-logger.js';
+import payoutManager from './payout-manager.js';
 
 // DOM elements
 const authSection = document.getElementById('auth-section');
@@ -150,6 +152,9 @@ function showApp(user) {
     authSection.style.display = 'none';
     appSection.classList.remove('hidden');
     userEmail.textContent = user.email;
+    
+    // Add Activity History to profile dropdown immediately
+    addActivityHistoryToDropdown();
 }
 
 function showAuth() {
@@ -272,6 +277,7 @@ if (tradeForm) {
             const result = await tradeManager.addTrade(tradeData);
             
             if (result.success) {
+                await activityLogger.logTradeAdded(currentUser.uid, tradeData);
                 console.log('Trade added successfully!');
                 hideTradeModal();
                 loadAccounts(); // Refresh the account display with new daily P&L
@@ -305,6 +311,34 @@ if (addAccountBtn) {
         resetModal();
         addAccountModal.style.display = 'block';
     });
+}
+
+function addActivityHistoryToDropdown() {
+    const profileDropdown = document.getElementById('profile-dropdown');
+    if (!profileDropdown) return;
+    
+    // Check if activity link already exists
+    if (profileDropdown.querySelector('.activity-link')) return;
+    
+    // Find settings button to insert activity link before it
+    const settingsBtn = profileDropdown.querySelector('#settings-btn');
+    if (settingsBtn) {
+        const activityLink = document.createElement('button');
+        activityLink.className = 'dropdown-item activity-link';
+        activityLink.innerHTML = `
+            <svg class="item-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M13,9H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+            </svg>
+            Activity History
+        `;
+        activityLink.onclick = () => {
+            profileDropdown.classList.remove('show');
+            window.location.href = 'pages/activity.html';
+        };
+        
+        // Insert before settings button
+        settingsBtn.parentNode.insertBefore(activityLink, settingsBtn);
+    }
 }
 
 function resetModal() {
@@ -550,20 +584,53 @@ if (addAccountForm) {
             } else {
                 const docRef = await addDoc(collection(db, 'accounts'), accountData);
                 console.log('Account added successfully!');
-                
+
+                // Check if this is an upgrade
                 const submitBtn = document.querySelector('#add-account-form button[type="submit"]');
-                if (submitBtn?.dataset.upgradeFrom) {
-                    await updateDoc(doc(db, 'accounts', submitBtn.dataset.upgradeFrom), {
+                const upgradeFromId = submitBtn?.dataset.upgradeFrom;
+                
+                if (upgradeFromId) {
+                    // This is an upgrade - get old account data for logging
+                    try {
+                        const oldAccountDoc = await getDoc(doc(db, 'accounts', upgradeFromId));
+                        if (oldAccountDoc.exists()) {
+                            const oldAccountData = oldAccountDoc.data();
+                            
+                            // Log the upgrade activity
+                            await activityLogger.logAccountUpgraded(
+                                currentUser.uid,
+                                upgradeFromId,
+                                docRef.id,
+                                oldAccountData.phase,
+                                phase,
+                                firmName,
+                                alias
+                            );
+                            console.log('Upgrade activity logged successfully');
+                        }
+                    } catch (error) {
+                        console.error('Error logging upgrade activity:', error);
+                    }
+                    
+                    // Mark old account as upgraded
+                    await updateDoc(doc(db, 'accounts', upgradeFromId), {
                         status: 'upgraded',
                         upgradedTo: docRef.id,
                         updatedAt: new Date()
                     });
                     
+                    // Link new account to old account
                     await updateDoc(doc(db, 'accounts', docRef.id), {
-                        upgradedFrom: submitBtn.dataset.upgradeFrom
+                        upgradedFrom: upgradeFromId
                     });
                     
                     console.log('Old account marked as upgraded');
+                } else {
+                    // Regular account creation
+                    await activityLogger.logAccountCreated(currentUser.uid, {
+                        ...accountData,
+                        accountId: docRef.id
+                    });
                 }
             }
             
@@ -627,12 +694,30 @@ async function loadAccounts() {
 
 // New function to load daily P&L data for all accounts
 async function loadDailyPnLForAllAccounts() {
+    console.log('Loading daily P&L for all accounts...');
+    
     const dailyPnLPromises = allAccounts.map(async (doc) => {
         const accountId = doc.id;
         const account = doc.data();
         
         try {
-            // Get current daily DD level (which helps us calculate daily P&L)
+            // Only check/create snapshot once per session per account
+            const sessionKey = `snapshot_checked_${accountId}_${dailyTracker.getCurrentISTDateString()}`;
+            if (!sessionStorage.getItem(sessionKey)) {
+                // Check and update daily snapshots (only once per session)
+                await dailyTracker.checkAndUpdateDailySnapshots(
+                    accountId,
+                    account.currentBalance,
+                    account.accountSize,
+                    account.dailyDrawdown
+                );
+                sessionStorage.setItem(sessionKey, 'true');
+            }
+            
+            // Calculate daily P&L
+            const dailyPnL = await dailyTracker.calculateDailyPnL(accountId, account.currentBalance);
+            
+            // Get current daily DD level
             const currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
                 accountId,
                 account.currentBalance,
@@ -640,12 +725,11 @@ async function loadDailyPnLForAllAccounts() {
                 account.dailyDrawdown
             );
             
-            // Calculate daily P&L
-            const dailyPnL = await calculateDailyPnL(accountId, account);
-            
             // Store in account data for display
             account._dailyPnL = dailyPnL;
             account._currentDailyDDLevel = currentDailyDDLevel;
+            
+            console.log(`Account ${accountId}: Daily P&L = ${dailyPnL}`);
             
         } catch (error) {
             console.error(`Error loading daily P&L for account ${accountId}:`, error);
@@ -655,6 +739,38 @@ async function loadDailyPnLForAllAccounts() {
     });
     
     await Promise.all(dailyPnLPromises);
+    console.log('Finished loading daily P&L for all accounts');
+}
+
+const dropdownFixCSS = `
+.profile-dropdown {
+    background: rgba(26, 26, 46, 0.95) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+}
+
+.dropdown-item {
+    color: #ccc !important;
+    background: transparent !important;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+}
+
+.profile-email {
+    color: #888 !important;
+}
+`;
+
+// Inject dropdown fix CSS
+if (!document.getElementById('dropdown-fix-css')) {
+    const style = document.createElement('style');
+    style.id = 'dropdown-fix-css';
+    style.textContent = dropdownFixCSS;
+    document.head.appendChild(style);
 }
 
 // Calculate actual daily P&L for an account
@@ -1162,9 +1278,20 @@ function getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml) {
             </div>
         `;
     } else {
+        let payoutButtonHtml = '';
+        
+        // Add payout button for funded accounts with profit
+        if (account.phase === 'Funded') {
+            const totalPnL = account.currentBalance - account.accountSize;
+            if (totalPnL > 0) {
+                payoutButtonHtml = `<button class="action-btn payout-btn" onclick="requestPayout('${accountId}')">Payout</button>`;
+            }
+        }
+        
         return `
             <div class="account-actions" onclick="event.stopPropagation()">
                 ${upgradeButtonHtml}
+                ${payoutButtonHtml}
                 <button class="action-btn trade-btn" onclick="showTradeModal('${accountId}', ${account.currentBalance}, '${account.firmName}')">Trade</button>
                 <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
                 <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
@@ -1288,7 +1415,7 @@ window.deleteAccount = async function(accountId) {
     });
 };
 
-window.upgradeAccount = function(accountId, firmName, accountSize, currentPhase) {
+window.upgradeAccount = async function(accountId, firmName, accountSize, currentPhase) {
     resetModal();
     addAccountModal.style.display = 'block';
     
@@ -1323,5 +1450,58 @@ window.upgradeAccount = function(accountId, firmName, accountSize, currentPhase)
     submitBtn.textContent = 'Create Upgraded Account';
     submitBtn.dataset.upgradeFrom = accountId;
 };
+
+// Add this to your app.js - Updated requestPayout function
+
+window.requestPayout = async function(accountId) {
+    try {
+        const accountDoc = await getDoc(doc(db, 'accounts', accountId));
+        if (!accountDoc.exists()) {
+            alert('Account not found');
+            return;
+        }
+        
+        const account = accountDoc.data();
+        
+        if (account.phase !== 'Funded') {
+            alert('Only funded accounts can request payouts');
+            return;
+        }
+        
+        // Make currentUser available globally for payout manager
+        window.currentUser = currentUser;
+        window.auth = auth;
+        
+        // Show payout modal
+        payoutManager.showPayoutModal(accountId, account);
+        
+    } catch (error) {
+        console.error('Error requesting payout:', error);
+        alert('Error: ' + error.message);
+    }
+};
+
+// STEP 7: Add this CSS at the bottom of your app.js (before the console.log):
+const payoutButtonCSS = `
+.payout-btn {
+    background: linear-gradient(45deg, #f39c12 0%, #e74c3c 100%);
+    color: white;
+    border: 1px solid transparent;
+}
+
+.payout-btn:hover {
+    background: linear-gradient(45deg, #d68910 0%, #c0392b 100%);
+    transform: translateY(-1px);
+}
+`;
+
+// Inject payout button CSS
+if (!document.getElementById('payout-btn-css')) {
+    const style = document.createElement('style');
+    style.id = 'payout-btn-css';
+    style.textContent = payoutButtonCSS;
+    document.head.appendChild(style);
+}
+
 
 console.log('Enhanced app with daily P&L tracking initialized');

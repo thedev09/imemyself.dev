@@ -128,6 +128,60 @@ class DailyTracker {
     }
 
     // Get current daily DD level for an account
+    // Add this method to your existing daily-tracker.js class
+
+// Add this method to the DailyTracker class (insert it after existing methods)
+
+    // Reset daily tracking after payout
+    async resetAfterPayout(accountId, newBalance, accountSize, dailyDrawdownPercent) {
+        try {
+            const tradingDay = this.getTradingDay();
+            
+            console.log(`Resetting daily tracking after payout for account ${accountId}`);
+            console.log(`New balance: ${newBalance}, Account size: ${accountSize}`);
+            
+            // Delete existing snapshot for today if it exists
+            const q = query(
+                collection(db, 'dailySnapshots'),
+                where('accountId', '==', accountId),
+                where('date', '==', tradingDay)
+            );
+            
+            const existingSnapshots = await getDocs(q);
+            const deletePromises = existingSnapshots.docs.map(doc => 
+                deleteDoc(doc.ref)
+            );
+            await Promise.all(deletePromises);
+            
+            console.log(`Deleted ${existingSnapshots.docs.length} existing snapshots for ${tradingDay}`);
+            
+            // Create new snapshot with reset balance
+            const dailyDDLevel = newBalance - (accountSize * (dailyDrawdownPercent / 100));
+            
+            const snapshotData = {
+                accountId,
+                date: tradingDay,
+                startingBalance: newBalance,
+                dailyDDLevel,
+                accountSize,
+                dailyDrawdownPercent,
+                createdAt: new Date(),
+                istTimestamp: new Date().getTime() + this.istOffset,
+                isPayoutReset: true // Flag to indicate this was created after payout
+            };
+            
+            const docRef = await addDoc(collection(db, 'dailySnapshots'), snapshotData);
+            
+            console.log(`Created new snapshot after payout:`, snapshotData);
+            
+            return { success: true, id: docRef.id, snapshot: snapshotData };
+        } catch (error) {
+            console.error('Error resetting daily tracking after payout:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Updated method to get current daily DD level (add this to replace existing method)
     async getCurrentDailyDDLevel(accountId, currentBalance, accountSize, dailyDrawdownPercent) {
         try {
             await this.loadSnapshotsForAccount(accountId);
@@ -148,6 +202,12 @@ class DailyTracker {
                     console.warn('Failed to create snapshot, using fallback calculation');
                     return currentBalance - (accountSize * (dailyDrawdownPercent / 100));
                 }
+            }
+            
+            // For payout resets, use the snapshot's DD level directly
+            if (todaySnapshot.isPayoutReset) {
+                console.log(`Using payout reset DD level: ${todaySnapshot.dailyDDLevel}`);
+                return todaySnapshot.dailyDDLevel;
             }
             
             return todaySnapshot.dailyDDLevel;
