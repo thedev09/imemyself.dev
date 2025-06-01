@@ -1,0 +1,470 @@
+/* Compact View CSS - compact-view.css */
+
+/* Filter Section - Enhanced to support right-aligned toggle */
+.filter-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+/* Filter Pills - Enhanced to work with view toggle */
+.filter-pills {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* View Toggle Button - Moved to right side */
+.view-toggle {
+    margin-left: auto;
+    padding-left: 20px;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+}
+
+.view-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ccc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.view-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.view-toggle-btn.active {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+}
+
+.view-toggle-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Compact Accounts Container */
+.compact-accounts-container {
+    display: none; /* Hidden by default */
+    margin-top: 20px;
+}
+
+.compact-accounts-container.active {
+    display: block;
+}
+
+/* Compact accounts grid - Updated for 4 columns */
+.compact-accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Reduced from 300px to 250px */
+    gap: 15px; /* Slightly reduced gap */
+    max-width: none;
+    margin: 0;
+}
+
+/* Force exactly 4 columns on larger screens */
+@media (min-width: 1400px) {
+    .compact-accounts-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+    .compact-accounts-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+    .compact-accounts-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+    .compact-accounts-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 599px) {
+    .compact-accounts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Phase Section Styling - Enhanced and more distinguishable */
+.phase-section {
+    margin-bottom: 35px;
+}
+
+.phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+    border-radius: 10px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.phase-header::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+}
+
+.phase-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.phase-count {
+    font-size: 0.8rem;
+    color: #667eea;
+    font-weight: 600;
+    background: rgba(102, 126, 234, 0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+/* Updated Compact Account Card - Removed phase badge, added daily P&L */
+.compact-account-card {
+    height: 100px; /* Slightly reduced height */
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.compact-account-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Compact Header - Updated for daily P&L */
+.compact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.compact-firm-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+.compact-firm-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.75rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.compact-firm-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Daily P&L Badge (replaces phase badge) */
+.compact-daily-pnl {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.compact-daily-pnl.positive {
+    background: rgba(46, 213, 115, 0.2);
+    color: #2ed573;
+}
+
+.compact-daily-pnl.negative {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+}
+
+/* Compact Balance */
+.compact-balance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.compact-balance {
+    font-size: 1.3rem; /* Increased from 1.1rem */
+    font-weight: 700;
+    color: #fff;
+}
+
+.compact-balance.positive {
+    color: #2ed573;
+}
+
+.compact-balance.negative {
+    color: #ff4757;
+}
+
+/* Compact Trade Button - Updated for smaller card */
+.compact-trade-btn {
+    background: linear-gradient(45deg, #2ed573 0%, #1e90ff 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 5px 12px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.compact-trade-btn:hover {
+    background: linear-gradient(45deg, #26c965 0%, #1a7edc 100%);
+    transform: translateY(-1px);
+}
+
+.compact-trade-btn:active {
+    transform: translateY(0);
+}
+
+/* Compact Upgrade Button */
+.compact-upgrade-btn {
+    background: linear-gradient(45deg, #ffa502 0%, #ff6348 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 5px 12px;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.compact-upgrade-btn:hover {
+    background: linear-gradient(45deg, #e6940a 0%, #e55039 100%);
+    transform: translateY(-1px);
+}
+
+.compact-upgrade-btn:active {
+    transform: translateY(0);
+}
+
+/* Prevent event bubbling for buttons */
+.compact-trade-btn,
+.compact-upgrade-btn {
+    position: relative;
+    z-index: 2;
+}
+
+/* Empty State for Compact View */
+.compact-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.compact-empty-state h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+/* Compact View Stats Header */
+.compact-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 20px 25px; /* Increased padding */
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px; /* Match summary cards */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.compact-view-title {
+    font-size: 1.3rem; /* Increased from 1.2rem */
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.compact-view-stats {
+    display: flex;
+    gap: 25px; /* Increased gap */
+    font-size: 0.95rem; /* Increased from 0.9rem */
+    color: #888;
+}
+
+.compact-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.compact-stat-value {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .view-toggle {
+        margin-left: 10px;
+        padding-left: 10px;
+    }
+    
+    .view-toggle-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .compact-accounts-grid {
+        gap: 12px;
+    }
+    
+    .compact-account-card {
+        height: 85px;
+        padding: 12px;
+    }
+    
+    .compact-firm-name {
+        font-size: 0.8rem;
+    }
+    
+    .compact-balance {
+        font-size: 1rem;
+    }
+    
+    .compact-view-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .compact-view-stats {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .phase-header {
+        padding: 10px 15px;
+    }
+    
+    .phase-title {
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .phase-count {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .compact-account-card {
+        height: 80px;
+        padding: 10px;
+    }
+    
+    .compact-firm-logo {
+        width: 24px;
+        height: 24px;
+        font-size: 0.65rem;
+    }
+    
+    .compact-firm-name {
+        font-size: 0.75rem;
+    }
+    
+    .compact-daily-pnl {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+    }
+    
+    .compact-balance {
+        font-size: 0.9rem;
+    }
+    
+    .compact-trade-btn,
+    .compact-upgrade-btn {
+        padding: 4px 8px;
+        font-size: 0.65rem;
+    }
+    
+    .phase-header {
+        padding: 8px 12px;
+    }
+    
+    .phase-title {
+        font-size: 0.85rem;
+        letter-spacing: 0.3px;
+    }
+    
+    .phase-count {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+    }
+}

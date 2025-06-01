@@ -20,6 +20,7 @@ import tradeManager from './trade-manager.js';
 import dailyTracker from './daily-tracker.js';
 import activityLogger from './activity-logger.js';
 import payoutManager from './payout-manager.js';
+import compactView from './compact-view.js'; // NEW IMPORT
 
 // DOM elements
 const authSection = document.getElementById('auth-section');
@@ -141,7 +142,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         showApp(user);
-        loadAccounts();
+        debouncedLoadAccounts();
     } else {
         currentUser = null;
         showAuth();
@@ -161,6 +162,14 @@ function showAuth() {
     authSection.style.display = 'block';
     appSection.classList.add('hidden');
 }
+
+let loadAccountsTimeout = null;
+const debouncedLoadAccounts = () => {
+    if (loadAccountsTimeout) {
+        clearTimeout(loadAccountsTimeout);
+    }
+    loadAccountsTimeout = setTimeout(loadAccounts, 150);
+};
 
 // Navigation functions
 if (profileBtn) {
@@ -280,7 +289,7 @@ if (tradeForm) {
                 await activityLogger.logTradeAdded(currentUser.uid, tradeData);
                 console.log('Trade added successfully!');
                 hideTradeModal();
-                loadAccounts(); // Refresh the account display with new daily P&L
+                debouncedLoadAccounts();
             } else {
                 alert('Error adding trade: ' + result.error);
             }
@@ -291,8 +300,6 @@ if (tradeForm) {
         }
     });
 }
-
-
 
 // Trade modal close handlers
 const tradeModalClose = document.querySelector('#trade-modal .close');
@@ -635,7 +642,7 @@ if (addAccountForm) {
             }
             
             hideModal();
-            loadAccounts();
+            debouncedLoadAccounts();
             
         } catch (error) {
             console.error('Error saving account:', error);
@@ -644,12 +651,22 @@ if (addAccountForm) {
     });
 }
 
-// Load and display accounts
-
+// Load and display accounts - UPDATED with compact view integration
 async function loadAccounts() {
     if (!currentUser) return;
+
+    if (loadAccountsTimeout) {
+        clearTimeout(loadAccountsTimeout);
+        loadAccountsTimeout = null;
+    }
     
     try {
+        // Show loading state immediately
+        const accountsList = document.getElementById('accounts-list');
+        if (accountsList) {
+            accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Loading accounts...</div>';
+        }
+
         const q = query(
             collection(db, 'accounts'),
             where('userId', '==', currentUser.uid),
@@ -659,88 +676,91 @@ async function loadAccounts() {
         const querySnapshot = await getDocs(q);
         allAccounts = querySnapshot.docs;
         
-        // Load daily P&L data for all accounts
-        await loadDailyPnLForAllAccounts();
+        // PERFORMANCE: Only load daily P&L for accounts that will be displayed
+        const activeAccounts = getFilteredAccounts();
         
-        allAccounts.sort((a, b) => {
-            const accountA = a.data();
-            const accountB = b.data();
+        // PERFORMANCE: Parallel loading of daily P&L (only for visible accounts)
+        const dailyPnLPromises = activeAccounts.slice(0, 20).map(async (doc) => { // Limit to first 20
+            const accountId = doc.id;
+            const account = doc.data();
             
-            const getPhaseOrder = (phase) => {
-                if (phase === 'Funded') return 0;
-                if (phase === 'Challenge Phase 2') return 1;
-                if (phase === 'Challenge Phase 1') return 2;
-                return 3;
-            };
-            
-            const phaseOrderA = getPhaseOrder(accountA.phase);
-            const phaseOrderB = getPhaseOrder(accountB.phase);
-            
-            if (phaseOrderA !== phaseOrderB) {
-                return phaseOrderA - phaseOrderB;
-            }
-            
-            return accountB.currentBalance - accountA.currentBalance;
-        });
-        
-        generateSummaryStats(allAccounts);
-        displayAccounts(getFilteredAccounts());
-        setupFilters();
-        
-    } catch (error) {
-        console.error('Error loading accounts:', error);
-    }
-}
-
-// New function to load daily P&L data for all accounts
-async function loadDailyPnLForAllAccounts() {
-    console.log('Loading daily P&L for all accounts...');
-    
-    const dailyPnLPromises = allAccounts.map(async (doc) => {
-        const accountId = doc.id;
-        const account = doc.data();
-        
-        try {
-            // Only check/create snapshot once per session per account
-            const sessionKey = `snapshot_checked_${accountId}_${dailyTracker.getCurrentISTDateString()}`;
-            if (!sessionStorage.getItem(sessionKey)) {
-                // Check and update daily snapshots (only once per session)
-                await dailyTracker.checkAndUpdateDailySnapshots(
+            try {
+                const sessionKey = `snapshot_checked_${accountId}_${dailyTracker.getCurrentISTDateString()}`;
+                if (!sessionStorage.getItem(sessionKey)) {
+                    await dailyTracker.checkAndUpdateDailySnapshots(
+                        accountId,
+                        account.currentBalance,
+                        account.accountSize,
+                        account.dailyDrawdown
+                    );
+                    sessionStorage.setItem(sessionKey, 'true');
+                }
+                
+                const dailyPnL = await dailyTracker.calculateDailyPnL(accountId, account.currentBalance);
+                const currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
                     accountId,
                     account.currentBalance,
                     account.accountSize,
                     account.dailyDrawdown
                 );
-                sessionStorage.setItem(sessionKey, 'true');
+                
+                account._dailyPnL = dailyPnL;
+                account._currentDailyDDLevel = currentDailyDDLevel;
+                
+            } catch (error) {
+                console.error(`Error loading daily P&L for account ${accountId}:`, error);
+                account._dailyPnL = 0;
+                account._currentDailyDDLevel = account.currentBalance - (account.accountSize * (account.dailyDrawdown / 100));
             }
+        });
+        
+        // PERFORMANCE: Don't block UI on daily P&L loading
+        Promise.all(dailyPnLPromises).then(() => {
+            // Update compact view after daily P&L is loaded
+            compactView.updateAccounts(allAccounts);
+        });
+        
+        // PERFORMANCE: Sort accounts efficiently
+        allAccounts.sort((a, b) => {
+            const accountA = a.data();
+            const accountB = b.data();
             
-            // Calculate daily P&L
-            const dailyPnL = await dailyTracker.calculateDailyPnL(accountId, account.currentBalance);
+            const phaseOrder = { 'Funded': 0, 'Challenge Phase 2': 1, 'Challenge Phase 1': 2 };
+            const orderA = phaseOrder[accountA.phase] ?? 3;
+            const orderB = phaseOrder[accountB.phase] ?? 3;
             
-            // Get current daily DD level
-            const currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
-                accountId,
-                account.currentBalance,
-                account.accountSize,
-                account.dailyDrawdown
-            );
-            
-            // Store in account data for display
-            account._dailyPnL = dailyPnL;
-            account._currentDailyDDLevel = currentDailyDDLevel;
-            
-            console.log(`Account ${accountId}: Daily P&L = ${dailyPnL}`);
-            
-        } catch (error) {
-            console.error(`Error loading daily P&L for account ${accountId}:`, error);
-            account._dailyPnL = 0; // Fallback
-            account._currentDailyDDLevel = account.currentBalance - (account.accountSize * (account.dailyDrawdown / 100));
+            if (orderA !== orderB) return orderA - orderB;
+            return accountB.currentBalance - accountA.currentBalance;
+        });
+        
+        // PERFORMANCE: Generate summary stats only once
+        const summaryStats = generateSummaryStatsOptimized(allAccounts);
+        displaySummaryStats(summaryStats);
+        
+        // PERFORMANCE: Display accounts immediately (without waiting for daily P&L)
+        displayAccounts(getFilteredAccounts());
+        setupFilters();
+        
+        // PERFORMANCE: Initialize compact view efficiently
+        compactView.initialize(allAccounts, currentUser);
+        
+    } catch (error) {
+        console.error('Error loading accounts:', error);
+        const accountsList = document.getElementById('accounts-list');
+        if (accountsList) {
+            accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #ff4757;">Error loading accounts. Please refresh the page.</div>';
         }
-    });
-    
-    await Promise.all(dailyPnLPromises);
-    console.log('Finished loading daily P&L for all accounts');
+    }
 }
+
+window.retryLoadAccounts = function() {
+    const accountsList = document.getElementById('accounts-list');
+    if (accountsList) {
+        accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
+    }
+    debouncedLoadAccounts();
+};
+
 
 const dropdownFixCSS = `
 .profile-dropdown {
@@ -773,65 +793,15 @@ if (!document.getElementById('dropdown-fix-css')) {
     document.head.appendChild(style);
 }
 
-// Calculate actual daily P&L for an account
-async function calculateDailyPnL(accountId, account) {
-    try {
-        // Load daily snapshots for this account
-        const result = await dailyTracker.loadSnapshotsForAccount(accountId);
-        
-        if (!result.success) {
-            return 0;
-        }
-        
-        const today = dailyTracker.getCurrentISTDateString();
-        const snapshots = result.snapshots || [];
-        
-        // Find today's snapshot
-        const todaySnapshot = snapshots.find(snapshot => snapshot.date === today);
-        
-        if (todaySnapshot) {
-            // Daily P&L = current balance - starting balance for today
-            return account.currentBalance - todaySnapshot.startingBalance;
-        } else {
-            // If no snapshot for today, create one and daily P&L is 0
-            await dailyTracker.createDailySnapshot(
-                accountId,
-                account.currentBalance,
-                account.accountSize,
-                account.dailyDrawdown
-            );
-            return 0;
-        }
-        
-    } catch (error) {
-        console.error('Error calculating daily P&L:', error);
-        return 0;
-    }
-}
-
-// Replace your generateSummaryStats function with this original version
-
-function generateSummaryStats(accounts) {
-    const summaryContainer = document.getElementById('summary-stats');
-    if (!summaryContainer) return;
-    
+function generateSummaryStatsOptimized(accounts) {
     const stats = {
         funded: { count: 0, totalFunding: 0, totalYourShare: 0, totalEstPayout: 0 },
-        challenge: { 
-            phase1Active: 0, 
-            phase1Capital: 0, 
-            phase2Active: 0, 
-            phase2Capital: 0 
-        },
-        inactive: { 
-            phase1Breached: 0, 
-            phase2Breached: 0, 
-            fundedBreached: 0, 
-            totalPassed: 0 
-        }
+        challenge: { phase1Active: 0, phase1Capital: 0, phase2Active: 0, phase2Capital: 0 },
+        inactive: { phase1Breached: 0, phase2Breached: 0, fundedBreached: 0, totalPassed: 0 }
     };
     
-    accounts.forEach(doc => {
+    // PERFORMANCE: Single loop through accounts
+    for (const doc of accounts) {
         const account = doc.data();
         const currentPnL = account.currentBalance - account.accountSize;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
@@ -845,13 +815,9 @@ function generateSummaryStats(accounts) {
                     const yourShare = currentPnL * (account.profitShare || 80) / 100;
                     stats.funded.totalYourShare += yourShare;
                 }
-                
-                // Calculate estimated payout: available drawdown + current profit
                 const availableDrawdown = maxDrawdownAmount - Math.abs(Math.min(0, currentPnL));
                 const currentProfit = Math.max(0, currentPnL);
-                const estimatedPayout = availableDrawdown + currentProfit;
-                stats.funded.totalEstPayout += estimatedPayout;
-                
+                stats.funded.totalEstPayout += availableDrawdown + currentProfit;
             } else if (account.phase === 'Challenge Phase 1') {
                 stats.challenge.phase1Active++;
                 stats.challenge.phase1Capital += account.accountSize;
@@ -860,22 +826,25 @@ function generateSummaryStats(accounts) {
                 stats.challenge.phase2Capital += account.accountSize;
             }
         } else if (account.status === 'breached' || (account.status === 'active' && isBreached)) {
-            if (account.phase === 'Challenge Phase 1') {
-                stats.inactive.phase1Breached++;
-            } else if (account.phase === 'Challenge Phase 2') {
-                stats.inactive.phase2Breached++;
-            } else if (account.phase === 'Funded') {
-                stats.inactive.fundedBreached++;
-            }
+            if (account.phase === 'Challenge Phase 1') stats.inactive.phase1Breached++;
+            else if (account.phase === 'Challenge Phase 2') stats.inactive.phase2Breached++;
+            else if (account.phase === 'Funded') stats.inactive.fundedBreached++;
         } else if (account.status === 'upgraded') {
             stats.inactive.totalPassed++;
         }
-    });
+    }
     
-    // Add currently funded accounts to passed count
     stats.inactive.totalPassed += stats.funded.count;
+    return stats;
+}
+
+// 4. PERFORMANCE: Use this optimized displaySummaryStats function
+function displaySummaryStats(stats) {
+    const summaryContainer = document.getElementById('summary-stats');
+    if (!summaryContainer) return;
     
-    const summaryHTML = `
+    // PERFORMANCE: Build HTML string instead of DOM manipulation
+    summaryContainer.innerHTML = `
         <div class="summary-card funded">
             <h3>Funded Accounts</h3>
             <div class="summary-stats">
@@ -942,8 +911,67 @@ function generateSummaryStats(accounts) {
             </div>
         </div>
     `;
+}
+
+// UPDATED: Setup filters with compact view integration
+function setupFilters() {
+    const filterContainer = document.querySelector('.filter-pills');
+    if (!filterContainer) return;
     
-    summaryContainer.innerHTML = summaryHTML;
+    // PERFORMANCE: Only set up once, not on every load
+    if (filterContainer.dataset.initialized) return;
+    
+    filterContainer.innerHTML = `
+        <button class="filter-pill active" data-filter="active">Active</button>
+        <button class="filter-pill" data-filter="funded">Funded</button>
+        <button class="filter-pill" data-filter="phase2">Phase 2</button>
+        <button class="filter-pill" data-filter="phase1">Phase 1</button>
+        <button class="filter-pill" data-filter="breached">Breached</button>
+        <button class="filter-pill" data-filter="upgraded">Upgraded</button>
+        <button class="filter-pill" data-filter="all">All</button>
+    `;
+    
+    const filterPills = document.querySelectorAll('.filter-pill');
+    
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            filterPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            currentFilter = pill.dataset.filter;
+            
+            displayAccounts(getFilteredAccounts());
+            compactView.updateAccounts(getFilteredAccounts());
+        });
+    });
+    filterContainer.dataset.initialized = 'true';
+}
+
+function getFilteredAccounts() {
+    return allAccounts.filter(doc => {
+        const account = doc.data();
+        const currentPnL = account.currentBalance - account.accountSize;
+        const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
+        const isBreached = currentPnL < -maxDrawdownAmount;
+        
+        switch (currentFilter) {
+            case 'active':
+                return account.status === 'active' && !isBreached;
+            case 'funded':
+                return account.phase === 'Funded' && account.status === 'active' && !isBreached;
+            case 'phase1':
+                return account.phase === 'Challenge Phase 1' && account.status === 'active' && !isBreached;
+            case 'phase2':
+                return account.phase === 'Challenge Phase 2' && account.status === 'active' && !isBreached;
+            case 'breached':
+                return account.status === 'breached' || (account.status === 'active' && isBreached);
+            case 'upgraded':
+                return account.status === 'upgraded';
+            case 'all':
+                return true;
+            default:
+                return account.status === 'active' && !isBreached;
+        }
+    });
 }
 
 // FIXED progress bar calculation
@@ -972,11 +1000,6 @@ function calculateEnhancedProgress(account) {
     const distanceFromLeft = currentPnL - symmetricalLeft;
     const progressPercent = Math.max(0, Math.min(100, (distanceFromLeft / totalRange) * 100));
     
-    // For account at starting balance:
-    // currentPnL = 0
-    // distanceFromLeft = 0 - (-maxRange) = maxRange
-    // progressPercent = maxRange / (2 * maxRange) * 100 = 50% ✅ (CENTER!)
-    
     // Determine color based on position
     let progressColor;
     if (currentPnL < 0) {
@@ -991,18 +1014,18 @@ function calculateEnhancedProgress(account) {
     let progressText;
     if (account.phase === 'Funded') {
         if (currentPnL >= 0) {
-            progressText = currentPnL === 0 ? '+$0 profit' : `+$${currentPnL.toLocaleString()} profit`;
+            progressText = currentPnL === 0 ? '+$0 profit' : `+${currentPnL.toLocaleString()} profit`;
         } else {
-            progressText = `$${Math.abs(currentPnL).toLocaleString()} drawdown`;
+            progressText = `${Math.abs(currentPnL).toLocaleString()} drawdown`;
         }
     } else {
         const targetRemaining = Math.max(0, account.profitTargetAmount - currentPnL);
         if (currentPnL >= account.profitTargetAmount) {
             progressText = 'Target Reached!';
         } else if (currentPnL < 0) {
-            progressText = `$${Math.abs(currentPnL).toLocaleString()} drawdown`;
+            progressText = `${Math.abs(currentPnL).toLocaleString()} drawdown`;
         } else {
-            progressText = `$${targetRemaining.toLocaleString()} to target`;
+            progressText = `${targetRemaining.toLocaleString()} to target`;
         }
     }
     
@@ -1056,63 +1079,20 @@ function generateTooltipData(account, dailyPnL) {
     }
 }
 
-function setupFilters() {
-    const filterContainer = document.querySelector('.filter-pills');
-    if (!filterContainer) return;
-    
-    filterContainer.innerHTML = `
-        <button class="filter-pill active" data-filter="active">Active</button>
-        <button class="filter-pill" data-filter="funded">Funded</button>
-        <button class="filter-pill" data-filter="phase2">Phase 2</button>
-        <button class="filter-pill" data-filter="phase1">Phase 1</button>
-        <button class="filter-pill" data-filter="breached">Breached</button>
-        <button class="filter-pill" data-filter="upgraded">Upgraded</button>
-        <button class="filter-pill" data-filter="all">All</button>
-    `;
-    
-    const filterPills = document.querySelectorAll('.filter-pill');
-    
-    filterPills.forEach(pill => {
-        pill.addEventListener('click', () => {
-            filterPills.forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            currentFilter = pill.dataset.filter;
-            displayAccounts(getFilteredAccounts());
-        });
-    });
-}
-
-function getFilteredAccounts() {
-    return allAccounts.filter(doc => {
-        const account = doc.data();
-        const currentPnL = account.currentBalance - account.accountSize;
-        const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-        const isBreached = currentPnL < -maxDrawdownAmount;
-        
-        switch (currentFilter) {
-            case 'active':
-                return account.status === 'active' && !isBreached;
-            case 'funded':
-                return account.phase === 'Funded' && account.status === 'active' && !isBreached;
-            case 'phase1':
-                return account.phase === 'Challenge Phase 1' && account.status === 'active' && !isBreached;
-            case 'phase2':
-                return account.phase === 'Challenge Phase 2' && account.status === 'active' && !isBreached;
-            case 'breached':
-                return account.status === 'breached' || (account.status === 'active' && isBreached);
-            case 'upgraded':
-                return account.status === 'upgraded';
-            case 'all':
-                return true;
-            default:
-                return account.status === 'active' && !isBreached;
-        }
-    });
-}
-
-// Enhanced displayAccounts function with new 4-stat layout
+// Enhanced displayAccounts function - UPDATED with compact view integration
 function displayAccounts(accounts) {
     if (!accountsList) return;
+    
+    // Update compact view when accounts change
+    compactView.updateAccounts(accounts);
+    
+    // Only update normal view if not in compact mode
+    if (compactView.isInCompactView()) {
+        accountsList.style.display = 'none';
+        return;
+    } else {
+        accountsList.style.display = 'block';
+    }
     
     if (accounts.length === 0) {
         let emptyMessage = 'No accounts found.';
@@ -1253,7 +1233,6 @@ function displayAccounts(accounts) {
     }).join('')}</div>`;
 }
 
-
 // Add this function to handle account card clicks
 window.openAccountDashboard = function(accountId) {
     window.location.href = `pages/account-dashboard.html?id=${accountId}`;
@@ -1392,7 +1371,7 @@ window.deleteAccount = async function(accountId) {
                 updatedAt: new Date()
             });
             console.log('Account marked as breached!');
-            loadAccounts();
+            debouncedLoadAccounts();
             deleteModal.remove();
         } catch (error) {
             console.error('Error marking account as breached:', error);
@@ -1405,7 +1384,7 @@ window.deleteAccount = async function(accountId) {
             try {
                 await deleteDoc(doc(db, 'accounts', accountId));
                 console.log('Account deleted permanently!');
-                loadAccounts();
+                debouncedLoadAccounts();
                 deleteModal.remove();
             } catch (error) {
                 console.error('Error deleting account:', error);
@@ -1452,7 +1431,6 @@ window.upgradeAccount = async function(accountId, firmName, accountSize, current
 };
 
 // Add this to your app.js - Updated requestPayout function
-
 window.requestPayout = async function(accountId) {
     try {
         const accountDoc = await getDoc(doc(db, 'accounts', accountId));
@@ -1481,7 +1459,7 @@ window.requestPayout = async function(accountId) {
     }
 };
 
-// STEP 7: Add this CSS at the bottom of your app.js (before the console.log):
+// Add this CSS at the bottom of your app.js (before the console.log):
 const payoutButtonCSS = `
 .payout-btn {
     background: linear-gradient(45deg, #f39c12 0%, #e74c3c 100%);
@@ -1503,5 +1481,4 @@ if (!document.getElementById('payout-btn-css')) {
     document.head.appendChild(style);
 }
 
-
-console.log('Enhanced app with daily P&L tracking initialized');
+console.log('Enhanced app with compact view initialized');
