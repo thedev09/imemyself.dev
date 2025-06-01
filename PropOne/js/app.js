@@ -1,4 +1,4 @@
-// Complete app.js - Main application (CLEAN VERSION)
+// Enhanced app.js - Add daily P&L tracking to main dashboard
 import { auth, db } from './firebase-config.js';
 import { 
     signOut, 
@@ -17,6 +17,7 @@ import {
     getDoc
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import tradeManager from './trade-manager.js';
+import dailyTracker from './daily-tracker.js';
 
 // DOM elements
 const authSection = document.getElementById('auth-section');
@@ -244,6 +245,20 @@ if (tradeForm) {
                 return;
             }
             
+            // Get account data for daily tracking
+            const accountDoc = await getDoc(doc(db, 'accounts', accountId));
+            if (accountDoc.exists()) {
+                const accountData = accountDoc.data();
+                
+                // Update daily snapshot for trade
+                await dailyTracker.updateSnapshotForTrade(
+                    accountId,
+                    newBalance,
+                    accountData.accountSize,
+                    accountData.dailyDrawdown
+                );
+            }
+            
             const tradeData = {
                 accountId,
                 oldBalance,
@@ -259,7 +274,7 @@ if (tradeForm) {
             if (result.success) {
                 console.log('Trade added successfully!');
                 hideTradeModal();
-                loadAccounts(); // Refresh the account display
+                loadAccounts(); // Refresh the account display with new daily P&L
             } else {
                 alert('Error adding trade: ' + result.error);
             }
@@ -270,6 +285,8 @@ if (tradeForm) {
         }
     });
 }
+
+
 
 // Trade modal close handlers
 const tradeModalClose = document.querySelector('#trade-modal .close');
@@ -561,6 +578,7 @@ if (addAccountForm) {
 }
 
 // Load and display accounts
+
 async function loadAccounts() {
     if (!currentUser) return;
     
@@ -574,28 +592,29 @@ async function loadAccounts() {
         const querySnapshot = await getDocs(q);
         allAccounts = querySnapshot.docs;
         
+        // Load daily P&L data for all accounts
+        await loadDailyPnLForAllAccounts();
+        
         allAccounts.sort((a, b) => {
-    const accountA = a.data();
-    const accountB = b.data();
-    
-    const getPhaseOrder = (phase) => {
-        if (phase === 'Funded') return 0;
-        if (phase === 'Challenge Phase 2') return 1;
-        if (phase === 'Challenge Phase 1') return 2;
-        return 3;
-    };
-    
-    const phaseOrderA = getPhaseOrder(accountA.phase);
-    const phaseOrderB = getPhaseOrder(accountB.phase);
-    
-    // First sort by phase
-    if (phaseOrderA !== phaseOrderB) {
-        return phaseOrderA - phaseOrderB;
-    }
-    
-    // Within same phase, sort by current balance (highest first)
-    return accountB.currentBalance - accountA.currentBalance;
-});
+            const accountA = a.data();
+            const accountB = b.data();
+            
+            const getPhaseOrder = (phase) => {
+                if (phase === 'Funded') return 0;
+                if (phase === 'Challenge Phase 2') return 1;
+                if (phase === 'Challenge Phase 1') return 2;
+                return 3;
+            };
+            
+            const phaseOrderA = getPhaseOrder(accountA.phase);
+            const phaseOrderB = getPhaseOrder(accountB.phase);
+            
+            if (phaseOrderA !== phaseOrderB) {
+                return phaseOrderA - phaseOrderB;
+            }
+            
+            return accountB.currentBalance - accountA.currentBalance;
+        });
         
         generateSummaryStats(allAccounts);
         displayAccounts(getFilteredAccounts());
@@ -606,18 +625,87 @@ async function loadAccounts() {
     }
 }
 
+// New function to load daily P&L data for all accounts
+async function loadDailyPnLForAllAccounts() {
+    const dailyPnLPromises = allAccounts.map(async (doc) => {
+        const accountId = doc.id;
+        const account = doc.data();
+        
+        try {
+            // Get current daily DD level (which helps us calculate daily P&L)
+            const currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
+                accountId,
+                account.currentBalance,
+                account.accountSize,
+                account.dailyDrawdown
+            );
+            
+            // Calculate daily P&L
+            const dailyPnL = await calculateDailyPnL(accountId, account);
+            
+            // Store in account data for display
+            account._dailyPnL = dailyPnL;
+            account._currentDailyDDLevel = currentDailyDDLevel;
+            
+        } catch (error) {
+            console.error(`Error loading daily P&L for account ${accountId}:`, error);
+            account._dailyPnL = 0; // Fallback
+            account._currentDailyDDLevel = account.currentBalance - (account.accountSize * (account.dailyDrawdown / 100));
+        }
+    });
+    
+    await Promise.all(dailyPnLPromises);
+}
+
+// Calculate actual daily P&L for an account
+async function calculateDailyPnL(accountId, account) {
+    try {
+        // Load daily snapshots for this account
+        const result = await dailyTracker.loadSnapshotsForAccount(accountId);
+        
+        if (!result.success) {
+            return 0;
+        }
+        
+        const today = dailyTracker.getCurrentISTDateString();
+        const snapshots = result.snapshots || [];
+        
+        // Find today's snapshot
+        const todaySnapshot = snapshots.find(snapshot => snapshot.date === today);
+        
+        if (todaySnapshot) {
+            // Daily P&L = current balance - starting balance for today
+            return account.currentBalance - todaySnapshot.startingBalance;
+        } else {
+            // If no snapshot for today, create one and daily P&L is 0
+            await dailyTracker.createDailySnapshot(
+                accountId,
+                account.currentBalance,
+                account.accountSize,
+                account.dailyDrawdown
+            );
+            return 0;
+        }
+        
+    } catch (error) {
+        console.error('Error calculating daily P&L:', error);
+        return 0;
+    }
+}
+
 // Enhanced generateSummaryStats function with "Your Share" and correct Est. Payout
 function generateSummaryStats(accounts) {
     const summaryContainer = document.getElementById('summary-stats');
     if (!summaryContainer) return;
     
     const stats = {
-        funded: { count: 0, totalFunding: 0, totalYourShare: 0, totalEstPayout: 0 },
+        funded: { count: 0, totalFunding: 0, totalYourShare: 0, totalEstPayout: 0, dailyPnL: 0 },
         challenge: { 
             phase1Active: 0, 
             phase1Capital: 0, 
             phase2Active: 0, 
-            phase2Capital: 0 
+            phase2Capital: 0,
+            dailyPnL: 0
         },
         inactive: { 
             phase1Breached: 0, 
@@ -629,33 +717,35 @@ function generateSummaryStats(accounts) {
     
     accounts.forEach(doc => {
         const account = doc.data();
-        const currentPnL = account.currentBalance - account.accountSize;
+        const totalPnL = account.currentBalance - account.accountSize;
+        const dailyPnL = account._dailyPnL || 0;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-        const isBreached = currentPnL < -maxDrawdownAmount;
+        const isBreached = totalPnL < -maxDrawdownAmount;
         
         if (account.status === 'active' && !isBreached) {
             if (account.phase === 'Funded') {
                 stats.funded.count++;
                 stats.funded.totalFunding += account.accountSize;
+                stats.funded.dailyPnL += dailyPnL;
                 
-                // Calculate YOUR SHARE from profitable accounts
-                if (currentPnL > 0) {
-                    const yourShare = currentPnL * (account.profitShare || 80) / 100;
+                if (totalPnL > 0) {
+                    const yourShare = totalPnL * (account.profitShare || 80) / 100;
                     stats.funded.totalYourShare += yourShare;
                 }
                 
-                // Calculate estimated payout: available drawdown + current profit
-                const availableDrawdown = maxDrawdownAmount - Math.abs(Math.min(0, currentPnL));
-                const currentProfit = Math.max(0, currentPnL);
+                const availableDrawdown = maxDrawdownAmount - Math.abs(Math.min(0, totalPnL));
+                const currentProfit = Math.max(0, totalPnL);
                 const estimatedPayout = availableDrawdown + currentProfit;
                 stats.funded.totalEstPayout += estimatedPayout;
                 
             } else if (account.phase === 'Challenge Phase 1') {
                 stats.challenge.phase1Active++;
                 stats.challenge.phase1Capital += account.accountSize;
+                stats.challenge.dailyPnL += dailyPnL;
             } else if (account.phase === 'Challenge Phase 2') {
                 stats.challenge.phase2Active++;
                 stats.challenge.phase2Capital += account.accountSize;
+                stats.challenge.dailyPnL += dailyPnL;
             }
         } else if (account.status === 'breached' || (account.status === 'active' && isBreached)) {
             if (account.phase === 'Challenge Phase 1') {
@@ -670,7 +760,6 @@ function generateSummaryStats(accounts) {
         }
     });
     
-    // Add currently funded accounts to passed count
     stats.inactive.totalPassed += stats.funded.count;
     
     const summaryHTML = `
@@ -682,8 +771,8 @@ function generateSummaryStats(accounts) {
                     <div class="summary-stat-value">${stats.funded.count}</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">Total Funding</div>
-                    <div class="summary-stat-value">${stats.funded.totalFunding.toLocaleString()}</div>
+                    <div class="summary-stat-label">Daily P&L</div>
+                    <div class="summary-stat-value ${stats.funded.dailyPnL >= 0 ? 'positive' : 'negative'}">${stats.funded.dailyPnL >= 0 ? '+' : ''}${stats.funded.dailyPnL.toLocaleString()}</div>
                 </div>
                 <div class="summary-stat">
                     <div class="summary-stat-label">Your Share</div>
@@ -704,16 +793,16 @@ function generateSummaryStats(accounts) {
                     <div class="summary-stat-value">${stats.challenge.phase1Active} accounts</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">P1 Capital</div>
-                    <div class="summary-stat-value">${stats.challenge.phase1Capital.toLocaleString()}</div>
-                </div>
-                <div class="summary-stat">
                     <div class="summary-stat-label">Phase 2</div>
                     <div class="summary-stat-value">${stats.challenge.phase2Active} accounts</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">P2 Capital</div>
-                    <div class="summary-stat-value">${stats.challenge.phase2Capital.toLocaleString()}</div>
+                    <div class="summary-stat-label">Daily P&L</div>
+                    <div class="summary-stat-value ${stats.challenge.dailyPnL >= 0 ? 'positive' : 'negative'}">${stats.challenge.dailyPnL >= 0 ? '+' : ''}${stats.challenge.dailyPnL.toLocaleString()}</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-label">Total Capital</div>
+                    <div class="summary-stat-value">${(stats.challenge.phase1Capital + stats.challenge.phase2Capital).toLocaleString()}</div>
                 </div>
             </div>
         </div>
@@ -841,16 +930,16 @@ function generateProgressBarHTML(account) {
 }
 
 // Helper function to generate tooltip data
-function generateTooltipData(account) {
-    const currentPnL = account.currentBalance - account.accountSize;
+function generateTooltipData(account, dailyPnL) {
+    const totalPnL = account.currentBalance - account.accountSize;
     const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-    const availableDrawdown = maxDrawdownAmount + currentPnL;
+    const availableDrawdown = maxDrawdownAmount + totalPnL;
     
     if (account.phase === 'Funded') {
-        return `Balance: ${account.currentBalance.toLocaleString()} | Available DD: ${availableDrawdown.toLocaleString()} | Current P&L: ${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
+        return `Balance: ${account.currentBalance.toLocaleString()} | Daily: ${dailyPnL >= 0 ? '+' : ''}${dailyPnL.toLocaleString()} | Total: ${totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString()} | Available DD: ${availableDrawdown.toLocaleString()}`;
     } else {
-        const targetRemaining = Math.max(0, account.profitTargetAmount - currentPnL);
-        return `Balance: ${account.currentBalance.toLocaleString()} | Target: ${targetRemaining.toLocaleString()} | Available DD: ${availableDrawdown.toLocaleString()}`;
+        const targetRemaining = Math.max(0, account.profitTargetAmount - totalPnL);
+        return `Balance: ${account.currentBalance.toLocaleString()} | Daily: ${dailyPnL >= 0 ? '+' : ''}${dailyPnL.toLocaleString()} | Target: ${targetRemaining.toLocaleString()} | Available DD: ${availableDrawdown.toLocaleString()}`;
     }
 }
 
@@ -908,7 +997,7 @@ function getFilteredAccounts() {
     });
 }
 
-// Enhanced displayAccounts function with fixed progress bars and "Your Share"
+// Enhanced displayAccounts function with new 4-stat layout
 function displayAccounts(accounts) {
     if (!accountsList) return;
     
@@ -935,14 +1024,16 @@ function displayAccounts(accounts) {
         const account = doc.data();
         const accountId = doc.id;
         
-        const currentPnL = account.currentBalance - account.accountSize;
+        const totalPnL = account.currentBalance - account.accountSize;
+        const dailyPnL = account._dailyPnL || 0;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
         
-        const isMaxDrawdownBreached = currentPnL < -maxDrawdownAmount;
+        const isMaxDrawdownBreached = totalPnL < -maxDrawdownAmount;
         const isBreached = isMaxDrawdownBreached;
         
         const firmInitials = account.firmName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
         
+        // Calculate stats based on account phase
         let stat1Label, stat1Value, stat2Label, stat2Value, stat3Label, stat3Value, stat4Label, stat4Value;
         let upgradeButtonHtml = '';
         let statusBadgeHtml = '';
@@ -957,36 +1048,30 @@ function displayAccounts(accounts) {
             statusBadgeHtml = `<div class="status-badge upgraded">Upgraded to ${nextPhase}</div>`;
         }
         
+        // New 4-stat layout: Balance, Daily P&L, Total P&L, Your Share/Target Remaining
+        stat1Label = 'Balance';
+        stat1Value = `${account.currentBalance.toLocaleString()}`;
+        
+        stat2Label = 'Daily P&L';
+        stat2Value = `${dailyPnL >= 0 ? '+' : ''}${dailyPnL.toLocaleString()}`;
+        
+        stat3Label = 'Total P&L';
+        stat3Value = `${totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString()}`;
+        
         if (account.phase === 'Funded') {
-            stat1Label = 'Balance';
-            stat1Value = `${account.currentBalance.toLocaleString()}`;
-            stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
-            stat3Label = 'Profit Share';
-            stat3Value = `${account.profitShare || 80}%`;
             stat4Label = 'Your Share';
-            
-            // Calculate actual profit share correctly
-            if (currentPnL > 0) {
-                const yourShare = currentPnL * (account.profitShare || 80) / 100;
+            if (totalPnL > 0) {
+                const yourShare = totalPnL * (account.profitShare || 80) / 100;
                 stat4Value = `${yourShare.toLocaleString()}`;
             } else {
                 stat4Value = '$0';
             }
-            
         } else {
-            const remainingTarget = Math.max(0, account.profitTargetAmount - currentPnL);
+            stat4Label = 'Target Remaining';
+            const remainingTarget = Math.max(0, account.profitTargetAmount - totalPnL);
+            stat4Value = `${remainingTarget.toLocaleString()}`;
             
-            stat1Label = 'Balance';
-            stat1Value = `${account.currentBalance.toLocaleString()}`;
-            stat2Label = 'Daily P&L';
-            stat2Value = `${currentPnL >= 0 ? '+' : ''}${currentPnL.toLocaleString()}`;
-            stat3Label = 'Target Remaining';
-            stat3Value = `${remainingTarget.toLocaleString()}`;
-            stat4Label = 'Max DD';
-            stat4Value = `${account.maxDrawdown}%`;
-            
-            if (account.profitTargetAmount > 0 && currentPnL >= account.profitTargetAmount && !isBreached && account.status === 'active') {
+            if (account.profitTargetAmount > 0 && totalPnL >= account.profitTargetAmount && !isBreached && account.status === 'active') {
                 upgradeButtonHtml = `<button class="action-btn upgrade-btn" onclick="upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
             }
         }
@@ -1002,14 +1087,14 @@ function displayAccounts(accounts) {
                          account.status === 'upgraded' ? 'phase-badge upgraded' :
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
-        // Generate enhanced progress bar
+        // Generate enhanced progress bar (using total P&L for progress)
         const progressBarHtml = generateProgressBarHTML(account);
         
-        // Use the getBottomRowHtml function
+        // Get bottom row HTML
         const bottomRowHtml = getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml);
         
         // Add tooltip data for progress bar
-        const tooltipData = generateTooltipData(account);
+        const tooltipData = generateTooltipData(account, dailyPnL);
         
         return `
             <div class="${cardClass}" onclick="openAccountDashboard('${accountId}')" style="cursor: pointer;">
@@ -1033,15 +1118,15 @@ function displayAccounts(accounts) {
                     </div>
                     <div class="stat-item">
                         <div class="stat-label">${stat2Label}</div>
-                        <div class="stat-value ${currentPnL >= 0 ? 'positive' : 'negative'}">${stat2Value}</div>
+                        <div class="stat-value ${dailyPnL >= 0 ? 'positive' : 'negative'}">${stat2Value}</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-label">${stat3Label}</div>
-                        <div class="stat-value">${stat3Value}</div>
+                        <div class="stat-value ${totalPnL >= 0 ? 'positive' : 'negative'}">${stat3Value}</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-label">${stat4Label}</div>
-                        <div class="stat-value ${account.phase === 'Funded' && currentPnL > 0 ? 'positive' : ''}">${stat4Value}</div>
+                        <div class="stat-value ${account.phase === 'Funded' && totalPnL > 0 ? 'positive' : ''}">${stat4Value}</div>
                     </div>
                 </div>
                 
@@ -1054,6 +1139,7 @@ function displayAccounts(accounts) {
         `;
     }).join('')}</div>`;
 }
+
 
 // Add this function to handle account card clicks
 window.openAccountDashboard = function(accountId) {
@@ -1240,3 +1326,5 @@ window.upgradeAccount = function(accountId, firmName, accountSize, currentPhase)
     submitBtn.textContent = 'Create Upgraded Account';
     submitBtn.dataset.upgradeFrom = accountId;
 };
+
+console.log('Enhanced app with daily P&L tracking initialized');
