@@ -693,19 +693,19 @@ async function calculateDailyPnL(accountId, account) {
     }
 }
 
-// Enhanced generateSummaryStats function with "Your Share" and correct Est. Payout
+// Replace your generateSummaryStats function with this original version
+
 function generateSummaryStats(accounts) {
     const summaryContainer = document.getElementById('summary-stats');
     if (!summaryContainer) return;
     
     const stats = {
-        funded: { count: 0, totalFunding: 0, totalYourShare: 0, totalEstPayout: 0, dailyPnL: 0 },
+        funded: { count: 0, totalFunding: 0, totalYourShare: 0, totalEstPayout: 0 },
         challenge: { 
             phase1Active: 0, 
             phase1Capital: 0, 
             phase2Active: 0, 
-            phase2Capital: 0,
-            dailyPnL: 0
+            phase2Capital: 0 
         },
         inactive: { 
             phase1Breached: 0, 
@@ -717,35 +717,31 @@ function generateSummaryStats(accounts) {
     
     accounts.forEach(doc => {
         const account = doc.data();
-        const totalPnL = account.currentBalance - account.accountSize;
-        const dailyPnL = account._dailyPnL || 0;
+        const currentPnL = account.currentBalance - account.accountSize;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-        const isBreached = totalPnL < -maxDrawdownAmount;
+        const isBreached = currentPnL < -maxDrawdownAmount;
         
         if (account.status === 'active' && !isBreached) {
             if (account.phase === 'Funded') {
                 stats.funded.count++;
                 stats.funded.totalFunding += account.accountSize;
-                stats.funded.dailyPnL += dailyPnL;
-                
-                if (totalPnL > 0) {
-                    const yourShare = totalPnL * (account.profitShare || 80) / 100;
+                if (currentPnL > 0) {
+                    const yourShare = currentPnL * (account.profitShare || 80) / 100;
                     stats.funded.totalYourShare += yourShare;
                 }
                 
-                const availableDrawdown = maxDrawdownAmount - Math.abs(Math.min(0, totalPnL));
-                const currentProfit = Math.max(0, totalPnL);
+                // Calculate estimated payout: available drawdown + current profit
+                const availableDrawdown = maxDrawdownAmount - Math.abs(Math.min(0, currentPnL));
+                const currentProfit = Math.max(0, currentPnL);
                 const estimatedPayout = availableDrawdown + currentProfit;
                 stats.funded.totalEstPayout += estimatedPayout;
                 
             } else if (account.phase === 'Challenge Phase 1') {
                 stats.challenge.phase1Active++;
                 stats.challenge.phase1Capital += account.accountSize;
-                stats.challenge.dailyPnL += dailyPnL;
             } else if (account.phase === 'Challenge Phase 2') {
                 stats.challenge.phase2Active++;
                 stats.challenge.phase2Capital += account.accountSize;
-                stats.challenge.dailyPnL += dailyPnL;
             }
         } else if (account.status === 'breached' || (account.status === 'active' && isBreached)) {
             if (account.phase === 'Challenge Phase 1') {
@@ -760,6 +756,7 @@ function generateSummaryStats(accounts) {
         }
     });
     
+    // Add currently funded accounts to passed count
     stats.inactive.totalPassed += stats.funded.count;
     
     const summaryHTML = `
@@ -771,8 +768,8 @@ function generateSummaryStats(accounts) {
                     <div class="summary-stat-value">${stats.funded.count}</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">Daily P&L</div>
-                    <div class="summary-stat-value ${stats.funded.dailyPnL >= 0 ? 'positive' : 'negative'}">${stats.funded.dailyPnL >= 0 ? '+' : ''}${stats.funded.dailyPnL.toLocaleString()}</div>
+                    <div class="summary-stat-label">Total Funding</div>
+                    <div class="summary-stat-value">${stats.funded.totalFunding.toLocaleString()}</div>
                 </div>
                 <div class="summary-stat">
                     <div class="summary-stat-label">Your Share</div>
@@ -793,16 +790,16 @@ function generateSummaryStats(accounts) {
                     <div class="summary-stat-value">${stats.challenge.phase1Active} accounts</div>
                 </div>
                 <div class="summary-stat">
+                    <div class="summary-stat-label">P1 Capital</div>
+                    <div class="summary-stat-value">${stats.challenge.phase1Capital.toLocaleString()}</div>
+                </div>
+                <div class="summary-stat">
                     <div class="summary-stat-label">Phase 2</div>
                     <div class="summary-stat-value">${stats.challenge.phase2Active} accounts</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">Daily P&L</div>
-                    <div class="summary-stat-value ${stats.challenge.dailyPnL >= 0 ? 'positive' : 'negative'}">${stats.challenge.dailyPnL >= 0 ? '+' : ''}${stats.challenge.dailyPnL.toLocaleString()}</div>
-                </div>
-                <div class="summary-stat">
-                    <div class="summary-stat-label">Total Capital</div>
-                    <div class="summary-stat-value">${(stats.challenge.phase1Capital + stats.challenge.phase2Capital).toLocaleString()}</div>
+                    <div class="summary-stat-label">P2 Capital</div>
+                    <div class="summary-stat-value">${stats.challenge.phase2Capital.toLocaleString()}</div>
                 </div>
             </div>
         </div>
