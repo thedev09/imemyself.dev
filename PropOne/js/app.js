@@ -1,4 +1,4 @@
-// Enhanced app.js - Add daily P&L tracking to main dashboard
+// COMPLETE PRODUCTION-READY App.js - Final Optimized Version
 import { auth, db } from './firebase-config.js';
 import { 
     signOut, 
@@ -20,124 +20,198 @@ import tradeManager from './trade-manager.js';
 import dailyTracker from './daily-tracker.js';
 import activityLogger from './activity-logger.js';
 import payoutManager from './payout-manager.js';
-import compactView from './compact-view.js'; // NEW IMPORT
+import compactView from './compact-view.js';
 
-// DOM elements
-const authSection = document.getElementById('auth-section');
-const appSection = document.getElementById('app-section');
-const logoutBtn = document.getElementById('logout-btn');
-const userEmail = document.getElementById('user-email');
-const accountsList = document.getElementById('accounts-list');
-const addAccountBtn = document.getElementById('add-account-btn');
-const addAccountModal = document.getElementById('add-account-modal');
-const closeModal = document.querySelector('.close');
-const cancelBtn = document.getElementById('cancel-btn');
-const addAccountForm = document.getElementById('add-account-form');
+// DOM elements - OPTIMIZED: Cache all DOM queries once
+const DOM = {
+    authSection: document.getElementById('auth-section'),
+    appSection: document.getElementById('app-section'),
+    logoutBtn: document.getElementById('logout-btn'),
+    userEmail: document.getElementById('user-email'),
+    accountsList: document.getElementById('accounts-list'),
+    addAccountBtn: document.getElementById('add-account-btn'),
+    addAccountModal: document.getElementById('add-account-modal'),
+    closeModal: document.querySelector('.close'),
+    cancelBtn: document.getElementById('cancel-btn'),
+    addAccountForm: document.getElementById('add-account-form'),
+    profileBtn: document.getElementById('profile-btn'),
+    profileDropdown: document.getElementById('profile-dropdown'),
+    settingsBtn: document.getElementById('settings-btn'),
+    helpBtn: document.getElementById('help-btn'),
+    firmSelect: document.getElementById('firm-name'),
+    customFirmGroup: document.getElementById('custom-firm-group'),
+    customFirmInput: document.getElementById('custom-firm-name'),
+    accountSizeSelect: document.getElementById('account-size-select'),
+    customSizeGroup: document.getElementById('custom-size-group'),
+    customSizeInput: document.getElementById('custom-account-size'),
+    profitTargetPercent: document.getElementById('profit-target-percent'),
+    phaseSelect: document.getElementById('phase'),
+    profitTargetGroup: document.getElementById('profit-target-group'),
+    profitShareGroup: document.getElementById('profit-share-group'),
+    tradeModal: document.getElementById('trade-modal'),
+    tradeForm: document.getElementById('trade-form')
+};
 
-// Navigation elements
-const profileBtn = document.getElementById('profile-btn');
-const profileDropdown = document.getElementById('profile-dropdown');
-const settingsBtn = document.getElementById('settings-btn');
-const helpBtn = document.getElementById('help-btn');
-
-// Form elements
-const firmSelect = document.getElementById('firm-name');
-const customFirmGroup = document.getElementById('custom-firm-group');
-const customFirmInput = document.getElementById('custom-firm-name');
-const accountSizeSelect = document.getElementById('account-size-select');
-const customSizeGroup = document.getElementById('custom-size-group');
-const customSizeInput = document.getElementById('custom-account-size');
-const profitTargetPercent = document.getElementById('profit-target-percent');
-const phaseSelect = document.getElementById('phase');
-const profitTargetGroup = document.getElementById('profit-target-group');
-const profitShareGroup = document.getElementById('profit-share-group');
-
-// Trade modal elements
-const tradeModal = document.getElementById('trade-modal');
-const tradeForm = document.getElementById('trade-form');
-
+// State management
 let currentUser = null;
 let editingAccountId = null;
 let currentFilter = 'active';
 let allAccounts = [];
+let loadAccountsTimeout = null;
 
-// Prop firm templates
-const propFirmTemplates = {
-    'FundingPips': {
-        accountSizes: [10000, 25000, 50000, 100000, 200000],
-        dailyDrawdown: 5,
-        maxDrawdown: 10,
-        phase1Target: 10,
-        phase2Target: 5,
-        platform: 'MT5'
-    },
-    'The5%ers': {
-        accountSizes: [100000],
-        dailyDrawdown: 5,
-        maxDrawdown: 10,
-        phase1Target: 8,
-        phase2Target: 5,
-        platform: 'MT5'
-    },
-    'Alpha Capital': {
-        accountSizes: [25000, 50000, 100000, 200000],
-        dailyDrawdown: 5,
-        maxDrawdown: 10,
-        phase1Target: 10,
-        phase2Target: 5,
-        platform: 'MT5'
-    },
-    'FunderPro': {
-        accountSizes: [10000, 25000, 50000, 100000, 200000],
-        dailyDrawdown: 5,
-        maxDrawdown: 10,
-        phase1Target: 10,
-        phase2Target: 8,
-        platform: 'TradeLocker'
-    },
-    'ThinkCapital': {
-        accountSizes: [25000, 50000, 100000, 200000],
-        dailyDrawdown: 4,
-        maxDrawdown: 8,
-        phase1Target: 8,
-        phase2Target: 5,
-        platform: 'TradingView'
-    },
-    'BrightFunded': {
-        accountSizes: [10000, 25000, 50000, 100000, 200000],
-        dailyDrawdown: 5,
-        maxDrawdown: 10,
-        phase1Target: 8,
-        phase2Target: 5,
-        platform: 'cTrader'
-    },
-    'PipFarm': {
-        accountSizes: [10000, 25000, 50000, 100000, 200000],
-        dailyDrawdown: 3,
-        maxDrawdown: 10,
-        phase1Target: 9,
-        phase2Target: 6,
-        platform: 'cTrader'
-    },
-    'FundedNext': {
-        accountSizes: [5000, 10000, 25000, 50000, 100000, 200000],
-        dailyDrawdown: 5,
-        maxDrawdown: 10,
-        phase1Target: 8,
-        phase2Target: 5,
-        platform: 'MT5'
-    },
-    'Instant Funding': {
-        accountSizes: [5000, 10000, 25000, 50000, 100000, 200000],
-        dailyDrawdown: 5,
-        maxDrawdown: 10,
-        phase1Target: 10,
-        phase2Target: 5,
-        platform: 'MT5'
+// Prop firm templates - OPTIMIZED: Moved to readonly constant
+const PROP_FIRM_TEMPLATES = Object.freeze({
+    'FundingPips': { accountSizes: [10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 10, phase2Target: 5, platform: 'MT5' },
+    'The5%ers': { accountSizes: [100000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 8, phase2Target: 5, platform: 'MT5' },
+    'Alpha Capital': { accountSizes: [25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 10, phase2Target: 5, platform: 'MT5' },
+    'FunderPro': { accountSizes: [10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 10, phase2Target: 8, platform: 'TradeLocker' },
+    'ThinkCapital': { accountSizes: [25000, 50000, 100000, 200000], dailyDrawdown: 4, maxDrawdown: 8, phase1Target: 8, phase2Target: 5, platform: 'TradingView' },
+    'BrightFunded': { accountSizes: [10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 8, phase2Target: 5, platform: 'cTrader' },
+    'PipFarm': { accountSizes: [10000, 25000, 50000, 100000, 200000], dailyDrawdown: 3, maxDrawdown: 10, phase1Target: 9, phase2Target: 6, platform: 'cTrader' },
+    'FundedNext': { accountSizes: [5000, 10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 8, phase2Target: 5, platform: 'MT5' },
+    'Instant Funding': { accountSizes: [5000, 10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 10, phase2Target: 5, platform: 'MT5' }
+});
+
+// PRODUCTION OPTIMIZATION: Enhanced SmartCache with error handling
+class SmartCache {
+    static getCacheKey(accountId, date = null) {
+        try {
+            const currentISTDate = date || dailyTracker.getCurrentISTDateString();
+            return `daily_pnl_${accountId}_${currentISTDate}`;
+        } catch (error) {
+            console.warn('Cache key generation failed:', error);
+            return `daily_pnl_${accountId}_${new Date().toISOString().split('T')[0]}`;
+        }
     }
-};
+    
+    static getTradeTrackingKey(accountId, date = null) {
+        try {
+            const currentISTDate = date || dailyTracker.getCurrentISTDateString();
+            return `trade_count_${accountId}_${currentISTDate}`;
+        } catch (error) {
+            console.warn('Trade tracking key generation failed:', error);
+            return `trade_count_${accountId}_${new Date().toISOString().split('T')[0]}`;
+        }
+    }
+    
+    static getCachedData(accountId) {
+        try {
+            const cacheKey = this.getCacheKey(accountId);
+            const cached = sessionStorage.getItem(cacheKey);
+            
+            if (cached) {
+                return JSON.parse(cached);
+            }
+        } catch (error) {
+            console.warn('Cache retrieval failed:', error);
+            this.invalidateCache(accountId);
+        }
+        return null;
+    }
+    
+    static setCachedData(accountId, data) {
+        try {
+            const cacheKey = this.getCacheKey(accountId);
+            const trackingKey = this.getTradeTrackingKey(accountId);
+            const currentTradeCount = this.getCurrentTradeCount(accountId);
+            
+            const cacheData = {
+                ...data,
+                timestamp: Date.now(),
+                tradeCount: currentTradeCount
+            };
+            
+            sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+            sessionStorage.setItem(trackingKey, currentTradeCount.toString());
+        } catch (error) {
+            console.warn('Cache storage failed:', error);
+        }
+    }
+    
+    static getCurrentTradeCount(accountId) {
+        try {
+            const trackingKey = this.getTradeTrackingKey(accountId);
+            const current = sessionStorage.getItem(trackingKey);
+            return current ? parseInt(current) || 0 : 0;
+        } catch (error) {
+            console.warn('Trade count retrieval failed:', error);
+            return 0;
+        }
+    }
+    
+    static incrementTradeCount(accountId) {
+        try {
+            const trackingKey = this.getTradeTrackingKey(accountId);
+            const current = this.getCurrentTradeCount(accountId);
+            sessionStorage.setItem(trackingKey, (current + 1).toString());
+            this.invalidateCache(accountId);
+        } catch (error) {
+            console.warn('Trade count increment failed:', error);
+        }
+    }
+    
+    static invalidateCache(accountId) {
+        try {
+            const cacheKey = this.getCacheKey(accountId);
+            sessionStorage.removeItem(cacheKey);
+        } catch (error) {
+            console.warn('Cache invalidation failed:', error);
+        }
+    }
+    
+    static invalidateAllCache() {
+        try {
+            const keys = Object.keys(sessionStorage);
+            keys.forEach(key => {
+                if (key.startsWith('daily_pnl_') || key.startsWith('trade_count_')) {
+                    sessionStorage.removeItem(key);
+                }
+            });
+        } catch (error) {
+            console.warn('Bulk cache invalidation failed:', error);
+        }
+    }
+    
+    static isCacheValid(accountId, cachedData) {
+        if (!cachedData) return false;
+        
+        try {
+            // Check cache age
+            const cacheAge = Date.now() - cachedData.timestamp;
+            const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+            
+            if (cacheAge > maxAge) {
+                this.invalidateCache(accountId);
+                return false;
+            }
+            
+            // Check trade count
+            const currentTradeCount = this.getCurrentTradeCount(accountId);
+            if (cachedData.tradeCount !== currentTradeCount) {
+                this.invalidateCache(accountId);
+                return false;
+            }
+            
+            return true;
+        } catch (error) {
+            console.warn('Cache validation failed:', error);
+            this.invalidateCache(accountId);
+            return false;
+        }
+    }
+}
 
-// Auth state listener
+// OPTIMIZED: Debounced load accounts with better performance
+const debouncedLoadAccounts = (() => {
+    return () => {
+        if (loadAccountsTimeout) {
+            clearTimeout(loadAccountsTimeout);
+        }
+        loadAccountsTimeout = setTimeout(loadAccounts, 100); // Reduced from 150ms
+    };
+})();
+
+// Auth state listener - OPTIMIZED: Single event listener
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
@@ -150,185 +224,184 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function showApp(user) {
-    authSection.style.display = 'none';
-    appSection.classList.remove('hidden');
-    userEmail.textContent = user.email;
-    
-    // Add Activity History to profile dropdown immediately
+    if (DOM.authSection) DOM.authSection.style.display = 'none';
+    if (DOM.appSection) DOM.appSection.classList.remove('hidden');
+    if (DOM.userEmail) DOM.userEmail.textContent = user.email;
     addActivityHistoryToDropdown();
 }
 
 function showAuth() {
-    authSection.style.display = 'block';
-    appSection.classList.add('hidden');
+    if (DOM.authSection) DOM.authSection.style.display = 'block';
+    if (DOM.appSection) DOM.appSection.classList.add('hidden');
 }
 
-let loadAccountsTimeout = null;
-const debouncedLoadAccounts = () => {
+// PRODUCTION-OPTIMIZED: Main loadAccounts function with enhanced error handling
+async function loadAccounts() {
+    if (!currentUser) return;
+
     if (loadAccountsTimeout) {
         clearTimeout(loadAccountsTimeout);
+        loadAccountsTimeout = null;
     }
-    loadAccountsTimeout = setTimeout(loadAccounts, 150);
-};
+    
+    try {
+        // Show loading state
+        if (DOM.accountsList) {
+            DOM.accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Loading accounts...</div>';
+        }
 
-// Navigation functions
-if (profileBtn) {
-    profileBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        profileDropdown.classList.toggle('show');
-    });
-}
+        const q = query(
+            collection(db, 'accounts'),
+            where('userId', '==', currentUser.uid),
+            orderBy('createdAt', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        allAccounts = querySnapshot.docs;
+        
+        if (allAccounts.length === 0) {
+            displayAccounts([]);
+            setupFilters();
+            return;
+        }
 
-document.addEventListener('click', (e) => {
-    if (profileBtn && profileDropdown && !profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
-        profileDropdown.classList.remove('show');
-    }
-});
-
-if (settingsBtn) {
-    settingsBtn.addEventListener('click', () => {
-        profileDropdown.classList.remove('show');
-        window.location.href = 'pages/settings.html';
-    });
-}
-
-if (helpBtn) {
-    helpBtn.addEventListener('click', () => {
-        profileDropdown.classList.remove('show');
-        alert('Help & Support coming soon!');
-    });
-}
-
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        signOut(auth).then(() => {
-            console.log('Logout successful');
+        // PRODUCTION: Optimized batch processing with smart caching
+        const processedAccounts = await Promise.all(
+            allAccounts.map(async (docRef) => {
+                const accountId = docRef.id;
+                const accountData = docRef.data();
+                
+                try {
+                    const cached = SmartCache.getCachedData(accountId);
+                    let dailyPnL = 0;
+                    let currentDailyDDLevel = accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100));
+                    
+                    if (cached && SmartCache.isCacheValid(accountId, cached)) {
+                        // Use cached data
+                        dailyPnL = cached.dailyPnL;
+                        currentDailyDDLevel = cached.currentDailyDDLevel;
+                    } else {
+                        // Calculate fresh data with fallback
+                        try {
+                            dailyPnL = await dailyTracker.calculateDailyPnL(accountId, accountData.currentBalance);
+                            currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
+                                accountId,
+                                accountData.currentBalance,
+                                accountData.accountSize,
+                                accountData.dailyDrawdown
+                            );
+                            
+                            SmartCache.setCachedData(accountId, { dailyPnL, currentDailyDDLevel });
+                        } catch (dailyError) {
+                            console.warn(`Daily P&L calculation failed for ${accountId}:`, dailyError);
+                            // Continue with fallback values
+                        }
+                    }
+                    
+                    return {
+                        id: accountId,
+                        data: () => ({
+                            ...accountData,
+                            _dailyPnL: dailyPnL,
+                            _currentDailyDDLevel: currentDailyDDLevel
+                        }),
+                        exists: docRef.exists,
+                        metadata: docRef.metadata,
+                        ref: docRef.ref
+                    };
+                    
+                } catch (error) {
+                    console.warn(`Error processing account ${accountId}:`, error);
+                    return {
+                        id: accountId,
+                        data: () => ({
+                            ...accountData,
+                            _dailyPnL: 0,
+                            _currentDailyDDLevel: accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100))
+                        }),
+                        exists: docRef.exists,
+                        metadata: docRef.metadata,
+                        ref: docRef.ref
+                    };
+                }
+            })
+        );
+        
+        allAccounts = processedAccounts;
+        
+        // OPTIMIZED: Efficient sorting
+        allAccounts.sort((a, b) => {
+            const accountA = a.data();
+            const accountB = b.data();
+            
+            const phaseOrder = { 'Funded': 0, 'Challenge Phase 2': 1, 'Challenge Phase 1': 2 };
+            const orderA = phaseOrder[accountA.phase] ?? 3;
+            const orderB = phaseOrder[accountB.phase] ?? 3;
+            
+            return orderA !== orderB ? orderA - orderB : accountB.currentBalance - accountA.currentBalance;
         });
-    });
+        
+        // Update UI efficiently
+        const summaryStats = generateSummaryStatsOptimized(allAccounts);
+        displaySummaryStats(summaryStats);
+        displayAccounts(getFilteredAccounts());
+        setupFilters();
+        
+        // Initialize compact view asynchronously
+        requestAnimationFrame(() => {
+            if (compactView?.initialize) {
+                compactView.initialize(allAccounts, currentUser);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error loading accounts:', error);
+        if (DOM.accountsList) {
+            DOM.accountsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #ff4757;">
+                    Error loading accounts. Please refresh the page.
+                    <br><br>
+                    <button onclick="retryLoadAccounts()" class="btn btn-primary">Retry</button>
+                </div>
+            `;
+        }
+    }
 }
 
-// Trade modal functions
+// Trade modal functions - OPTIMIZED with null checks
 function showTradeModal(accountId, currentBalance, firmName) {
-    if (!tradeModal) return;
+    if (!DOM.tradeModal) return;
     
-    // Reset form
-    if (tradeForm) tradeForm.reset();
+    DOM.tradeForm?.reset();
     
-    // Set account info in modal
     const modalTitle = document.querySelector('#trade-modal h2');
     const currentBalanceDisplay = document.getElementById('current-balance-display');
     
     if (modalTitle) modalTitle.textContent = `Add Trade - ${firmName}`;
     if (currentBalanceDisplay) currentBalanceDisplay.textContent = `Current: $${currentBalance.toLocaleString()}`;
     
-    // Store account data in form
     const accountIdInput = document.getElementById('trade-account-id');
     const oldBalanceInput = document.getElementById('trade-old-balance');
     
     if (accountIdInput) accountIdInput.value = accountId;
     if (oldBalanceInput) oldBalanceInput.value = currentBalance;
     
-    tradeModal.style.display = 'block';
+    DOM.tradeModal.style.display = 'block';
 }
 
 function hideTradeModal() {
-    if (tradeModal) tradeModal.style.display = 'none';
-    if (tradeForm) tradeForm.reset();
-}
-
-// Trade form submission handler
-if (tradeForm) {
-    tradeForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        if (!currentUser) {
-            alert('You must be logged in');
-            return;
-        }
-        
-        try {
-            const accountId = document.getElementById('trade-account-id').value;
-            const oldBalance = parseFloat(document.getElementById('trade-old-balance').value);
-            const newBalance = parseFloat(document.getElementById('trade-new-balance').value);
-            const instrument = document.getElementById('trade-instrument').value.trim();
-            const tradeType = document.getElementById('trade-type').value;
-            const notes = document.getElementById('trade-notes').value.trim();
-            
-            if (!newBalance || newBalance < 0) {
-                alert('Please enter a valid new balance');
-                return;
-            }
-            
-            // Get account data for daily tracking
-            const accountDoc = await getDoc(doc(db, 'accounts', accountId));
-            if (accountDoc.exists()) {
-                const accountData = accountDoc.data();
-                
-                // Update daily snapshot for trade
-                await dailyTracker.updateSnapshotForTrade(
-                    accountId,
-                    newBalance,
-                    accountData.accountSize,
-                    accountData.dailyDrawdown
-                );
-            }
-            
-            const tradeData = {
-                accountId,
-                oldBalance,
-                newBalance,
-                timestamp: new Date(),
-                instrument: instrument || null,
-                tradeType: tradeType || null,
-                notes: notes || null
-            };
-            
-            const result = await tradeManager.addTrade(tradeData);
-            
-            if (result.success) {
-                await activityLogger.logTradeAdded(currentUser.uid, tradeData);
-                console.log('Trade added successfully!');
-                hideTradeModal();
-                debouncedLoadAccounts();
-            } else {
-                alert('Error adding trade: ' + result.error);
-            }
-            
-        } catch (error) {
-            console.error('Error adding trade:', error);
-            alert('Error adding trade: ' + error.message);
-        }
-    });
-}
-
-// Trade modal close handlers
-const tradeModalClose = document.querySelector('#trade-modal .close');
-const tradeCancelBtn = document.getElementById('trade-cancel-btn');
-
-if (tradeModalClose) tradeModalClose.addEventListener('click', hideTradeModal);
-if (tradeCancelBtn) tradeCancelBtn.addEventListener('click', hideTradeModal);
-
-// Make functions global for onclick handlers
-window.showTradeModal = showTradeModal;
-window.hideTradeModal = hideTradeModal;
-
-// Account modal functions
-if (addAccountBtn) {
-    addAccountBtn.addEventListener('click', () => {
-        resetModal();
-        addAccountModal.style.display = 'block';
-    });
+    if (DOM.tradeModal) DOM.tradeModal.style.display = 'none';
+    DOM.tradeForm?.reset();
 }
 
 function addActivityHistoryToDropdown() {
-    const profileDropdown = document.getElementById('profile-dropdown');
-    if (!profileDropdown) return;
+    if (!DOM.profileDropdown) return;
     
     // Check if activity link already exists
-    if (profileDropdown.querySelector('.activity-link')) return;
+    if (DOM.profileDropdown.querySelector('.activity-link')) return;
     
     // Find settings button to insert activity link before it
-    const settingsBtn = profileDropdown.querySelector('#settings-btn');
+    const settingsBtn = DOM.profileDropdown.querySelector('#settings-btn');
     if (settingsBtn) {
         const activityLink = document.createElement('button');
         activityLink.className = 'dropdown-item activity-link';
@@ -339,7 +412,7 @@ function addActivityHistoryToDropdown() {
             Activity History
         `;
         activityLink.onclick = () => {
-            profileDropdown.classList.remove('show');
+            DOM.profileDropdown.classList.remove('show');
             window.location.href = 'pages/activity.html';
         };
         
@@ -350,21 +423,21 @@ function addActivityHistoryToDropdown() {
 
 function resetModal() {
     editingAccountId = null;
-    if (addAccountForm) addAccountForm.reset();
-    if (customFirmGroup) customFirmGroup.style.display = 'none';
-    if (customSizeGroup) customSizeGroup.style.display = 'none';
-    if (profitShareGroup) profitShareGroup.style.display = 'none';
-    if (profitTargetGroup) profitTargetGroup.style.display = 'block';
+    DOM.addAccountForm?.reset();
+    if (DOM.customFirmGroup) DOM.customFirmGroup.style.display = 'none';
+    if (DOM.customSizeGroup) DOM.customSizeGroup.style.display = 'none';
+    if (DOM.profitShareGroup) DOM.profitShareGroup.style.display = 'none';
+    if (DOM.profitTargetGroup) DOM.profitTargetGroup.style.display = 'block';
     
-    if (accountSizeSelect) accountSizeSelect.value = '100000';
+    if (DOM.accountSizeSelect) DOM.accountSizeSelect.value = '100000';
     const currentBalanceInput = document.getElementById('current-balance');
     if (currentBalanceInput) currentBalanceInput.value = '100000';
     
     const profitShareInput = document.getElementById('profit-share');
     if (profitShareInput) profitShareInput.value = '80';
     
-    if (firmSelect) {
-        firmSelect.innerHTML = `
+    if (DOM.firmSelect) {
+        DOM.firmSelect.innerHTML = `
             <option value="">Select Prop Firm</option>
             <option value="FundingPips">FundingPips</option>
             <option value="The5%ers">The5%ers</option>
@@ -377,7 +450,7 @@ function resetModal() {
             <option value="Instant Funding">Instant Funding</option>
             <option value="Other">Other</option>
         `;
-        firmSelect.disabled = false;
+        DOM.firmSelect.disabled = false;
     }
     
     const modalTitle = document.querySelector('#add-account-modal h2');
@@ -390,47 +463,36 @@ function resetModal() {
 }
 
 function hideModal() {
-    if (addAccountModal) addAccountModal.style.display = 'none';
+    if (DOM.addAccountModal) DOM.addAccountModal.style.display = 'none';
     resetModal();
 }
 
-if (closeModal) closeModal.addEventListener('click', hideModal);
-if (cancelBtn) cancelBtn.addEventListener('click', hideModal);
-
-window.addEventListener('click', (e) => {
-    if (e.target === addAccountModal) hideModal();
-});
-
-// Form logic
-if (firmSelect) {
-    firmSelect.addEventListener('change', (e) => {
-        const selectedFirm = e.target.value;
-        
-        if (selectedFirm === 'Other') {
-            if (customFirmGroup) customFirmGroup.style.display = 'block';
-            if (customFirmInput) customFirmInput.setAttribute('required', 'required');
-        } else {
-            if (customFirmGroup) customFirmGroup.style.display = 'none';
-            if (customFirmInput) {
-                customFirmInput.removeAttribute('required');
-                customFirmInput.value = '';
-            }
+// OPTIMIZED: Extracted helper functions for better maintainability
+function handleFirmSelection(selectedFirm) {
+    if (selectedFirm === 'Other') {
+        if (DOM.customFirmGroup) DOM.customFirmGroup.style.display = 'block';
+        if (DOM.customFirmInput) DOM.customFirmInput.setAttribute('required', 'required');
+    } else {
+        if (DOM.customFirmGroup) DOM.customFirmGroup.style.display = 'none';
+        if (DOM.customFirmInput) {
+            DOM.customFirmInput.removeAttribute('required');
+            DOM.customFirmInput.value = '';
         }
-        
-        if (propFirmTemplates[selectedFirm]) {
-            applyTemplate(selectedFirm);
-        } else {
-            resetTemplate();
-        }
-    });
+    }
+    
+    if (PROP_FIRM_TEMPLATES[selectedFirm]) {
+        applyTemplate(selectedFirm);
+    } else {
+        resetTemplate();
+    }
 }
 
 function applyTemplate(firmName) {
-    const template = propFirmTemplates[firmName];
+    const template = PROP_FIRM_TEMPLATES[firmName];
     if (!template) return;
     
     const targetSize = template.accountSizes.includes(100000) ? '100000' : template.accountSizes[0].toString();
-    if (accountSizeSelect) accountSizeSelect.value = targetSize;
+    if (DOM.accountSizeSelect) DOM.accountSizeSelect.value = targetSize;
     
     const currentBalanceInput = document.getElementById('current-balance');
     if (currentBalanceInput) currentBalanceInput.value = targetSize;
@@ -458,486 +520,69 @@ function resetTemplate() {
 }
 
 function updateProfitTargetFromTemplate(template) {
-    if (!phaseSelect || !profitTargetPercent) return;
+    if (!DOM.phaseSelect || !DOM.profitTargetPercent) return;
     
-    const selectedPhase = phaseSelect.value;
+    const selectedPhase = DOM.phaseSelect.value;
     
     if (selectedPhase === 'Challenge Phase 1') {
-        profitTargetPercent.value = template.phase1Target;
+        DOM.profitTargetPercent.value = template.phase1Target;
     } else if (selectedPhase === 'Challenge Phase 2') {
-        profitTargetPercent.value = template.phase2Target;
+        DOM.profitTargetPercent.value = template.phase2Target;
     } else if (selectedPhase === 'Funded') {
-        profitTargetPercent.value = '';
+        DOM.profitTargetPercent.value = '';
     }
 }
 
-if (phaseSelect) {
-    phaseSelect.addEventListener('change', (e) => {
-        const selectedPhase = e.target.value;
+function handlePhaseSelection(selectedPhase) {
+    if (selectedPhase === 'Funded') {
+        if (DOM.profitTargetGroup) DOM.profitTargetGroup.style.display = 'none';
+        if (DOM.profitShareGroup) DOM.profitShareGroup.style.display = 'block';
+        if (DOM.profitTargetPercent) DOM.profitTargetPercent.removeAttribute('required');
+        const profitShare = document.getElementById('profit-share');
+        if (profitShare) profitShare.setAttribute('required', 'required');
+    } else {
+        if (DOM.profitTargetGroup) DOM.profitTargetGroup.style.display = 'block';
+        if (DOM.profitShareGroup) DOM.profitShareGroup.style.display = 'none';
+        if (DOM.profitTargetPercent) DOM.profitTargetPercent.setAttribute('required', 'required');
+        const profitShare = document.getElementById('profit-share');
+        if (profitShare) profitShare.removeAttribute('required');
         
-        if (selectedPhase === 'Funded') {
-            if (profitTargetGroup) profitTargetGroup.style.display = 'none';
-            if (profitShareGroup) profitShareGroup.style.display = 'block';
-            if (profitTargetPercent) profitTargetPercent.removeAttribute('required');
-            const profitShare = document.getElementById('profit-share');
-            if (profitShare) profitShare.setAttribute('required', 'required');
-        } else {
-            if (profitTargetGroup) profitTargetGroup.style.display = 'block';
-            if (profitShareGroup) profitShareGroup.style.display = 'none';
-            if (profitTargetPercent) profitTargetPercent.setAttribute('required', 'required');
-            const profitShare = document.getElementById('profit-share');
-            if (profitShare) profitShare.removeAttribute('required');
-            
-            const selectedFirm = firmSelect.value;
-            if (propFirmTemplates[selectedFirm]) {
-                updateProfitTargetFromTemplate(propFirmTemplates[selectedFirm]);
-                calculateTargetAmount();
-            }
+        const selectedFirm = DOM.firmSelect?.value;
+        if (PROP_FIRM_TEMPLATES[selectedFirm]) {
+            updateProfitTargetFromTemplate(PROP_FIRM_TEMPLATES[selectedFirm]);
+            calculateTargetAmount();
         }
-    });
+    }
 }
 
-if (accountSizeSelect) {
-    accountSizeSelect.addEventListener('change', (e) => {
-        if (e.target.value === 'custom') {
-            if (customSizeGroup) customSizeGroup.style.display = 'block';
-            if (customSizeInput) customSizeInput.setAttribute('required', 'required');
-        } else {
-            if (customSizeGroup) customSizeGroup.style.display = 'none';
-            if (customSizeInput) {
-                customSizeInput.removeAttribute('required');
-                customSizeInput.value = '';
-            }
-            const currentBalanceInput = document.getElementById('current-balance');
-            if (currentBalanceInput) currentBalanceInput.value = e.target.value;
+function handleAccountSizeSelection(value) {
+    if (value === 'custom') {
+        if (DOM.customSizeGroup) DOM.customSizeGroup.style.display = 'block';
+        if (DOM.customSizeInput) DOM.customSizeInput.setAttribute('required', 'required');
+    } else {
+        if (DOM.customSizeGroup) DOM.customSizeGroup.style.display = 'none';
+        if (DOM.customSizeInput) {
+            DOM.customSizeInput.removeAttribute('required');
+            DOM.customSizeInput.value = '';
         }
-        calculateTargetAmount();
-    });
+        const currentBalanceInput = document.getElementById('current-balance');
+        if (currentBalanceInput) currentBalanceInput.value = value;
+    }
+    calculateTargetAmount();
 }
 
 function calculateTargetAmount() {
-    if (!accountSizeSelect || !profitTargetPercent) return;
+    if (!DOM.accountSizeSelect || !DOM.profitTargetPercent) return;
     
-    const accountSize = accountSizeSelect.value === 'custom' 
-        ? parseFloat(customSizeInput?.value) || 0
-        : parseFloat(accountSizeSelect.value) || 0;
+    const accountSize = DOM.accountSizeSelect.value === 'custom' 
+        ? parseFloat(DOM.customSizeInput?.value) || 0
+        : parseFloat(DOM.accountSizeSelect.value) || 0;
     
-    const percentage = parseFloat(profitTargetPercent.value) || 0;
+    const percentage = parseFloat(DOM.profitTargetPercent.value) || 0;
     const targetAmount = (accountSize * percentage / 100).toFixed(2);
     
     const targetAmountDisplay = document.getElementById('target-amount-display');
     if (targetAmountDisplay) targetAmountDisplay.textContent = targetAmount;
-}
-
-if (profitTargetPercent) profitTargetPercent.addEventListener('input', calculateTargetAmount);
-if (customSizeInput) customSizeInput.addEventListener('input', calculateTargetAmount);
-
-// Form submission
-if (addAccountForm) {
-    addAccountForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        if (!currentUser) {
-            alert('You must be logged in');
-            return;
-        }
-        
-        try {
-            const firmName = firmSelect.value === 'Other' ? customFirmInput.value : firmSelect.value;
-            const alias = document.getElementById('alias').value.trim();
-            const accountSize = accountSizeSelect.value === 'custom' ? parseFloat(customSizeInput.value) : parseFloat(accountSizeSelect.value);
-            const currentBalance = parseFloat(document.getElementById('current-balance').value);
-            const phase = document.getElementById('phase').value;
-            const maxDrawdown = parseFloat(document.getElementById('max-drawdown').value);
-            const dailyDrawdown = parseFloat(document.getElementById('daily-drawdown').value);
-            const platform = document.getElementById('platform').value;
-            
-            let profitTargetPercentValue, profitTargetAmount, profitShare;
-            
-            if (phase === 'Funded') {
-                profitShare = parseFloat(document.getElementById('profit-share').value) || 80;
-                profitTargetPercentValue = 0;
-                profitTargetAmount = 0;
-            } else {
-                profitTargetPercentValue = parseFloat(document.getElementById('profit-target-percent').value);
-                profitTargetAmount = (accountSize * profitTargetPercentValue / 100);
-                profitShare = 0;
-            }
-            
-            const accountData = {
-                userId: currentUser.uid,
-                firmName,
-                alias,
-                accountSize,
-                currentBalance,
-                phase,
-                profitTargetPercent: profitTargetPercentValue,
-                profitTargetAmount,
-                profitShare,
-                maxDrawdown,
-                dailyDrawdown,
-                platform,
-                status: 'active',
-                upgradedFrom: null,
-                upgradedTo: null,
-                createdAt: editingAccountId ? undefined : new Date(),
-                updatedAt: new Date()
-            };
-            
-            if (editingAccountId) {
-                delete accountData.createdAt;
-                await updateDoc(doc(db, 'accounts', editingAccountId), accountData);
-                console.log('Account updated successfully!');
-            } else {
-                const docRef = await addDoc(collection(db, 'accounts'), accountData);
-                console.log('Account added successfully!');
-
-                // Check if this is an upgrade
-                const submitBtn = document.querySelector('#add-account-form button[type="submit"]');
-                const upgradeFromId = submitBtn?.dataset.upgradeFrom;
-                
-                if (upgradeFromId) {
-                    // This is an upgrade - get old account data for logging
-                    try {
-                        const oldAccountDoc = await getDoc(doc(db, 'accounts', upgradeFromId));
-                        if (oldAccountDoc.exists()) {
-                            const oldAccountData = oldAccountDoc.data();
-                            
-                            // Log the upgrade activity
-                            await activityLogger.logAccountUpgraded(
-                                currentUser.uid,
-                                upgradeFromId,
-                                docRef.id,
-                                oldAccountData.phase,
-                                phase,
-                                firmName,
-                                alias
-                            );
-                            console.log('Upgrade activity logged successfully');
-                        }
-                    } catch (error) {
-                        console.error('Error logging upgrade activity:', error);
-                    }
-                    
-                    // Mark old account as upgraded
-                    await updateDoc(doc(db, 'accounts', upgradeFromId), {
-                        status: 'upgraded',
-                        upgradedTo: docRef.id,
-                        updatedAt: new Date()
-                    });
-                    
-                    // Link new account to old account
-                    await updateDoc(doc(db, 'accounts', docRef.id), {
-                        upgradedFrom: upgradeFromId
-                    });
-                    
-                    console.log('Old account marked as upgraded');
-                } else {
-                    // Regular account creation
-                    await activityLogger.logAccountCreated(currentUser.uid, {
-                        ...accountData,
-                        accountId: docRef.id
-                    });
-                }
-            }
-            
-            hideModal();
-            debouncedLoadAccounts();
-            
-        } catch (error) {
-            console.error('Error saving account:', error);
-            alert('Error saving account: ' + error.message);
-        }
-    });
-}
-
-async function loadAccounts() {
-    if (!currentUser) return;
-
-    if (loadAccountsTimeout) {
-        clearTimeout(loadAccountsTimeout);
-        loadAccountsTimeout = null;
-    }
-    
-    try {
-        const accountsList = document.getElementById('accounts-list');
-        if (accountsList) {
-            accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Loading accounts...</div>';
-        }
-
-        const q = query(
-            collection(db, 'accounts'),
-            where('userId', '==', currentUser.uid),
-            orderBy('createdAt', 'desc')
-        );
-        
-        const querySnapshot = await getDocs(q);
-        allAccounts = querySnapshot.docs;
-        
-        // PERFORMANCE: Early exit if no accounts
-        if (allAccounts.length === 0) {
-            displayAccounts([]);
-            setupFilters();
-            return;
-        }
-
-        console.log(`📊 Processing ${allAccounts.length} accounts for daily P&L`);
-        
-        // PERFORMANCE: Get current IST date once
-        const currentISTDate = dailyTracker.getCurrentISTDateString();
-        
-        // PERFORMANCE: Batch process with smart caching
-        const processedAccounts = await Promise.all(
-            allAccounts.map(async (docRef, index) => {
-                const accountId = docRef.id;
-                const accountData = docRef.data();
-                
-                try {
-                    // PERFORMANCE: Check cache first
-                    const cacheKey = `daily_pnl_${accountId}_${currentISTDate}`;
-                    const cached = sessionStorage.getItem(cacheKey);
-                    
-                    let dailyPnL = 0;
-                    let currentDailyDDLevel = accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100));
-                    
-                    if (cached) {
-                        // Use cached data
-                        const parsedCache = JSON.parse(cached);
-                        dailyPnL = parsedCache.dailyPnL;
-                        currentDailyDDLevel = parsedCache.currentDailyDDLevel;
-                    } else {
-                        // Calculate and cache
-                        try {
-                            dailyPnL = await dailyTracker.calculateDailyPnL(accountId, accountData.currentBalance);
-                            currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
-                                accountId,
-                                accountData.currentBalance,
-                                accountData.accountSize,
-                                accountData.dailyDrawdown
-                            );
-                            
-                            // Cache the results
-                            sessionStorage.setItem(cacheKey, JSON.stringify({
-                                dailyPnL,
-                                currentDailyDDLevel,
-                                timestamp: Date.now()
-                            }));
-                        } catch (error) {
-                            console.warn(`⚠️ Daily P&L calc failed for ${accountId}:`, error.message);
-                            // Use fallback values silently
-                        }
-                    }
-                    
-                    // PERFORMANCE: Create optimized account object
-                    return {
-                        id: accountId,
-                        data: () => ({
-                            ...accountData,
-                            _dailyPnL: dailyPnL,
-                            _currentDailyDDLevel: currentDailyDDLevel
-                        }),
-                        exists: docRef.exists,
-                        metadata: docRef.metadata,
-                        ref: docRef.ref
-                    };
-                    
-                } catch (error) {
-                    console.warn(`⚠️ Error processing ${accountId}:`, error.message);
-                    // Return fallback account
-                    return {
-                        id: accountId,
-                        data: () => ({
-                            ...accountData,
-                            _dailyPnL: 0,
-                            _currentDailyDDLevel: accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100))
-                        }),
-                        exists: docRef.exists,
-                        metadata: docRef.metadata,
-                        ref: docRef.ref
-                    };
-                }
-            })
-        );
-        
-        // Replace allAccounts with processed accounts
-        allAccounts = processedAccounts;
-        
-        console.log('✅ Daily P&L processing completed');
-        
-        // PERFORMANCE: Optimized sorting
-        allAccounts.sort((a, b) => {
-            const accountA = a.data();
-            const accountB = b.data();
-            
-            const phaseOrder = { 'Funded': 0, 'Challenge Phase 2': 1, 'Challenge Phase 1': 2 };
-            const orderA = phaseOrder[accountA.phase] ?? 3;
-            const orderB = phaseOrder[accountB.phase] ?? 3;
-            
-            return orderA !== orderB ? orderA - orderB : accountB.currentBalance - accountA.currentBalance;
-        });
-        
-        // PERFORMANCE: Update UI efficiently
-        const summaryStats = generateSummaryStatsOptimized(allAccounts);
-        displaySummaryStats(summaryStats);
-        displayAccounts(getFilteredAccounts());
-        setupFilters();
-        
-        // PERFORMANCE: Initialize compact view without blocking
-        requestAnimationFrame(() => {
-            if (typeof compactView !== 'undefined' && compactView.initialize) {
-                compactView.initialize(allAccounts, currentUser);
-            }
-        });
-        
-    } catch (error) {
-        console.error('❌ Error loading accounts:', error);
-        const accountsList = document.getElementById('accounts-list');
-        if (accountsList) {
-            accountsList.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #ff4757;">
-                    Error loading accounts. Please refresh the page.
-                    <br><br>
-                    <button onclick="retryLoadAccounts()" class="btn btn-primary">Retry</button>
-                </div>
-            `;
-        }
-    }
-}
-
-function renderCompactCardFixed(doc) {
-    const account = doc.data();
-    const accountId = doc.id;
-    
-    const firmInitials = account.firmName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
-    const displayName = account.alias ? `${account.alias}-${account.firmName}` : account.firmName;
-    
-    const currentPnL = account.currentBalance - account.accountSize;
-    const balanceClass = currentPnL >= 0 ? 'positive' : currentPnL < 0 ? 'negative' : '';
-    
-    // CRITICAL FIX: Properly extract daily P&L from account data
-    const dailyPnL = account._dailyPnL !== undefined ? account._dailyPnL : 0;
-    const dailyPnLClass = dailyPnL >= 0 ? 'positive' : dailyPnL < 0 ? 'negative' : '';
-    
-    console.log(`🎯 Compact view - Account ${accountId}: Daily P&L = ${dailyPnL}`);
-    
-    // Check if account can be upgraded
-    const canUpgrade = this.checkCanUpgrade(account);
-    
-    // Determine button type and action
-    let buttonHtml;
-    if (canUpgrade) {
-        buttonHtml = `<button class="compact-upgrade-btn" onclick="event.stopPropagation(); upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
-    } else {
-        buttonHtml = `<button class="compact-trade-btn">Trade</button>`;
-    }
-    
-    return `
-        <div class="compact-account-card" 
-             data-account-id="${accountId}"
-             data-current-balance="${account.currentBalance}"
-             data-firm-name="${account.firmName}">
-            
-            <div class="compact-header">
-                <div class="compact-firm-info">
-                    <div class="compact-firm-logo">${firmInitials}</div>
-                    <div class="compact-firm-name" title="${displayName}">${displayName}</div>
-                </div>
-                <div class="compact-daily-pnl ${dailyPnLClass}">
-                    ${dailyPnL >= 0 ? '+' : ''}${dailyPnL.toLocaleString()}
-                </div>
-            </div>
-            
-            <div class="compact-balance-row">
-                <div class="compact-balance ${balanceClass}">${account.currentBalance.toLocaleString()}</div>
-                ${buttonHtml}
-            </div>
-        </div>
-    `;
-}
-
-// Retry function for error handling
-window.retryLoadAccounts = function() {
-    const accountsList = document.getElementById('accounts-list');
-    if (accountsList) {
-        accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
-    }
-    loadAccounts();
-};
-
-async function calculateDailyPnLFixed(accountId, currentBalance) {
-    try {
-        await this.loadSnapshotsForAccount(accountId);
-        
-        const tradingDay = this.getTradingDay();
-        let todaySnapshot = this.dailySnapshots.find(
-            snapshot => snapshot.accountId === accountId && snapshot.date === tradingDay
-        );
-        
-        // If no snapshot for today, check if we need to create one
-        if (!todaySnapshot) {
-            console.log(`📝 No snapshot found for ${accountId} on ${tradingDay}`);
-            
-            // For accounts with trades, we should have a snapshot
-            // If missing, create one based on current balance
-            const shouldCreate = await this.shouldCreateSnapshot(accountId, currentBalance);
-            if (shouldCreate) {
-                console.log(`📝 Creating missing snapshot for ${accountId}`);
-                // This indicates the first activity of the day
-                return 0; // No P&L until we have a starting point
-            }
-            
-            return 0; // No trading activity today
-        }
-        
-        const dailyPnL = currentBalance - todaySnapshot.startingBalance;
-        console.log(`📊 Daily P&L for ${accountId}: ${dailyPnL} (Current: ${currentBalance}, Starting: ${todaySnapshot.startingBalance})`);
-        return dailyPnL;
-        
-    } catch (error) {
-        console.error('❌ Error calculating daily P&L:', error);
-        return 0;
-    }
-}
-
-// Retry function for error handling
-window.retryLoadAccounts = function() {
-    const accountsList = document.getElementById('accounts-list');
-    if (accountsList) {
-        accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
-    }
-    loadAccounts();
-};
-
-
-const dropdownFixCSS = `
-.profile-dropdown {
-    background: rgba(26, 26, 46, 0.95) !important;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff !important;
-}
-
-.dropdown-item {
-    color: #ccc !important;
-    background: transparent !important;
-}
-
-.dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #fff !important;
-}
-
-.profile-email {
-    color: #888 !important;
-}
-`;
-
-// Inject dropdown fix CSS
-if (!document.getElementById('dropdown-fix-css')) {
-    const style = document.createElement('style');
-    style.id = 'dropdown-fix-css';
-    style.textContent = dropdownFixCSS;
-    document.head.appendChild(style);
 }
 
 function generateSummaryStatsOptimized(accounts) {
@@ -985,12 +630,10 @@ function generateSummaryStatsOptimized(accounts) {
     return stats;
 }
 
-// 4. PERFORMANCE: Use this optimized displaySummaryStats function
 function displaySummaryStats(stats) {
     const summaryContainer = document.getElementById('summary-stats');
     if (!summaryContainer) return;
     
-    // PERFORMANCE: Build HTML string instead of DOM manipulation
     summaryContainer.innerHTML = `
         <div class="summary-card funded">
             <h3>Funded Accounts</h3>
@@ -1060,12 +703,10 @@ function displaySummaryStats(stats) {
     `;
 }
 
-// UPDATED: Setup filters with compact view integration
 function setupFilters() {
     const filterContainer = document.querySelector('.filter-pills');
     if (!filterContainer) return;
     
-    // PERFORMANCE: Only set up once, not on every load
     if (filterContainer.dataset.initialized) return;
     
     filterContainer.innerHTML = `
@@ -1087,7 +728,9 @@ function setupFilters() {
             currentFilter = pill.dataset.filter;
             
             displayAccounts(getFilteredAccounts());
-            compactView.updateAccounts(getFilteredAccounts());
+            if (compactView?.updateAccounts) {
+                compactView.updateAccounts(getFilteredAccounts());
+            }
         });
     });
     filterContainer.dataset.initialized = 'true';
@@ -1121,33 +764,27 @@ function getFilteredAccounts() {
     });
 }
 
-// FIXED progress bar calculation
 function calculateEnhancedProgress(account) {
     const currentPnL = account.currentBalance - account.accountSize;
     const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
     
-    // Define the range - FIXED to make center line the neutral point
-    const leftLimit = -maxDrawdownAmount; // e.g., -10k for 10% max DD
+    const leftLimit = -maxDrawdownAmount;
     let rightLimit;
     
     if (account.phase === 'Funded') {
-        rightLimit = account.accountSize * 0.2; // 20% for funded accounts
+        rightLimit = account.accountSize * 0.2;
     } else {
         rightLimit = account.profitTargetAmount || (account.accountSize * 0.1);
     }
     
-    // FIXED: Make the total range symmetrical around the starting balance (0 P&L)
-    // Use the larger of leftLimit or rightLimit to create equal ranges
     const maxRange = Math.max(Math.abs(leftLimit), Math.abs(rightLimit));
     const symmetricalLeft = -maxRange;
     const symmetricalRight = maxRange;
     const totalRange = symmetricalRight - symmetricalLeft;
     
-    // Calculate position - now the center (50%) represents starting balance
     const distanceFromLeft = currentPnL - symmetricalLeft;
     const progressPercent = Math.max(0, Math.min(100, (distanceFromLeft / totalRange) * 100));
     
-    // Determine color based on position
     let progressColor;
     if (currentPnL < 0) {
         progressColor = 'loss';
@@ -1157,7 +794,6 @@ function calculateEnhancedProgress(account) {
         progressColor = 'target';
     }
     
-    // Generate progress text
     let progressText;
     if (account.phase === 'Funded') {
         if (currentPnL >= 0) {
@@ -1180,17 +816,15 @@ function calculateEnhancedProgress(account) {
         progressPercent,
         progressColor,
         progressText,
-        leftLimit: symmetricalLeft,  // Use symmetrical range for display
+        leftLimit: symmetricalLeft,
         rightLimit: symmetricalRight,
         centerPoint: 0
     };
 }
 
-// Enhanced progress bar HTML with simplified scale (percentages only)
 function generateProgressBarHTML(account) {
     const progress = calculateEnhancedProgress(account);
     
-    // Calculate percentage labels
     const leftPercent = `-${account.maxDrawdown}%`;
     const rightPercent = account.phase === 'Funded' ? '+20%' : `+${account.profitTargetPercent || 10}%`;
     
@@ -1212,7 +846,6 @@ function generateProgressBarHTML(account) {
     `;
 }
 
-// Helper function to generate tooltip data
 function generateTooltipData(account, dailyPnL) {
     const totalPnL = account.currentBalance - account.accountSize;
     const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
@@ -1226,21 +859,20 @@ function generateTooltipData(account, dailyPnL) {
     }
 }
 
-// Enhanced displayAccounts function - UPDATED with compact view integration
 function displayAccounts(accounts) {
-    if (!accountsList) return;
+    if (!DOM.accountsList) return;
     
     // Update compact view efficiently
-    if (typeof compactView !== 'undefined' && compactView.updateAccounts) {
+    if (compactView?.updateAccounts) {
         compactView.updateAccounts(accounts);
     }
     
     // Handle compact view display
-    if (typeof compactView !== 'undefined' && compactView.isInCompactView && compactView.isInCompactView()) {
-        accountsList.style.display = 'none';
+    if (compactView?.isInCompactView && compactView.isInCompactView()) {
+        DOM.accountsList.style.display = 'none';
         return;
     } else {
-        accountsList.style.display = 'block';
+        DOM.accountsList.style.display = 'block';
     }
     
     if (accounts.length === 0) {
@@ -1253,7 +885,7 @@ function displayAccounts(accounts) {
             emptyMessage = 'No upgraded accounts yet.';
         }
         
-        accountsList.innerHTML = `
+        DOM.accountsList.innerHTML = `
             <div class="empty-state">
                 <h3>No accounts found</h3>
                 <p>${emptyMessage}</p>
@@ -1369,47 +1001,9 @@ function displayAccounts(accounts) {
         `;
     }).join('');
     
-    accountsList.innerHTML = `<div class="accounts-grid">${accountsHTML}</div>`;
+    DOM.accountsList.innerHTML = `<div class="accounts-grid">${accountsHTML}</div>`;
 }
 
-// PERFORMANCE: Clean up session cache periodically
-function cleanupSessionCache() {
-    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
-    const now = Date.now();
-    
-    for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && key.startsWith('daily_pnl_')) {
-            try {
-                const data = JSON.parse(sessionStorage.getItem(key));
-                if (data.timestamp && (now - data.timestamp) > maxAge) {
-                    sessionStorage.removeItem(key);
-                }
-            } catch (e) {
-                sessionStorage.removeItem(key);
-            }
-        }
-    }
-}
-
-// Call cleanup on page load
-cleanupSessionCache();
-
-// Retry function
-window.retryLoadAccounts = function() {
-    const accountsList = document.getElementById('accounts-list');
-    if (accountsList) {
-        accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
-    }
-    loadAccounts();
-};
-
-// Add this function to handle account card clicks
-window.openAccountDashboard = function(accountId) {
-    window.location.href = `pages/account-dashboard.html?id=${accountId}`;
-}
-
-// Update the getBottomRowHtml function to prevent event bubbling
 function getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml) {
     if (account.status === 'breached' || isBreached) {
         return `
@@ -1450,6 +1044,247 @@ function getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml) {
     }
 }
 
+// OPTIMIZED: Event listeners setup with null checks
+function setupEventListeners() {
+    // Navigation
+    DOM.profileBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        DOM.profileDropdown?.classList.toggle('show');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (DOM.profileBtn && DOM.profileDropdown && 
+            !DOM.profileBtn.contains(e.target) && 
+            !DOM.profileDropdown.contains(e.target)) {
+            DOM.profileDropdown.classList.remove('show');
+        }
+    });
+
+    DOM.settingsBtn?.addEventListener('click', () => {
+        DOM.profileDropdown?.classList.remove('show');
+        window.location.href = 'pages/settings.html';
+    });
+
+    DOM.helpBtn?.addEventListener('click', () => {
+        DOM.profileDropdown?.classList.remove('show');
+        alert('Help & Support coming soon!');
+    });
+
+    DOM.logoutBtn?.addEventListener('click', () => {
+        signOut(auth).then(() => console.log('Logout successful'));
+    });
+
+    // Trade form with enhanced error handling
+    DOM.tradeForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!currentUser) {
+            alert('You must be logged in');
+            return;
+        }
+        
+        try {
+            const accountId = document.getElementById('trade-account-id')?.value;
+            const oldBalance = parseFloat(document.getElementById('trade-old-balance')?.value);
+            const newBalance = parseFloat(document.getElementById('trade-new-balance')?.value);
+            const instrument = document.getElementById('trade-instrument')?.value.trim();
+            const tradeType = document.getElementById('trade-type')?.value;
+            const notes = document.getElementById('trade-notes')?.value.trim();
+            
+            if (!newBalance || newBalance < 0) {
+                alert('Please enter a valid new balance');
+                return;
+            }
+            
+            // CRITICAL: Cache invalidation before trade
+            SmartCache.invalidateCache(accountId);
+            
+            // Update daily tracking
+            const accountDoc = await getDoc(doc(db, 'accounts', accountId));
+            if (accountDoc.exists()) {
+                const accountData = accountDoc.data();
+                await dailyTracker.updateSnapshotForTrade(
+                    accountId, newBalance, accountData.accountSize, accountData.dailyDrawdown
+                );
+            }
+            
+            const tradeData = {
+                accountId, oldBalance, newBalance,
+                timestamp: new Date(),
+                instrument: instrument || null,
+                tradeType: tradeType || null,
+                notes: notes || null
+            };
+            
+            const result = await tradeManager.addTrade(tradeData);
+            
+            if (result.success) {
+                SmartCache.incrementTradeCount(accountId);
+                await activityLogger.logTradeAdded(currentUser.uid, tradeData);
+                hideTradeModal();
+                debouncedLoadAccounts();
+            } else {
+                alert('Error adding trade: ' + result.error);
+            }
+            
+        } catch (error) {
+            console.error('Error adding trade:', error);
+            alert('Error adding trade: ' + error.message);
+        }
+    });
+
+    // Modal events
+    DOM.addAccountBtn?.addEventListener('click', () => {
+        resetModal();
+        if (DOM.addAccountModal) DOM.addAccountModal.style.display = 'block';
+    });
+
+    DOM.closeModal?.addEventListener('click', hideModal);
+    DOM.cancelBtn?.addEventListener('click', hideModal);
+
+    // Trade modal close handlers
+    document.querySelector('#trade-modal .close')?.addEventListener('click', hideTradeModal);
+    document.getElementById('trade-cancel-btn')?.addEventListener('click', hideTradeModal);
+
+    // Form logic
+    DOM.firmSelect?.addEventListener('change', (e) => {
+        handleFirmSelection(e.target.value);
+    });
+
+    DOM.phaseSelect?.addEventListener('change', (e) => {
+        handlePhaseSelection(e.target.value);
+    });
+
+    DOM.accountSizeSelect?.addEventListener('change', (e) => {
+        handleAccountSizeSelection(e.target.value);
+    });
+
+    DOM.profitTargetPercent?.addEventListener('input', calculateTargetAmount);
+    DOM.customSizeInput?.addEventListener('input', calculateTargetAmount);
+
+    // Form submission
+    DOM.addAccountForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!currentUser) {
+            alert('You must be logged in');
+            return;
+        }
+        
+        try {
+            const firmName = DOM.firmSelect.value === 'Other' ? DOM.customFirmInput.value : DOM.firmSelect.value;
+            const alias = document.getElementById('alias').value.trim();
+            const accountSize = DOM.accountSizeSelect.value === 'custom' ? parseFloat(DOM.customSizeInput.value) : parseFloat(DOM.accountSizeSelect.value);
+            const currentBalance = parseFloat(document.getElementById('current-balance').value);
+            const phase = document.getElementById('phase').value;
+            const maxDrawdown = parseFloat(document.getElementById('max-drawdown').value);
+            const dailyDrawdown = parseFloat(document.getElementById('daily-drawdown').value);
+            const platform = document.getElementById('platform').value;
+            
+            let profitTargetPercentValue, profitTargetAmount, profitShare;
+            
+            if (phase === 'Funded') {
+                profitShare = parseFloat(document.getElementById('profit-share').value) || 80;
+                profitTargetPercentValue = 0;
+                profitTargetAmount = 0;
+            } else {
+                profitTargetPercentValue = parseFloat(document.getElementById('profit-target-percent').value);
+                profitTargetAmount = (accountSize * profitTargetPercentValue / 100);
+                profitShare = 0;
+            }
+            
+            const accountData = {
+                userId: currentUser.uid,
+                firmName,
+                alias,
+                accountSize,
+                currentBalance,
+                phase,
+                profitTargetPercent: profitTargetPercentValue,
+                profitTargetAmount,
+                profitShare,
+                maxDrawdown,
+                dailyDrawdown,
+                platform,
+                status: 'active',
+                upgradedFrom: null,
+                upgradedTo: null,
+                createdAt: editingAccountId ? undefined : new Date(),
+                updatedAt: new Date()
+            };
+            
+            if (editingAccountId) {
+                delete accountData.createdAt;
+                await updateDoc(doc(db, 'accounts', editingAccountId), accountData);
+                console.log('Account updated successfully!');
+            } else {
+                const docRef = await addDoc(collection(db, 'accounts'), accountData);
+                console.log('Account added successfully!');
+
+                // Check if this is an upgrade
+                const submitBtn = document.querySelector('#add-account-form button[type="submit"]');
+                const upgradeFromId = submitBtn?.dataset.upgradeFrom;
+                
+                if (upgradeFromId) {
+                    // This is an upgrade - get old account data for logging
+                    try {
+                        const oldAccountDoc = await getDoc(doc(db, 'accounts', upgradeFromId));
+                        if (oldAccountDoc.exists()) {
+                            const oldAccountData = oldAccountDoc.data();
+                            
+                            // Log the upgrade activity
+                            await activityLogger.logAccountUpgraded(
+                                currentUser.uid,
+                                upgradeFromId,
+                                docRef.id,
+                                oldAccountData.phase,
+                                phase,
+                                firmName,
+                                alias
+                            );
+                            console.log('Upgrade activity logged successfully');
+                        }
+                    } catch (error) {
+                        console.error('Error logging upgrade activity:', error);
+                    }
+                    
+                    // Mark old account as upgraded
+                    await updateDoc(doc(db, 'accounts', upgradeFromId), {
+                        status: 'upgraded',
+                        upgradedTo: docRef.id,
+                        updatedAt: new Date()
+                    });
+                    
+                    // Link new account to old account
+                    await updateDoc(doc(db, 'accounts', docRef.id), {
+                        upgradedFrom: upgradeFromId
+                    });
+                    
+                    console.log('Old account marked as upgraded');
+                } else {
+                    // Regular account creation
+                    await activityLogger.logAccountCreated(currentUser.uid, {
+                        ...accountData,
+                        accountId: docRef.id
+                    });
+                }
+            }
+            
+            hideModal();
+            debouncedLoadAccounts();
+            
+        } catch (error) {
+            console.error('Error saving account:', error);
+            alert('Error saving account: ' + error.message);
+        }
+    });
+
+    // Window click handler
+    window.addEventListener('click', (e) => {
+        if (e.target === DOM.addAccountModal) hideModal();
+    });
+}
+
 // Global functions for buttons
 window.editAccount = async function(accountId) {
     try {
@@ -1470,22 +1305,22 @@ window.editAccount = async function(accountId) {
         
         editingAccountId = accountId;
         
-        addAccountModal.style.display = 'block';
+        DOM.addAccountModal.style.display = 'block';
         document.querySelector('#add-account-modal h2').textContent = 'Edit Account';
         document.querySelector('#add-account-form button[type="submit"]').textContent = 'Update Account';
         
         const firmNameCleaned = account.firmName;
         
-        firmSelect.innerHTML = `<option value="${firmNameCleaned}" selected>${firmNameCleaned}</option>`;
-        firmSelect.disabled = true;
+        DOM.firmSelect.innerHTML = `<option value="${firmNameCleaned}" selected>${firmNameCleaned}</option>`;
+        DOM.firmSelect.disabled = true;
         
         if ([5000, 10000, 25000, 50000, 100000, 200000].includes(account.accountSize)) {
-            accountSizeSelect.value = account.accountSize.toString();
+            DOM.accountSizeSelect.value = account.accountSize.toString();
         } else {
-            accountSizeSelect.value = 'custom';
-            customSizeGroup.style.display = 'block';
-            customSizeInput.value = account.accountSize;
-            customSizeInput.setAttribute('required', 'required');
+            DOM.accountSizeSelect.value = 'custom';
+            DOM.customSizeGroup.style.display = 'block';
+            DOM.customSizeInput.value = account.accountSize;
+            DOM.customSizeInput.setAttribute('required', 'required');
         }
         
         document.getElementById('current-balance').value = account.currentBalance;
@@ -1496,16 +1331,16 @@ window.editAccount = async function(accountId) {
         document.getElementById('platform').value = account.platform;
         
         if (account.phase === 'Funded') {
-            profitTargetGroup.style.display = 'none';
-            profitShareGroup.style.display = 'block';
+            DOM.profitTargetGroup.style.display = 'none';
+            DOM.profitShareGroup.style.display = 'block';
             document.getElementById('profit-share').value = account.profitShare || 80;
             document.getElementById('profit-share').setAttribute('required', 'required');
-            profitTargetPercent.removeAttribute('required');
+            DOM.profitTargetPercent.removeAttribute('required');
         } else {
-            profitTargetGroup.style.display = 'block';
-            profitShareGroup.style.display = 'none';
+            DOM.profitTargetGroup.style.display = 'block';
+            DOM.profitShareGroup.style.display = 'none';
             document.getElementById('profit-target-percent').value = account.profitTargetPercent;
-            profitTargetPercent.setAttribute('required', 'required');
+            DOM.profitTargetPercent.setAttribute('required', 'required');
             document.getElementById('profit-share').removeAttribute('required');
             calculateTargetAmount();
         }
@@ -1567,16 +1402,16 @@ window.deleteAccount = async function(accountId) {
 
 window.upgradeAccount = async function(accountId, firmName, accountSize, currentPhase) {
     resetModal();
-    addAccountModal.style.display = 'block';
+    DOM.addAccountModal.style.display = 'block';
     
     document.querySelector('#add-account-modal h2').textContent = 'Upgrade to Next Phase';
     
-    firmSelect.value = firmName;
-    if (propFirmTemplates[firmName]) {
+    DOM.firmSelect.value = firmName;
+    if (PROP_FIRM_TEMPLATES[firmName]) {
         applyTemplate(firmName);
     }
     
-    accountSizeSelect.value = accountSize.toString();
+    DOM.accountSizeSelect.value = accountSize.toString();
     document.getElementById('current-balance').value = accountSize;
     
     let nextPhase;
@@ -1588,11 +1423,11 @@ window.upgradeAccount = async function(accountId, firmName, accountSize, current
         nextPhase = 'Funded';
     }
     
-    phaseSelect.value = nextPhase;
-    phaseSelect.dispatchEvent(new Event('change'));
+    DOM.phaseSelect.value = nextPhase;
+    DOM.phaseSelect.dispatchEvent(new Event('change'));
     
-    if (propFirmTemplates[firmName]) {
-        updateProfitTargetFromTemplate(propFirmTemplates[firmName]);
+    if (PROP_FIRM_TEMPLATES[firmName]) {
+        updateProfitTargetFromTemplate(PROP_FIRM_TEMPLATES[firmName]);
         calculateTargetAmount();
     }
     
@@ -1601,7 +1436,6 @@ window.upgradeAccount = async function(accountId, firmName, accountSize, current
     submitBtn.dataset.upgradeFrom = accountId;
 };
 
-// Add this to your app.js - Updated requestPayout function
 window.requestPayout = async function(accountId) {
     try {
         const accountDoc = await getDoc(doc(db, 'accounts', accountId));
@@ -1630,8 +1464,84 @@ window.requestPayout = async function(accountId) {
     }
 };
 
-// Add this CSS at the bottom of your app.js (before the console.log):
-const payoutButtonCSS = `
+// Add this function to handle account card clicks
+window.openAccountDashboard = function(accountId) {
+    window.location.href = `pages/account-dashboard.html?id=${accountId}`;
+}
+
+// PRODUCTION: Clean session cache on startup
+function cleanupSessionCache() {
+    try {
+        const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+        const now = Date.now();
+        
+        const keysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key?.startsWith('daily_pnl_')) {
+                try {
+                    const data = JSON.parse(sessionStorage.getItem(key));
+                    if (data.timestamp && (now - data.timestamp) > maxAge) {
+                        keysToRemove.push(key);
+                    }
+                } catch (e) {
+                    keysToRemove.push(key);
+                }
+            }
+        }
+        
+        keysToRemove.forEach(key => sessionStorage.removeItem(key));
+    } catch (error) {
+        console.warn('Session cleanup failed:', error);
+    }
+}
+
+// Initialize application
+function initializeApp() {
+    try {
+        setupEventListeners();
+        cleanupSessionCache();
+        
+        // Add utility functions to window for debugging (only in development)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.clearDailyPnLCache = () => {
+                SmartCache.invalidateAllCache();
+                debouncedLoadAccounts();
+            };
+            window.SmartCache = SmartCache;
+        }
+        
+        console.log('PropOne initialized successfully');
+    } catch (error) {
+        console.error('App initialization failed:', error);
+    }
+}
+
+// Inject CSS for dropdown fixes and payout button
+const appCSS = `
+/* Profile dropdown fixes */
+.profile-dropdown {
+    background: rgba(26, 26, 46, 0.95) !important;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff !important;
+}
+
+.dropdown-item {
+    color: #ccc !important;
+    background: transparent !important;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+}
+
+.profile-email {
+    color: #888 !important;
+}
+
+/* Payout button styling */
 .payout-btn {
     background: linear-gradient(45deg, #f39c12 0%, #e74c3c 100%);
     color: white;
@@ -1644,12 +1554,25 @@ const payoutButtonCSS = `
 }
 `;
 
-// Inject payout button CSS
-if (!document.getElementById('payout-btn-css')) {
+// Inject CSS if not already present
+if (!document.getElementById('app-css-fixes')) {
     const style = document.createElement('style');
-    style.id = 'payout-btn-css';
-    style.textContent = payoutButtonCSS;
+    style.id = 'app-css-fixes';
+    style.textContent = appCSS;
     document.head.appendChild(style);
 }
 
-console.log('Enhanced app with compact view initialized');
+// Start the application
+initializeApp();
+
+// Make essential functions global
+window.showTradeModal = showTradeModal;
+window.hideTradeModal = hideTradeModal;
+window.retryLoadAccounts = () => {
+    if (DOM.accountsList) {
+        DOM.accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
+    }
+    loadAccounts();
+};
+
+console.log('Enhanced PropOne app with compact view initialized');
