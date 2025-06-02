@@ -257,7 +257,7 @@
     gap: 8px;
 }
 
-/* COMPLETELY FIXED Activity Items */
+/* COMPLETELY FIXED Activity Items with Clickable Support */
 .activity-item {
     display: flex;
     align-items: center;
@@ -275,6 +275,33 @@
     background: rgba(255, 255, 255, 0.06) !important;
     border-color: rgba(255, 255, 255, 0.1);
     transform: translateY(-1px);
+}
+
+/* Enhanced hover effects for clickable items */
+.activity-item.clickable {
+    cursor: pointer;
+}
+
+.activity-item.clickable:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(102, 126, 234, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.activity-item.clickable:hover .activity-title {
+    color: #667eea !important;
+}
+
+.activity-item.clickable:hover .activity-icon {
+    transform: scale(1.1);
+    background: rgba(102, 126, 234, 0.2);
+}
+
+/* Click feedback */
+.activity-item.clickable:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Color accent lines - FIXED */
@@ -308,6 +335,7 @@
     background: rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
 /* Content area - COMPLETELY FIXED */
@@ -335,6 +363,7 @@
     line-height: 1.3 !important;
     opacity: 1 !important;
     display: block !important;
+    transition: color 0.3s ease;
 }
 
 .activity-description {
@@ -403,6 +432,24 @@
 .activity-feed .activity-item * {
     color: inherit !important;
     opacity: 1 !important;
+}
+
+/* Tooltip for clickable items */
+.activity-item.clickable::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
+    background: #667eea;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.activity-item.clickable:hover::after {
+    opacity: 1;
 }
 
 /* Responsive Design */

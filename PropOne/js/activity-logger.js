@@ -1,4 +1,4 @@
-// activity-logger.js - FIXED HTML generation
+// activity-logger.js - FIXED HTML generation with clickable activities
 import { db } from './firebase-config.js';
 import {
     collection,
@@ -153,7 +153,7 @@ class ActivityLogger {
             minute: '2-digit'
         });
 
-        let icon, title, description, color;
+        let icon, title, description, color, accountId;
 
         switch (activity.type) {
             case 'account_created':
@@ -161,6 +161,7 @@ class ActivityLogger {
                 color = 'blue';
                 title = 'Account Created';
                 description = `${activity.data.firmName}${activity.data.alias ? ` (${activity.data.alias})` : ''} • ${activity.data.phase} • $${activity.data.accountSize.toLocaleString()}`;
+                accountId = activity.data.accountId;
                 break;
 
             case 'account_edited':
@@ -171,6 +172,7 @@ class ActivityLogger {
                 if (activity.data.changes.balance) {
                     description += ` • Balance: $${activity.data.changes.balance.to.toLocaleString()}`;
                 }
+                accountId = activity.data.accountId;
                 break;
 
             case 'trade_added':
@@ -182,6 +184,7 @@ class ActivityLogger {
                     description += ` (${activity.data.instrument})`;
                 }
                 description += ` • Balance: $${activity.data.newBalance.toLocaleString()}`;
+                accountId = activity.data.accountId;
                 break;
 
             case 'account_upgraded':
@@ -189,6 +192,8 @@ class ActivityLogger {
                 color = 'purple';
                 title = 'Account Upgraded';
                 description = `${activity.data.firmName}${activity.data.alias ? ` (${activity.data.alias})` : ''} • ${activity.data.fromPhase} → ${activity.data.toPhase}`;
+                // For upgrades, link to the new account
+                accountId = activity.data.newAccountId;
                 break;
 
             case 'payout_requested':
@@ -196,6 +201,7 @@ class ActivityLogger {
                 color = 'gold';
                 title = 'Payout Requested';
                 description = `${activity.data.firmName}${activity.data.alias ? ` (${activity.data.alias})` : ''} • $${activity.data.payoutAmount.toLocaleString()} payout`;
+                accountId = activity.data.accountId;
                 break;
 
             case 'account_status_changed':
@@ -203,6 +209,7 @@ class ActivityLogger {
                 color = activity.data.toStatus === 'breached' ? 'red' : 'gray';
                 title = 'Status Changed';
                 description = `${activity.data.firmName}${activity.data.alias ? ` (${activity.data.alias})` : ''} • ${activity.data.fromStatus} → ${activity.data.toStatus}`;
+                accountId = activity.data.accountId;
                 break;
 
             default:
@@ -210,6 +217,7 @@ class ActivityLogger {
                 color = 'gray';
                 title = 'Activity';
                 description = activity.type;
+                accountId = activity.data.accountId;
         }
 
         return {
@@ -218,11 +226,12 @@ class ActivityLogger {
             description,
             timeStr,
             color,
-            timestamp
+            timestamp,
+            accountId // Include accountId for navigation
         };
     }
 
-    // FIXED: Generate activity feed HTML with correct structure
+    // ENHANCED: Generate activity feed HTML with clickable items
     generateActivityFeedHTML(activities, limit = 10) {
         if (!activities || activities.length === 0) {
             return `
@@ -237,8 +246,17 @@ class ActivityLogger {
         return displayActivities.map(activity => {
             const display = this.getActivityDisplayInfo(activity);
             
+            // Determine if item should be clickable
+            const isClickable = display.accountId && display.accountId !== 'unknown';
+            const clickableClass = isClickable ? 'clickable' : '';
+            const clickHandler = isClickable ? `onclick="navigateToAccount('${display.accountId}')"` : '';
+            const cursorStyle = isClickable ? 'cursor: pointer;' : '';
+            
             return `
-                <div class="activity-item ${display.color}">
+                <div class="activity-item ${display.color} ${clickableClass}" 
+                     ${clickHandler} 
+                     style="${cursorStyle}" 
+                     title="${isClickable ? 'Click to view account details' : ''}">
                     <div class="activity-icon">${display.icon}</div>
                     <div class="activity-content-area">
                         <div class="activity-main-info">
@@ -271,6 +289,25 @@ class ActivityLogger {
         return summary;
     }
 }
+
+// Global function for navigation (will be called from HTML onclick)
+window.navigateToAccount = function(accountId) {
+    if (accountId && accountId !== 'unknown') {
+        // Check if we're already on an account page to avoid nested navigation
+        const currentPath = window.location.pathname;
+        
+        if (currentPath.includes('account-dashboard.html')) {
+            // We're already on an account page, just change the ID parameter
+            window.location.href = `account-dashboard.html?id=${accountId}`;
+        } else if (currentPath.includes('/pages/')) {
+            // We're in the pages directory (like activity.html)
+            window.location.href = `account-dashboard.html?id=${accountId}`;
+        } else {
+            // We're in the root directory
+            window.location.href = `pages/account-dashboard.html?id=${accountId}`;
+        }
+    }
+};
 
 // Create and export singleton instance
 const activityLogger = new ActivityLogger();
