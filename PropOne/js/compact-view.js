@@ -1,4 +1,4 @@
-// Compact View Module - compact-view.js
+// PERFORMANCE OPTIMIZED Compact View Module
 import { db } from './firebase-config.js';
 import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
@@ -7,60 +7,60 @@ class CompactView {
         this.isCompactView = false;
         this.accounts = [];
         this.currentUser = null;
+        this.lastRenderHash = null; // PERFORMANCE: Track if re-render is needed
         this.initializeEventListeners();
         this.loadViewPreference();
     }
 
-    // Initialize event listeners
+    // PERFORMANCE: Optimized event listeners
     initializeEventListeners() {
-        // View toggle button will be added by main app
+        // Use event delegation for better performance
         document.addEventListener('click', (e) => {
             if (e.target.closest('.view-toggle-btn')) {
                 this.toggleView();
+                return;
             }
             
-            if (e.target.closest('.compact-account-card')) {
-                const card = e.target.closest('.compact-account-card');
-                // Don't navigate if trade button was clicked
-                if (!e.target.closest('.compact-trade-btn')) {
-                    const accountId = card.dataset.accountId;
+            const compactCard = e.target.closest('.compact-account-card');
+            if (compactCard) {
+                if (e.target.closest('.compact-trade-btn') || e.target.closest('.compact-upgrade-btn')) {
+                    e.stopPropagation();
+                    this.handleButtonClick(e, compactCard);
+                } else {
+                    const accountId = compactCard.dataset.accountId;
                     if (accountId) {
                         this.openAccountDashboard(accountId);
                     }
                 }
             }
-            
-            if (e.target.closest('.compact-trade-btn')) {
-                e.stopPropagation();
-                const card = e.target.closest('.compact-account-card');
-                const accountId = card.dataset.accountId;
-                const currentBalance = parseFloat(card.dataset.currentBalance);
-                const firmName = card.dataset.firmName;
-                
-                if (typeof window.showTradeModal === 'function') {
-                    window.showTradeModal(accountId, currentBalance, firmName);
-                }
-            }
         });
     }
 
-    // Load user's view preference - Default to grid view
-    loadViewPreference() {
-        const saved = localStorage.getItem('propone-view-preference');
-        if (saved === 'normal') {
-            this.isCompactView = false;
-        } else {
-            // Default to grid view (compact)
-            this.isCompactView = true;
+    // PERFORMANCE: Handle button clicks efficiently
+    handleButtonClick(e, card) {
+        const accountId = card.dataset.accountId;
+        const currentBalance = parseFloat(card.dataset.currentBalance);
+        const firmName = card.dataset.firmName;
+        
+        if (e.target.closest('.compact-trade-btn') && typeof window.showTradeModal === 'function') {
+            window.showTradeModal(accountId, currentBalance, firmName);
+        } else if (e.target.closest('.compact-upgrade-btn')) {
+            const account = this.accounts.find(doc => doc.id === accountId)?.data();
+            if (account && typeof window.upgradeAccount === 'function') {
+                window.upgradeAccount(accountId, account.firmName, account.accountSize, account.phase);
+            }
         }
     }
 
-    // Save user's view preference
+    loadViewPreference() {
+        const saved = localStorage.getItem('propone-view-preference');
+        this.isCompactView = saved !== 'normal'; // Default to compact
+    }
+
     saveViewPreference() {
         localStorage.setItem('propone-view-preference', this.isCompactView ? 'compact' : 'normal');
     }
 
-    // Create view toggle button
     createViewToggleButton() {
         const toggleContainer = document.createElement('div');
         toggleContainer.className = 'view-toggle';
@@ -78,7 +78,6 @@ class CompactView {
         return toggleContainer;
     }
 
-    // Toggle between normal and compact view
     toggleView() {
         this.isCompactView = !this.isCompactView;
         this.saveViewPreference();
@@ -86,31 +85,24 @@ class CompactView {
         this.switchViewDisplay();
     }
 
-    // Update toggle button appearance
     updateViewToggleButton() {
         const toggleBtn = document.querySelector('.view-toggle-btn');
         if (toggleBtn) {
-            if (this.isCompactView) {
-                toggleBtn.classList.add('active');
-                toggleBtn.innerHTML = `
-                    <svg class="view-toggle-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
-                    </svg>
-                    List View
-                `;
-            } else {
-                toggleBtn.classList.remove('active');
-                toggleBtn.innerHTML = `
-                    <svg class="view-toggle-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 3h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6zM3 11h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6z"/>
-                    </svg>
-                    Grid View
-                `;
-            }
+            toggleBtn.className = `view-toggle-btn ${this.isCompactView ? 'active' : ''}`;
+            toggleBtn.innerHTML = this.isCompactView ? `
+                <svg class="view-toggle-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                </svg>
+                List View
+            ` : `
+                <svg class="view-toggle-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 3h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6zM3 11h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6z"/>
+                </svg>
+                Grid View
+            `;
         }
     }
 
-    // Switch between view displays
     switchViewDisplay() {
         const normalContainer = document.getElementById('accounts-list');
         const compactContainer = document.querySelector('.compact-accounts-container');
@@ -129,12 +121,10 @@ class CompactView {
         }
     }
 
-    // Create compact container
     createCompactContainer() {
         const container = document.createElement('div');
         container.className = 'compact-accounts-container active';
         
-        // Add after the accounts list
         const accountsList = document.getElementById('accounts-list');
         if (accountsList) {
             accountsList.parentNode.insertBefore(container, accountsList.nextSibling);
@@ -142,35 +132,45 @@ class CompactView {
         }
     }
 
-    // Set accounts data with proper initialization
-    setAccounts(accounts, currentUser) {
-        this.accounts = accounts;
-        this.currentUser = currentUser;
+    // PERFORMANCE: Check if re-render is needed
+    shouldRerender(accounts) {
+        const currentHash = JSON.stringify(accounts.map(doc => ({
+            id: doc.id,
+            balance: doc.data().currentBalance,
+            dailyPnL: doc.data()._dailyPnL,
+            phase: doc.data().phase,
+            status: doc.data().status
+        })));
         
-        // Always render compact view if it's active, regardless of when called
-        if (this.isCompactView) {
-            // Small delay to ensure DOM is ready
-            setTimeout(() => {
-                this.renderCompactView();
-            }, 100);
+        if (currentHash === this.lastRenderHash) {
+            return false;
         }
+        
+        this.lastRenderHash = currentHash;
+        return true;
     }
 
-    // Filter active accounts only
+    // PERFORMANCE: Filter active accounts efficiently
     getActiveAccounts() {
         return this.accounts.filter(doc => {
             const account = doc.data();
+            if (account.status !== 'active') return false;
+            
             const currentPnL = account.currentBalance - account.accountSize;
             const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-            const isBreached = currentPnL < -maxDrawdownAmount;
-            return account.status === 'active' && !isBreached;
+            return currentPnL >= -maxDrawdownAmount;
         });
     }
 
-    // Render compact view
+    // PERFORMANCE: Optimized render function
     renderCompactView() {
         const container = document.querySelector('.compact-accounts-container');
         if (!container) return;
+
+        // Check if re-render is needed
+        if (!this.shouldRerender(this.accounts)) {
+            return;
+        }
 
         const activeAccounts = this.getActiveAccounts();
         
@@ -179,15 +179,13 @@ class CompactView {
             return;
         }
 
-        // Group accounts by phase
+        // PERFORMANCE: Group accounts efficiently
         const groupedAccounts = this.groupAccountsByPhase(activeAccounts);
-        
         const sectionsHtml = this.renderPhaseGroups(groupedAccounts);
         
         container.innerHTML = sectionsHtml;
     }
 
-    // Group accounts by phase
     groupAccountsByPhase(accounts) {
         const groups = {
             'Funded': [],
@@ -196,16 +194,15 @@ class CompactView {
         };
 
         accounts.forEach(doc => {
-            const account = doc.data();
-            if (groups[account.phase]) {
-                groups[account.phase].push(doc);
+            const phase = doc.data().phase;
+            if (groups[phase]) {
+                groups[phase].push(doc);
             }
         });
 
         return groups;
     }
 
-    // Render phase groups
     renderPhaseGroups(groupedAccounts) {
         const phaseOrder = ['Funded', 'Challenge Phase 2', 'Challenge Phase 1'];
         const phaseDisplayNames = {
@@ -234,26 +231,7 @@ class CompactView {
         }).join('');
     }
 
-    // Render compact header
-    renderCompactHeader(accountCount) {
-        return `
-            <div class="compact-view-header">
-                <h3 class="compact-view-title">Active Accounts Overview</h3>
-                <div class="compact-view-stats">
-                    <div class="compact-stat">
-                        <span>Total:</span>
-                        <span class="compact-stat-value">${accountCount}</span>
-                    </div>
-                    <div class="compact-stat">
-                        <span>View:</span>
-                        <span class="compact-stat-value">Grid Mode</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // Render compact card (updated without phase badge, with daily P&L and upgrade logic)
+    // PERFORMANCE: Optimized card rendering
     renderCompactCard(doc) {
         const account = doc.data();
         const accountId = doc.id;
@@ -262,22 +240,16 @@ class CompactView {
         const displayName = account.alias ? `${account.alias}-${account.firmName}` : account.firmName;
         
         const currentPnL = account.currentBalance - account.accountSize;
-        const balanceClass = currentPnL >= 0 ? 'positive' : currentPnL < 0 ? 'negative' : '';
+        const balanceClass = currentPnL >= 0 ? 'positive' : (currentPnL < 0 ? 'negative' : '');
         
-        // Get daily P&L (assuming it's stored in account._dailyPnL)
         const dailyPnL = account._dailyPnL || 0;
-        const dailyPnLClass = dailyPnL >= 0 ? 'positive' : dailyPnL < 0 ? 'negative' : '';
+        const dailyPnLClass = dailyPnL >= 0 ? 'positive' : (dailyPnL < 0 ? 'negative' : '');
         
-        // Check if account can be upgraded (reached profit target)
         const canUpgrade = this.checkCanUpgrade(account);
         
-        // Determine button type and action
-        let buttonHtml;
-        if (canUpgrade) {
-            buttonHtml = `<button class="compact-upgrade-btn" onclick="event.stopPropagation(); upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
-        } else {
-            buttonHtml = `<button class="compact-trade-btn">Trade</button>`;
-        }
+        const buttonHtml = canUpgrade ? 
+            `<button class="compact-upgrade-btn">Upgrade</button>` :
+            `<button class="compact-trade-btn">Trade</button>`;
         
         return `
             <div class="compact-account-card" 
@@ -303,22 +275,15 @@ class CompactView {
         `;
     }
 
-    // Check if account can be upgraded
     checkCanUpgrade(account) {
-        if (account.phase === 'Funded') return false; // Already funded
-        if (account.status !== 'active') return false; // Must be active
+        if (account.phase === 'Funded' || account.status !== 'active') return false;
         
         const currentPnL = account.currentBalance - account.accountSize;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-        const isBreached = currentPnL < -maxDrawdownAmount;
         
-        if (isBreached) return false; // Can't upgrade if breached
-        
-        // Check if reached profit target
-        return currentPnL >= (account.profitTargetAmount || 0);
+        return currentPnL >= -maxDrawdownAmount && currentPnL >= (account.profitTargetAmount || 0);
     }
 
-    // Render empty state
     renderEmptyState() {
         return `
             <div class="compact-empty-state">
@@ -329,38 +294,29 @@ class CompactView {
         `;
     }
 
-    // Open account dashboard
     openAccountDashboard(accountId) {
         window.location.href = `pages/account-dashboard.html?id=${accountId}`;
     }
 
-    // Get current view state
     isInCompactView() {
         return this.isCompactView;
     }
 
-    // Force refresh compact view
-    refresh() {
-        if (this.isCompactView) {
-            this.renderCompactView();
-        }
-    }
-
-    // Initialize with existing accounts (called from main app)
     initialize(accounts, currentUser) {
         this.accounts = accounts;
         this.currentUser = currentUser;
+        this.lastRenderHash = null; // Reset render hash
         
-        // Add toggle button to filter section
         this.addToggleButtonToPage();
         
-        // Apply saved view preference
         if (this.isCompactView) {
-            this.switchViewDisplay();
+            // Use requestAnimationFrame for non-blocking render
+            requestAnimationFrame(() => {
+                this.switchViewDisplay();
+            });
         }
     }
 
-    // Add toggle button to the page
     addToggleButtonToPage() {
         const filterSection = document.querySelector('.filter-section');
         if (filterSection && !document.querySelector('.view-toggle')) {
@@ -370,14 +326,15 @@ class CompactView {
         }
     }
 
-    // Update accounts when main app reloads data - Enhanced
+    // PERFORMANCE: Smart update - only re-render if needed
     updateAccounts(accounts) {
         this.accounts = accounts;
-        if (this.isCompactView) {
-            // Force re-render with fresh data
-            setTimeout(() => {
+        
+        if (this.isCompactView && this.shouldRerender(accounts)) {
+            // Use requestAnimationFrame for smooth updates
+            requestAnimationFrame(() => {
                 this.renderCompactView();
-            }, 50);
+            });
         }
     }
 }

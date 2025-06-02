@@ -651,7 +651,6 @@ if (addAccountForm) {
     });
 }
 
-// Load and display accounts - UPDATED with compact view integration
 async function loadAccounts() {
     if (!currentUser) return;
 
@@ -661,7 +660,6 @@ async function loadAccounts() {
     }
     
     try {
-        // Show loading state immediately
         const accountsList = document.getElementById('accounts-list');
         if (accountsList) {
             accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Loading accounts...</div>';
@@ -676,51 +674,97 @@ async function loadAccounts() {
         const querySnapshot = await getDocs(q);
         allAccounts = querySnapshot.docs;
         
-        // PERFORMANCE: Only load daily P&L for accounts that will be displayed
-        const activeAccounts = getFilteredAccounts();
+        // PERFORMANCE: Early exit if no accounts
+        if (allAccounts.length === 0) {
+            displayAccounts([]);
+            setupFilters();
+            return;
+        }
+
+        console.log(`📊 Processing ${allAccounts.length} accounts for daily P&L`);
         
-        // PERFORMANCE: Parallel loading of daily P&L (only for visible accounts)
-        const dailyPnLPromises = activeAccounts.slice(0, 20).map(async (doc) => { // Limit to first 20
-            const accountId = doc.id;
-            const account = doc.data();
-            
-            try {
-                const sessionKey = `snapshot_checked_${accountId}_${dailyTracker.getCurrentISTDateString()}`;
-                if (!sessionStorage.getItem(sessionKey)) {
-                    await dailyTracker.checkAndUpdateDailySnapshots(
-                        accountId,
-                        account.currentBalance,
-                        account.accountSize,
-                        account.dailyDrawdown
-                    );
-                    sessionStorage.setItem(sessionKey, 'true');
+        // PERFORMANCE: Get current IST date once
+        const currentISTDate = dailyTracker.getCurrentISTDateString();
+        
+        // PERFORMANCE: Batch process with smart caching
+        const processedAccounts = await Promise.all(
+            allAccounts.map(async (docRef, index) => {
+                const accountId = docRef.id;
+                const accountData = docRef.data();
+                
+                try {
+                    // PERFORMANCE: Check cache first
+                    const cacheKey = `daily_pnl_${accountId}_${currentISTDate}`;
+                    const cached = sessionStorage.getItem(cacheKey);
+                    
+                    let dailyPnL = 0;
+                    let currentDailyDDLevel = accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100));
+                    
+                    if (cached) {
+                        // Use cached data
+                        const parsedCache = JSON.parse(cached);
+                        dailyPnL = parsedCache.dailyPnL;
+                        currentDailyDDLevel = parsedCache.currentDailyDDLevel;
+                    } else {
+                        // Calculate and cache
+                        try {
+                            dailyPnL = await dailyTracker.calculateDailyPnL(accountId, accountData.currentBalance);
+                            currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
+                                accountId,
+                                accountData.currentBalance,
+                                accountData.accountSize,
+                                accountData.dailyDrawdown
+                            );
+                            
+                            // Cache the results
+                            sessionStorage.setItem(cacheKey, JSON.stringify({
+                                dailyPnL,
+                                currentDailyDDLevel,
+                                timestamp: Date.now()
+                            }));
+                        } catch (error) {
+                            console.warn(`⚠️ Daily P&L calc failed for ${accountId}:`, error.message);
+                            // Use fallback values silently
+                        }
+                    }
+                    
+                    // PERFORMANCE: Create optimized account object
+                    return {
+                        id: accountId,
+                        data: () => ({
+                            ...accountData,
+                            _dailyPnL: dailyPnL,
+                            _currentDailyDDLevel: currentDailyDDLevel
+                        }),
+                        exists: docRef.exists,
+                        metadata: docRef.metadata,
+                        ref: docRef.ref
+                    };
+                    
+                } catch (error) {
+                    console.warn(`⚠️ Error processing ${accountId}:`, error.message);
+                    // Return fallback account
+                    return {
+                        id: accountId,
+                        data: () => ({
+                            ...accountData,
+                            _dailyPnL: 0,
+                            _currentDailyDDLevel: accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100))
+                        }),
+                        exists: docRef.exists,
+                        metadata: docRef.metadata,
+                        ref: docRef.ref
+                    };
                 }
-                
-                const dailyPnL = await dailyTracker.calculateDailyPnL(accountId, account.currentBalance);
-                const currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
-                    accountId,
-                    account.currentBalance,
-                    account.accountSize,
-                    account.dailyDrawdown
-                );
-                
-                account._dailyPnL = dailyPnL;
-                account._currentDailyDDLevel = currentDailyDDLevel;
-                
-            } catch (error) {
-                console.error(`Error loading daily P&L for account ${accountId}:`, error);
-                account._dailyPnL = 0;
-                account._currentDailyDDLevel = account.currentBalance - (account.accountSize * (account.dailyDrawdown / 100));
-            }
-        });
+            })
+        );
         
-        // PERFORMANCE: Don't block UI on daily P&L loading
-        Promise.all(dailyPnLPromises).then(() => {
-            // Update compact view after daily P&L is loaded
-            compactView.updateAccounts(allAccounts);
-        });
+        // Replace allAccounts with processed accounts
+        allAccounts = processedAccounts;
         
-        // PERFORMANCE: Sort accounts efficiently
+        console.log('✅ Daily P&L processing completed');
+        
+        // PERFORMANCE: Optimized sorting
         allAccounts.sort((a, b) => {
             const accountA = a.data();
             const accountB = b.data();
@@ -729,36 +773,139 @@ async function loadAccounts() {
             const orderA = phaseOrder[accountA.phase] ?? 3;
             const orderB = phaseOrder[accountB.phase] ?? 3;
             
-            if (orderA !== orderB) return orderA - orderB;
-            return accountB.currentBalance - accountA.currentBalance;
+            return orderA !== orderB ? orderA - orderB : accountB.currentBalance - accountA.currentBalance;
         });
         
-        // PERFORMANCE: Generate summary stats only once
+        // PERFORMANCE: Update UI efficiently
         const summaryStats = generateSummaryStatsOptimized(allAccounts);
         displaySummaryStats(summaryStats);
-        
-        // PERFORMANCE: Display accounts immediately (without waiting for daily P&L)
         displayAccounts(getFilteredAccounts());
         setupFilters();
         
-        // PERFORMANCE: Initialize compact view efficiently
-        compactView.initialize(allAccounts, currentUser);
+        // PERFORMANCE: Initialize compact view without blocking
+        requestAnimationFrame(() => {
+            if (typeof compactView !== 'undefined' && compactView.initialize) {
+                compactView.initialize(allAccounts, currentUser);
+            }
+        });
         
     } catch (error) {
-        console.error('Error loading accounts:', error);
+        console.error('❌ Error loading accounts:', error);
         const accountsList = document.getElementById('accounts-list');
         if (accountsList) {
-            accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #ff4757;">Error loading accounts. Please refresh the page.</div>';
+            accountsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #ff4757;">
+                    Error loading accounts. Please refresh the page.
+                    <br><br>
+                    <button onclick="retryLoadAccounts()" class="btn btn-primary">Retry</button>
+                </div>
+            `;
         }
     }
 }
 
+function renderCompactCardFixed(doc) {
+    const account = doc.data();
+    const accountId = doc.id;
+    
+    const firmInitials = account.firmName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+    const displayName = account.alias ? `${account.alias}-${account.firmName}` : account.firmName;
+    
+    const currentPnL = account.currentBalance - account.accountSize;
+    const balanceClass = currentPnL >= 0 ? 'positive' : currentPnL < 0 ? 'negative' : '';
+    
+    // CRITICAL FIX: Properly extract daily P&L from account data
+    const dailyPnL = account._dailyPnL !== undefined ? account._dailyPnL : 0;
+    const dailyPnLClass = dailyPnL >= 0 ? 'positive' : dailyPnL < 0 ? 'negative' : '';
+    
+    console.log(`🎯 Compact view - Account ${accountId}: Daily P&L = ${dailyPnL}`);
+    
+    // Check if account can be upgraded
+    const canUpgrade = this.checkCanUpgrade(account);
+    
+    // Determine button type and action
+    let buttonHtml;
+    if (canUpgrade) {
+        buttonHtml = `<button class="compact-upgrade-btn" onclick="event.stopPropagation(); upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
+    } else {
+        buttonHtml = `<button class="compact-trade-btn">Trade</button>`;
+    }
+    
+    return `
+        <div class="compact-account-card" 
+             data-account-id="${accountId}"
+             data-current-balance="${account.currentBalance}"
+             data-firm-name="${account.firmName}">
+            
+            <div class="compact-header">
+                <div class="compact-firm-info">
+                    <div class="compact-firm-logo">${firmInitials}</div>
+                    <div class="compact-firm-name" title="${displayName}">${displayName}</div>
+                </div>
+                <div class="compact-daily-pnl ${dailyPnLClass}">
+                    ${dailyPnL >= 0 ? '+' : ''}${dailyPnL.toLocaleString()}
+                </div>
+            </div>
+            
+            <div class="compact-balance-row">
+                <div class="compact-balance ${balanceClass}">${account.currentBalance.toLocaleString()}</div>
+                ${buttonHtml}
+            </div>
+        </div>
+    `;
+}
+
+// Retry function for error handling
 window.retryLoadAccounts = function() {
     const accountsList = document.getElementById('accounts-list');
     if (accountsList) {
         accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
     }
-    debouncedLoadAccounts();
+    loadAccounts();
+};
+
+async function calculateDailyPnLFixed(accountId, currentBalance) {
+    try {
+        await this.loadSnapshotsForAccount(accountId);
+        
+        const tradingDay = this.getTradingDay();
+        let todaySnapshot = this.dailySnapshots.find(
+            snapshot => snapshot.accountId === accountId && snapshot.date === tradingDay
+        );
+        
+        // If no snapshot for today, check if we need to create one
+        if (!todaySnapshot) {
+            console.log(`📝 No snapshot found for ${accountId} on ${tradingDay}`);
+            
+            // For accounts with trades, we should have a snapshot
+            // If missing, create one based on current balance
+            const shouldCreate = await this.shouldCreateSnapshot(accountId, currentBalance);
+            if (shouldCreate) {
+                console.log(`📝 Creating missing snapshot for ${accountId}`);
+                // This indicates the first activity of the day
+                return 0; // No P&L until we have a starting point
+            }
+            
+            return 0; // No trading activity today
+        }
+        
+        const dailyPnL = currentBalance - todaySnapshot.startingBalance;
+        console.log(`📊 Daily P&L for ${accountId}: ${dailyPnL} (Current: ${currentBalance}, Starting: ${todaySnapshot.startingBalance})`);
+        return dailyPnL;
+        
+    } catch (error) {
+        console.error('❌ Error calculating daily P&L:', error);
+        return 0;
+    }
+}
+
+// Retry function for error handling
+window.retryLoadAccounts = function() {
+    const accountsList = document.getElementById('accounts-list');
+    if (accountsList) {
+        accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
+    }
+    loadAccounts();
 };
 
 
@@ -1083,11 +1230,13 @@ function generateTooltipData(account, dailyPnL) {
 function displayAccounts(accounts) {
     if (!accountsList) return;
     
-    // Update compact view when accounts change
-    compactView.updateAccounts(accounts);
+    // Update compact view efficiently
+    if (typeof compactView !== 'undefined' && compactView.updateAccounts) {
+        compactView.updateAccounts(accounts);
+    }
     
-    // Only update normal view if not in compact mode
-    if (compactView.isInCompactView()) {
+    // Handle compact view display
+    if (typeof compactView !== 'undefined' && compactView.isInCompactView && compactView.isInCompactView()) {
         accountsList.style.display = 'none';
         return;
     } else {
@@ -1113,44 +1262,37 @@ function displayAccounts(accounts) {
         return;
     }
     
-    accountsList.innerHTML = `<div class="accounts-grid">${accounts.map(doc => {
+    // PERFORMANCE: Build HTML string efficiently
+    const accountsHTML = accounts.map(doc => {
         const account = doc.data();
         const accountId = doc.id;
         
         const totalPnL = account.currentBalance - account.accountSize;
         const dailyPnL = account._dailyPnL || 0;
         const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
-        
         const isMaxDrawdownBreached = totalPnL < -maxDrawdownAmount;
         const isBreached = isMaxDrawdownBreached;
         
         const firmInitials = account.firmName.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
         
-        // Calculate stats based on account phase
-        let stat1Label, stat1Value, stat2Label, stat2Value, stat3Label, stat3Value, stat4Label, stat4Value;
         let upgradeButtonHtml = '';
         let statusBadgeHtml = '';
         
         let displayPhase = account.phase;
         if (account.phase === 'Challenge Phase 1') displayPhase = 'Phase 1';
         else if (account.phase === 'Challenge Phase 2') displayPhase = 'Phase 2';
-        else if (account.phase === 'Challenge Phase 3') displayPhase = 'Phase 3';
         
         if (account.status === 'upgraded') {
             const nextPhase = account.phase === 'Challenge Phase 1' ? 'Phase 2' : 'Funded';
             statusBadgeHtml = `<div class="status-badge upgraded">Upgraded to ${nextPhase}</div>`;
         }
         
-        // New 4-stat layout: Balance, Daily P&L, Total P&L, Your Share/Target Remaining
-        stat1Label = 'Balance';
-        stat1Value = `${account.currentBalance.toLocaleString()}`;
+        // Stats
+        const stat1Value = account.currentBalance.toLocaleString();
+        const stat2Value = `${dailyPnL >= 0 ? '+' : ''}${dailyPnL.toLocaleString()}`;
+        const stat3Value = `${totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString()}`;
         
-        stat2Label = 'Daily P&L';
-        stat2Value = `${dailyPnL >= 0 ? '+' : ''}${dailyPnL.toLocaleString()}`;
-        
-        stat3Label = 'Total P&L';
-        stat3Value = `${totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString()}`;
-        
+        let stat4Label, stat4Value;
         if (account.phase === 'Funded') {
             stat4Label = 'Your Share';
             if (totalPnL > 0) {
@@ -1180,13 +1322,8 @@ function displayAccounts(accounts) {
                          account.status === 'upgraded' ? 'phase-badge upgraded' :
                          account.phase === 'Funded' ? 'phase-badge funded' : 'phase-badge';
         
-        // Generate enhanced progress bar (using total P&L for progress)
         const progressBarHtml = generateProgressBarHTML(account);
-        
-        // Get bottom row HTML
         const bottomRowHtml = getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml);
-        
-        // Add tooltip data for progress bar
         const tooltipData = generateTooltipData(account, dailyPnL);
         
         return `
@@ -1206,15 +1343,15 @@ function displayAccounts(accounts) {
                 
                 <div class="account-stats">
                     <div class="stat-item">
-                        <div class="stat-label">${stat1Label}</div>
+                        <div class="stat-label">Balance</div>
                         <div class="stat-value">${stat1Value}</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-label">${stat2Label}</div>
+                        <div class="stat-label">Daily P&L</div>
                         <div class="stat-value ${dailyPnL >= 0 ? 'positive' : 'negative'}">${stat2Value}</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-label">${stat3Label}</div>
+                        <div class="stat-label">Total P&L</div>
                         <div class="stat-value ${totalPnL >= 0 ? 'positive' : 'negative'}">${stat3Value}</div>
                     </div>
                     <div class="stat-item">
@@ -1230,8 +1367,42 @@ function displayAccounts(accounts) {
                 ${bottomRowHtml}
             </div>
         `;
-    }).join('')}</div>`;
+    }).join('');
+    
+    accountsList.innerHTML = `<div class="accounts-grid">${accountsHTML}</div>`;
 }
+
+// PERFORMANCE: Clean up session cache periodically
+function cleanupSessionCache() {
+    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+    const now = Date.now();
+    
+    for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith('daily_pnl_')) {
+            try {
+                const data = JSON.parse(sessionStorage.getItem(key));
+                if (data.timestamp && (now - data.timestamp) > maxAge) {
+                    sessionStorage.removeItem(key);
+                }
+            } catch (e) {
+                sessionStorage.removeItem(key);
+            }
+        }
+    }
+}
+
+// Call cleanup on page load
+cleanupSessionCache();
+
+// Retry function
+window.retryLoadAccounts = function() {
+    const accountsList = document.getElementById('accounts-list');
+    if (accountsList) {
+        accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Retrying...</div>';
+    }
+    loadAccounts();
+};
 
 // Add this function to handle account card clicks
 window.openAccountDashboard = function(accountId) {
