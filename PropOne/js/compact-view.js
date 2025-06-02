@@ -53,12 +53,17 @@ class CompactView {
     }
 
     loadViewPreference() {
-        const saved = localStorage.getItem('propone-view-preference');
-        this.isCompactView = saved !== 'normal'; // Default to compact
+        // ALWAYS default to big detailed cards (list view) on every page load
+        // Never save or remember user preference - always reset to big cards
+        this.isCompactView = false;
+        
+        // Clear any existing saved preference to ensure we always start fresh
+        localStorage.removeItem('propone-view-preference');
     }
 
     saveViewPreference() {
-        localStorage.setItem('propone-view-preference', this.isCompactView ? 'compact' : 'normal');
+        // DON'T save preferences - we want to always reset to big cards on refresh
+        // localStorage.setItem('propone-view-preference', this.isCompactView ? 'compact' : 'normal');
     }
 
     createViewToggleButton() {
@@ -67,11 +72,12 @@ class CompactView {
         
         const toggleBtn = document.createElement('button');
         toggleBtn.className = `view-toggle-btn ${this.isCompactView ? 'active' : ''}`;
+        // Start with "Compact View" text since we default to big cards
         toggleBtn.innerHTML = `
             <svg class="view-toggle-icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3 3h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6zM3 11h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6z"/>
             </svg>
-            Grid View
+            Compact View
         `;
         
         toggleContainer.appendChild(toggleBtn);
@@ -93,12 +99,12 @@ class CompactView {
                 <svg class="view-toggle-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
                 </svg>
-                List View
+                Detailed View
             ` : `
                 <svg class="view-toggle-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 3h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6zM3 11h6v6H3zm8 0h6v6h-6zm8 0h6v6h-6z"/>
                 </svg>
-                Grid View
+                Compact View
             `;
         }
     }
