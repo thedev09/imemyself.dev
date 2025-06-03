@@ -1,39 +1,438 @@
 <!DOCTYPE html>
-<html data-lt-installed=true style="" lang="en-US">
+<html lang="en">
 <head>
-	<meta charset=utf-8>
-	<meta name=viewport content="width=device-width,initial-scale=1">
-	<meta name=theme-color content=#000000>
-	<title>The DEV</title>
-	<link rel="stylesheet" href="main.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Animated starfield background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out, moveStars 20s infinite linear;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes moveStars {
+            0% { transform: translateY(0) translateX(0); }
+            100% { transform: translateY(-100vh) translateX(-50px); }
+        }
+
+        /* Floating particles animation */
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: float 6s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        /* Main content */
+        .container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+            animation: fadeIn 2s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .name {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 3rem;
+            color: #cccccc;
+            letter-spacing: 0.5px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .social-link {
+            display: inline-block;
+            color: #ffffff;
+            font-size: 2.5rem;
+            transition: all 0.3s ease;
+            padding: 0.5rem;
+            text-decoration: none;
+        }
+
+        .social-link:hover {
+            color: #00bfff;
+            transform: translateY(-5px) scale(1.1);
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .theme-toggle i {
+            color: #ffffff;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Light theme */
+        body.light-theme {
+            background: #ffffff;
+            color: #333333;
+        }
+
+        body.light-theme .star {
+            background: #333333;
+        }
+
+        body.light-theme .particle {
+            background: rgba(51, 51, 51, 0.8);
+        }
+
+        body.light-theme .name {
+            color: #333333;
+            text-shadow: 0 0 20px rgba(51, 51, 51, 0.3);
+        }
+
+        body.light-theme .title {
+            color: #666666;
+        }
+
+        body.light-theme .social-link {
+            color: #333333;
+        }
+
+        body.light-theme .social-link:hover {
+            color: #00bfff;
+        }
+
+        body.light-theme .theme-toggle {
+            background: rgba(51, 51, 51, 0.1);
+            border: 1px solid rgba(51, 51, 51, 0.2);
+        }
+
+        body.light-theme .theme-toggle:hover {
+            background: rgba(51, 51, 51, 0.2);
+        }
+
+        body.light-theme .theme-toggle i {
+            color: #333333;
+        }
+
+        /* Footer */
+        .footer {
+            display: none;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .name {
+                font-size: 2.5rem;
+            }
+            
+            .title {
+                font-size: 1.3rem;
+                margin-bottom: 2rem;
+            }
+            
+            .social-links {
+                gap: 1rem;
+            }
+            
+            .social-link {
+                font-size: 2rem;
+                padding: 0.4rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .name {
+                font-size: 2rem;
+            }
+            
+            .title {
+                font-size: 1.1rem;
+            }
+            
+            .social-link {
+                font-size: 1.8rem;
+                padding: 0.3rem;
+            }
+        }
+    </style>
 </head>
-	
-	<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3LC0JB4FMF"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-3LC0JB4FMF');
-</script>
 <body>
-	<noscript class=sf-hidden>You need to enable JavaScript to run this app! lol </noscript>
-	<div id=home class="title bg-transparent bgstyle text-light min-vh-100 d-flex align-content-center align-items-center flex-wrap m-0 jumbotron jumbotron-fluid" style="overflow:hidden;background:rgba(0,0,0,0) linear-gradient(136deg,rgb(68,132,206),rgb(26,215,192),rgb(255,155,17),rgb(155,89,182),rgb(255,127,127),rgb(236,240,241)) repeat scroll 0% 0% / 1200% 1200%">
-	<div id=stars></div>
-		<div class="text-center container">
-			<h1 class=display-1>Hi, I am Dev</h1>
-			<h2 class=display-2>Dev as in Developer</h2>
+    <!-- Starfield background -->
+    <div class="starfield" id="starfield"></div>
 
-			<div class="Typist lead typist">Learner | He/Him | Insomniac</div>
-			<div class=p-5>
-				<a target=_blank rel="noopener noreferrer" aria-label="Dev's GitHub" href=https://github.com/thedev09><i class="fab fa-github fa-3x socialicons"></i></a>
-				<a target=_blank rel="noopener noreferrer" aria-label="Dev's Facebook" href=https://www.facebook.com/sharifladka69/><i class="fab fa-facebook fa-3x socialicons"></i></a>
-				<a target=_blank rel="noopener noreferrer" aria-label="Dev's Instagram" href=https://www.instagram.com/thedev09.eth/><i class="fab fa-instagram fa-3x socialicons"></i></a>				
-				<a target=_blank rel="noopener noreferrer" aria-label="Dev's Twitter" href=https://twitter.com/thakur_d09/><i class="fab fa-twitter fa-3x socialicons"></i></a>
-			</div>
-			<a class="btn btn-outline-light btn-lg" role=button aria-label="Get in Touch" href="mailto:thakurrahul2019@gmail.com" target="_blank">Get in Touch</a>
-		</div>
-	</div>
+    <!-- Theme toggle -->
+    <div class="theme-toggle" id="themeToggle">
+        <i class="far fa-moon" id="themeIcon"></i>
+    </div>
+
+    <!-- Main content -->
+    <div class="container">
+        <h1 class="name">Hi, I'm Dev</h1>
+        <h2 class="title">Insomniac</h2>
+        
+        <div class="social-links">
+            <a href="https://github.com/thedev09" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://x.com/thakur_d09" class="social-link" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+                <i class="fab fa-twitter"></i>
+            </a>
+            <a href="mailto:thakurrahul2019@gmail.com" class="social-link" aria-label="Email">
+                <i class="far fa-envelope"></i>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Create starfield
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            const numberOfStars = 200;
+
+            for (let i = 0; i < numberOfStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Random position
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 200 + '%'; // Start some stars below viewport
+                
+                // Random size
+                const size = Math.random() * 2 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                
+                // Random animation delays
+                star.style.animationDelay = `${Math.random() * 3}s, ${Math.random() * 20}s`;
+                
+                // Random animation duration for movement
+                const duration = Math.random() * 10 + 15; // 15-25 seconds
+                star.style.setProperty('--move-duration', duration + 's');
+                
+                starfield.appendChild(star);
+            }
+        }
+
+        // Continuously add new stars
+        function addNewStar() {
+            const starfield = document.getElementById('starfield');
+            const star = document.createElement('div');
+            star.className = 'star';
+            
+            // Start from bottom
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = '100%';
+            
+            // Random size
+            const size = Math.random() * 2 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            
+            // Random animation delays
+            star.style.animationDelay = `${Math.random() * 3}s, 0s`;
+            
+            starfield.appendChild(star);
+            
+            // Remove star after it moves off screen
+            setTimeout(() => {
+                if (star.parentNode) {
+                    star.parentNode.removeChild(star);
+                }
+            }, 25000);
+        }
+
+        // Create floating particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            // Random horizontal position
+            particle.style.left = Math.random() * 100 + '%';
+            
+            // Random size
+            const size = Math.random() * 4 + 2;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            
+            // Random animation duration
+            particle.style.animationDuration = (Math.random() * 3 + 4) + 's';
+            
+            document.body.appendChild(particle);
+            
+            // Remove particle after animation
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.parentNode.removeChild(particle);
+                }
+            }, 7000);
+        }
+
+        // Theme toggle functionality
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const isLight = body.classList.contains('light-theme');
+            
+            if (isLight) {
+                body.classList.remove('light-theme');
+                themeIcon.className = 'far fa-moon';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-theme');
+                themeIcon.className = 'far fa-sun';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load saved theme
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (savedTheme === 'light') {
+                body.classList.add('light-theme');
+                themeIcon.className = 'far fa-sun';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            createStarfield();
+            loadTheme();
+            
+            // Add event listener for theme toggle
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            
+            // Create particles periodically
+            setInterval(createParticle, 300);
+            
+            // Add new stars periodically
+            setInterval(addNewStar, 800);
+            
+            // Add keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 't' || e.key === 'T') {
+                    toggleTheme();
+                }
+            });
+        });
+
+        // Add hover effects to social links
+        document.querySelectorAll('.social-link').forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px) scale(1.1)';
+            });
+            
+            link.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Add smooth scrolling and performance optimization
+        let ticking = false;
+
+        function updateParticles() {
+            // Performance optimization for particle animation
+            if (!ticking) {
+                requestAnimationFrame(function() {
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }
+
+        // Preload animations
+        window.addEventListener('load', function() {
+            document.body.style.opacity = '1';
+        });
+    </script>
 </body>
 </html>
