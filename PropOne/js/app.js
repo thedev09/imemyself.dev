@@ -21,6 +21,7 @@ import dailyTracker from './daily-tracker.js';
 import activityLogger from './activity-logger.js';
 import payoutManager from './payout-manager.js';
 import compactView from './compact-view.js';
+import cascadingHedging from './sequential-hedging.js';
 
 // DOM elements - OPTIMIZED: Cache all DOM queries once
 const DOM = {
@@ -586,13 +587,26 @@ function calculateTargetAmount() {
 }
 
 function generateSummaryStatsOptimized(accounts) {
+    // Calculate cascading hedging potential
+    const hedgingResults = cascadingHedging.generateDashboardSummary(accounts);
+    
     const stats = {
         funded: { count: 0, totalFunding: 0, totalYourShare: 0, totalEstPayout: 0 },
-        challenge: { phase1Active: 0, phase1Capital: 0, phase2Active: 0, phase2Capital: 0 },
-        inactive: { phase1Breached: 0, phase2Breached: 0, fundedBreached: 0, totalPassed: 0 }
+        challenge: { 
+            phase1Active: 0, 
+            estimatedFundedAccounts: hedgingResults.estimatedFundedAccounts,
+            phase2Active: 0,
+            estimatedFundedDrawdown: hedgingResults.estimatedFundedDrawdown
+        },
+        inactive: { 
+            phase1Breached: 0, 
+            phase2Breached: 0, 
+            fundedBreached: 0, 
+            totalPassed: 0 
+        }
     };
     
-    // PERFORMANCE: Single loop through accounts
+    // Count accounts by status (existing logic)
     for (const doc of accounts) {
         const account = doc.data();
         const currentPnL = account.currentBalance - account.accountSize;
@@ -612,10 +626,8 @@ function generateSummaryStatsOptimized(accounts) {
                 stats.funded.totalEstPayout += availableDrawdown + currentProfit;
             } else if (account.phase === 'Challenge Phase 1') {
                 stats.challenge.phase1Active++;
-                stats.challenge.phase1Capital += account.accountSize;
             } else if (account.phase === 'Challenge Phase 2') {
                 stats.challenge.phase2Active++;
-                stats.challenge.phase2Capital += account.accountSize;
             }
         } else if (account.status === 'breached' || (account.status === 'active' && isBreached)) {
             if (account.phase === 'Challenge Phase 1') stats.inactive.phase1Breached++;
@@ -665,22 +677,22 @@ function displaySummaryStats(stats) {
                     <div class="summary-stat-value">${stats.challenge.phase1Active} accounts</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">P1 Capital</div>
-                    <div class="summary-stat-value">${stats.challenge.phase1Capital.toLocaleString()}</div>
+                    <div class="summary-stat-label">Est Funded Accounts</div>
+                    <div class="summary-stat-value positive">${stats.challenge.estimatedFundedAccounts}</div>
                 </div>
                 <div class="summary-stat">
                     <div class="summary-stat-label">Phase 2</div>
                     <div class="summary-stat-value">${stats.challenge.phase2Active} accounts</div>
                 </div>
                 <div class="summary-stat">
-                    <div class="summary-stat-label">P2 Capital</div>
-                    <div class="summary-stat-value">${stats.challenge.phase2Capital.toLocaleString()}</div>
+                    <div class="summary-stat-label">Est Funded Drawdown</div>
+                    <div class="summary-stat-value positive">${stats.challenge.estimatedFundedDrawdown.toLocaleString()}</div>
                 </div>
             </div>
         </div>
         
         <div class="summary-card inactive">
-            <h3>Inactive Stats</h3>
+            <h3>Portfolio Overview</h3>
             <div class="summary-stats">
                 <div class="summary-stat">
                     <div class="summary-stat-label">P1 Breached</div>

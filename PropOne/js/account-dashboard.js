@@ -872,6 +872,21 @@ if (editTradeForm) {
     });
 }
 
+// Add this after loading account data
+console.log('=== TESTING DAILY TRACKER ===');
+dailyTracker.debugTimeInfo();
+
+// Test specific times
+const testTimes = [
+    new Date('2025-01-15T21:00:00.000Z'), // 2:30 AM IST
+    new Date('2025-01-15T20:59:00.000Z'), // 2:29 AM IST
+    new Date('2025-01-15T18:30:00.000Z'), // 12:00 AM IST
+];
+
+testTimes.forEach(time => {
+    console.log(`Test time ${time.toISOString()}: Trading day = ${dailyTracker.getTradingDay(time)}`);
+});
+
 // Modal close handlers
 document.querySelectorAll('.close').forEach(closeBtn => {
     closeBtn.addEventListener('click', (e) => {

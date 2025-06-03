@@ -16,15 +16,15 @@ import {
 class DailyTracker {
     constructor() {
         this.dailySnapshots = [];
-        this.istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
     }
 
     // Get current IST date string (YYYY-MM-DD)
     getCurrentISTDateString() {
-        const now = new Date();
-        const istTime = new Date(now.getTime() + this.istOffset);
-        return istTime.toISOString().split('T')[0];
-    }
+    const now = new Date();
+    // Convert to IST (UTC+5:30)
+    const istTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+    return istTime.toISOString().split('T')[0];
+}
 
     // Get IST reset time for a given date (2:30 AM IST)
     getISTResetTime(dateString) {
@@ -36,19 +36,26 @@ class DailyTracker {
 
     // Get the trading day for a given timestamp
     getTradingDay(timestamp = new Date()) {
-        const istTime = new Date(timestamp.getTime() + this.istOffset);
-        const istHour = istTime.getHours();
-        const istMinute = istTime.getMinutes();
-        
-        // If it's before 2:30 AM IST, it belongs to the previous trading day
-        if (istHour < 2 || (istHour === 2 && istMinute < 30)) {
-            const previousDay = new Date(istTime);
-            previousDay.setDate(previousDay.getDate() - 1);
-            return previousDay.toISOString().split('T')[0];
-        } else {
-            return istTime.toISOString().split('T')[0];
-        }
+    // Convert to IST timezone
+    const istTime = new Date(timestamp.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+    const istHour = istTime.getHours();
+    const istMinute = istTime.getMinutes();
+    
+    console.log(`IST Time: ${istTime.toLocaleString()}, Hour: ${istHour}, Minute: ${istMinute}`);
+    
+    // If it's before 2:30 AM IST, it belongs to the previous trading day
+    if (istHour < 2 || (istHour === 2 && istMinute < 30)) {
+        const previousDay = new Date(istTime);
+        previousDay.setDate(previousDay.getDate() - 1);
+        const tradingDay = previousDay.toISOString().split('T')[0];
+        console.log(`Before 2:30 AM IST - Trading day: ${tradingDay}`);
+        return tradingDay;
+    } else {
+        const tradingDay = istTime.toISOString().split('T')[0];
+        console.log(`After 2:30 AM IST - Trading day: ${tradingDay}`);
+        return tradingDay;
     }
+}
 
     // Check if we need to create a new daily snapshot
     async shouldCreateSnapshot(accountId, currentBalance) {
@@ -385,59 +392,65 @@ class DailyTracker {
 
     // Get next reset time for display
     getNextResetTime() {
-        const now = new Date();
-        const istNow = new Date(now.getTime() + this.istOffset);
-        
-        // Calculate next 2:30 AM IST
-        const nextReset = new Date(istNow);
-        nextReset.setHours(2, 30, 0, 0);
-        
-        // If it's already past 2:30 AM today, move to tomorrow
-        if (istNow.getHours() > 2 || (istNow.getHours() === 2 && istNow.getMinutes() >= 30)) {
-            nextReset.setDate(nextReset.getDate() + 1);
-        }
-        
-        return nextReset;
+    // Get current IST time
+    const now = new Date();
+    const currentIST = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+    
+    // Calculate next 2:30 AM IST
+    const nextReset = new Date(currentIST);
+    nextReset.setHours(2, 30, 0, 0);
+    
+    // If it's already past 2:30 AM today, move to tomorrow
+    if (currentIST.getHours() > 2 || (currentIST.getHours() === 2 && currentIST.getMinutes() >= 30)) {
+        nextReset.setDate(nextReset.getDate() + 1);
     }
+    
+    return nextReset;
+}
 
     // Get time until next reset
     getTimeUntilReset() {
-        const now = new Date();
-        const nextReset = this.getNextResetTime();
-        const timeDiff = nextReset.getTime() - (now.getTime() + this.istOffset);
-        
-        if (timeDiff <= 0) return { hours: 0, minutes: 0 };
-        
-        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-        
-        return { hours, minutes };
-    }
+    const now = new Date();
+    const currentIST = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+    const nextReset = this.getNextResetTime();
+    
+    const timeDiff = nextReset.getTime() - currentIST.getTime();
+    
+    if (timeDiff <= 0) return { hours: 0, minutes: 0 };
+    
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { hours, minutes };
+}
 
     // Debug function to check current IST time and trading day
-    debugTimeInfo() {
-        const now = new Date();
-        const istTime = new Date(now.getTime() + this.istOffset);
-        const tradingDay = this.getTradingDay();
-        const nextReset = this.getNextResetTime();
-        const timeUntilReset = this.getTimeUntilReset();
-        
-        console.log('=== Daily Tracker Debug Info ===');
-        console.log('UTC Time:', now.toISOString());
-        console.log('IST Time:', istTime.toISOString());
-        console.log('Trading Day:', tradingDay);
-        console.log('Next Reset:', nextReset.toISOString());
-        console.log('Time Until Reset:', `${timeUntilReset.hours}h ${timeUntilReset.minutes}m`);
-        console.log('================================');
-        
-        return {
-            utcTime: now,
-            istTime,
-            tradingDay,
-            nextReset,
-            timeUntilReset
-        };
-    }
+    // Debug function to check current IST time and trading day
+debugTimeInfo() {
+    const now = new Date();
+    const istTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+    const tradingDay = this.getTradingDay();
+    const nextReset = this.getNextResetTime();
+    const timeUntilReset = this.getTimeUntilReset();
+    
+    console.log('=== Daily Tracker Debug Info ===');
+    console.log('UTC Time:', now.toISOString());
+    console.log('IST Time:', istTime.toLocaleString());
+    console.log('Current IST Hour:', istTime.getHours());
+    console.log('Current IST Minute:', istTime.getMinutes());
+    console.log('Trading Day:', tradingDay);
+    console.log('Next Reset (IST):', nextReset.toLocaleString());
+    console.log('Time Until Reset:', `${timeUntilReset.hours}h ${timeUntilReset.minutes}m`);
+    console.log('================================');
+    
+    return {
+        utcTime: now,
+        istTime,
+        tradingDay,
+        nextReset,
+        timeUntilReset
+    };
+}
 }
 
 // Create and export singleton instance
