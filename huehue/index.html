@@ -22,30 +22,37 @@
                 🌍 Detecting Session...
             </div>
             
-            <div class="data-source-selector">
-                <button class="source-button active" data-source="live">🔴 LIVE</button>
-                <button class="source-button" data-source="demo">🎭 DEMO</button>
-                <button class="source-button" data-source="enhanced">⚡ ENHANCED</button>
+            <!-- API Error Display -->
+            <div class="api-error-message" id="apiErrorMessage">
+                <div class="error-content">
+                    <span class="error-icon">⚠️</span>
+                    <div class="error-details">
+                        <div class="error-title">API Connection Failed</div>
+                        <div class="error-description" id="errorDescription">Unable to connect to Twelve Data API</div>
+                        <div class="error-actions">
+                            <button class="retry-btn" onclick="retryConnection()">🔄 Retry</button>
+                            <button class="details-btn" onclick="toggleErrorDetails()">📋 Details</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="error-technical-details" id="errorTechnicalDetails">
+                    <div class="tech-detail">
+                        <strong>Status:</strong> <span id="errorStatus">-</span>
+                    </div>
+                    <div class="tech-detail">
+                        <strong>Code:</strong> <span id="errorCode">-</span>
+                    </div>
+                    <div class="tech-detail">
+                        <strong>Message:</strong> <span id="errorMessage">-</span>
+                    </div>
+                    <div class="tech-detail">
+                        <strong>Time:</strong> <span id="errorTime">-</span>
+                    </div>
+                </div>
             </div>
             
             <div class="last-update" id="lastUpdate">
                 <span id="updateTime">--:--:--</span>
-            </div>
-        </div>
-
-        <!-- Quick Stats - Mobile First -->
-        <div class="quick-stats">
-            <div class="stat-item">
-                <span class="stat-value" id="dailySignals">0</span>
-                <span class="stat-label">Today</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="winRate">--</span>
-                <span class="stat-label">Win Rate</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="avgStrength">--</span>
-                <span class="stat-label">Strength</span>
             </div>
         </div>
 
@@ -145,23 +152,26 @@
             </div>
         </div>
 
-        <!-- Performance Stats - Mobile Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" style="color: #00ff88;" id="win-rate">--</div>
-                <div class="stat-label">Win Rate</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" style="color: #00d4ff;" id="total-pnl">--</div>
-                <div class="stat-label">P&L</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" style="color: #ffa502;" id="avg-rr">2.8:1</div>
-                <div class="stat-label">Risk:Reward</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" style="color: #ff6b35;" id="signals-week">--</div>
-                <div class="stat-label">This Week</div>
+        <!-- Trading Performance Summary -->
+        <div class="performance-summary">
+            <h3>📊 Trading Performance</h3>
+            <div class="performance-grid">
+                <div class="perf-card">
+                    <div class="perf-number" style="color: #00ff88;" id="dailySignals">0</div>
+                    <div class="perf-label">Signals Today</div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-number" style="color: #00d4ff;" id="weeklySignals">0</div>
+                    <div class="perf-label">This Week</div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-number" style="color: #ffa502;" id="avgStrength">0.0</div>
+                    <div class="perf-label">Avg Strength</div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-number" style="color: #ff6b35;" id="strongSignals">0</div>
+                    <div class="perf-label">Strong (5-6)</div>
+                </div>
             </div>
         </div>
 

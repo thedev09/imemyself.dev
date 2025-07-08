@@ -1,11 +1,12 @@
-// HueHue Configuration - Simple Fix
+// HueHue Optimized Configuration - Single Mode Only
 const CONFIG = {
     // Twelve Data API Configuration
     TWELVE_DATA: {
         baseUrl: 'https://api.twelvedata.com',
-        apiKey: 'b1b1a8bf0e4b4848b1a68bd4bb7ceb9c',
+        apiKey: 'b1b1a8bf0e4b4848b1a68bd4bb7ceb9c', // This will be moved to Firebase for security
         maxCallsPerMinute: 55,
-        rateLimitBuffer: 5
+        rateLimitBuffer: 5,
+        timeoutMs: 10000
     },
 
     // Trading Assets
@@ -18,11 +19,7 @@ const CONFIG = {
             pipValue: 0.1,
             digits: 2,
             contractSize: 100,
-            minMove: 0.01,
-            tradingHours: {
-                start: 23,
-                end: 21,
-            }
+            minMove: 0.01
         },
         USDJPY: {
             symbol: 'USDJPY',
@@ -32,26 +29,15 @@ const CONFIG = {
             pipValue: 0.01,
             digits: 3,
             contractSize: 100000,
-            minMove: 0.001,
-            tradingHours: {
-                start: 23,
-                end: 21,
-            }
+            minMove: 0.001
         }
     },
 
-    // EA Parameters
+    // EA Parameters - Much More Restrictive
     EA_PARAMS: {
-        autoStopTarget: 10.0,
-        maxDrawdown: 10.0,
-        dailyDrawdown: 4.0,
         riskPercent: 2.0,
-        maxTradesPerDay: 4,
         stopLossATRMult: 1.8,
         takeProfitRatio: 2.8,
-        baseMinPosition: 0.5,
-        baseMaxPosition: 2.0,
-        baseAccountSize: 50000.0,
         emaFastPeriod: 12,
         emaSlowPeriod: 26,
         smaTrendPeriod: 80,
@@ -59,12 +45,15 @@ const CONFIG = {
         atrPeriod: 14,
         bbPeriod: 20,
         bbDev: 2.0,
-        rsiOversold: 40.0,
-        rsiOverbought: 60.0,
-        minTrendStrength: 3.0,
-        volumeMultiplier: 1.2,
-        minSignalStrength: 4,
-        maxSignalStrength: 6
+        rsiOversold: 30.0,        // More restrictive (was 40)
+        rsiOverbought: 70.0,      // More restrictive (was 60)
+        minTrendStrength: 5.0,    // Much higher (was 3.0)
+        volumeMultiplier: 1.5,    // Higher volume requirement (was 1.2)
+        minSignalStrength: 5,     // Require 5/6 conditions (was 4)
+        maxSignalStrength: 6,
+        maxTradesPerDay: 2,       // Only 2 trades per day (was 4)
+        dailyDrawdown: 4.0,
+        signalCooldown: 3600000   // 1 hour cooldown between signals (new)
     },
 
     // Trading Hours
@@ -72,35 +61,25 @@ const CONFIG = {
         start: 2,
         end: 21,
         fridayClose: 20,
-        newsAvoidance: [7, 8, 12, 14]
+        newsAvoidance: [7, 8, 12, 14] // UTC hours to avoid during major news
     },
 
-    // Update Intervals (optimized)
+    // Update Intervals - Much Less Frequent
     UPDATE_INTERVALS: {
-        priceUpdate: 15000,          // 15 seconds
-        indicatorUpdate: 120000,     // 2 minutes
-        signalCheck: 60000,          // 1 minute
-        dashboardRefresh: 5000,      // 5 seconds
-        dataBackup: 24 * 60 * 60 * 1000
+        priceUpdate: 30000,          // 30 seconds (was 15)
+        indicatorUpdate: 600000,     // 10 minutes (was 3 minutes)
+        signalCheck: 300000,         // 5 minutes (was 1 minute)
+        dashboardRefresh: 10000,     // 10 seconds (was 5)
+        errorRetry: 30000,
+        healthCheck: 60000
     },
 
-    // Cache Settings
+    // Cache Settings - Optimized
     CACHE: {
-        priceMaxAge: 30000,
-        historicalMaxAge: 300000,
-        indicatorMaxAge: 60000,
-        maxCacheSize: 100
-    },
-
-    // UI Settings (simplified)
-    UI: {
-        theme: 'dark',
-        animations: true,
-        soundAlerts: false,
-        showMiniCharts: true,
-        maxSignalsDisplay: 20,
-        autoScroll: true,
-        priceUpdateAnimation: true
+        priceMaxAge: 30000,          // 30 seconds
+        historicalMaxAge: 300000,    // 5 minutes
+        indicatorMaxAge: 180000,     // 3 minutes
+        maxCacheSize: 50             // Reduced cache size
     },
 
     // Market Sessions
@@ -118,37 +97,28 @@ const CONFIG = {
         NEUTRAL: 'NEUTRAL'
     },
 
-    // Confluence Conditions
-    CONFLUENCE_CONDITIONS: {
-        TREND: 'trend',
-        STRENGTH: 'strength',
-        RSI: 'rsi',
-        POSITION: 'position',
-        PRICE_ACTION: 'priceAction',
-        VOLUME: 'volume'
+    // Error Handling Configuration
+    ERROR_HANDLING: {
+        maxRetries: 3,
+        retryDelay: 5000,
+        circuitBreakerThreshold: 5,
+        circuitBreakerTimeout: 300000, // 5 minutes
+        logLevel: 'error' // 'debug', 'info', 'warn', 'error'
     },
 
-    // Debug Settings (reduced for production)
-    DEBUG: {
-        enabled: false,              // Set to false for production
-        mockData: false,
-        logLevel: 'error',
-        showAPIRequests: false,
-        showRateLimit: false,
-        showCacheHits: false
-    },
-
-    // Data Sources
-    DATA_SOURCES: {
-        primary: 'twelve_data',
-        fallback: 'simulation',
-        available: ['twelve_data', 'simulation']
+    // Performance Settings
+    PERFORMANCE: {
+        enableCache: true,
+        enableRateLimit: true,
+        enableErrorTracking: true,
+        maxConcurrentRequests: 3,
+        requestTimeout: 10000
     }
 };
 
-// Helper Functions
+// Helper Functions - Optimized
 CONFIG.getAssetConfig = function(symbol) {
-    return CONFIG.ASSETS[symbol.toUpperCase()] || null;
+    return CONFIG.ASSETS[symbol?.toUpperCase()] || null;
 };
 
 CONFIG.isValidTradingTime = function() {
@@ -156,8 +126,13 @@ CONFIG.isValidTradingTime = function() {
     const hour = now.getUTCHours();
     const dayOfWeek = now.getUTCDay();
     
+    // No weekend trading
     if (dayOfWeek === 0 || dayOfWeek === 6) return false;
+    
+    // Trading hours check
     if (hour < CONFIG.TRADING_HOURS.start || hour > CONFIG.TRADING_HOURS.end) return false;
+    
+    // Friday early close
     if (dayOfWeek === 5 && hour >= CONFIG.TRADING_HOURS.fridayClose) return false;
     
     return true;
@@ -190,6 +165,96 @@ CONFIG.getCurrentSession = function() {
     return { name: 'CLOSED', emoji: '🌙', active: false };
 };
 
+CONFIG.shouldAvoidNews = function() {
+    const now = new Date();
+    const hour = now.getUTCHours();
+    const minute = now.getUTCMinutes();
+    
+    return CONFIG.TRADING_HOURS.newsAvoidance.includes(hour) && minute <= 30;
+};
+
+CONFIG.formatPrice = function(symbol, price) {
+    if (!symbol || price === undefined || price === null || isNaN(price)) {
+        return '--';
+    }
+    
+    try {
+        const asset = CONFIG.getAssetConfig(symbol);
+        if (!asset) return price.toFixed(4);
+        
+        if (symbol === 'XAUUSD') {
+            return `$${price.toLocaleString('en-US', {
+                minimumFractionDigits: asset.digits,
+                maximumFractionDigits: asset.digits
+            })}`;
+        } else if (symbol === 'USDJPY') {
+            return `¥${price.toFixed(asset.digits)}`;
+        }
+        
+        return price.toFixed(asset.digits);
+    } catch (error) {
+        console.warn('Error formatting price:', error);
+        return '--';
+    }
+};
+
+CONFIG.validateApiResponse = function(data, expectedFields = []) {
+    if (!data || typeof data !== 'object') {
+        return { valid: false, error: 'Invalid response format' };
+    }
+    
+    // Check for API error codes
+    if (data.code && data.code !== 200) {
+        return { 
+            valid: false, 
+            error: data.message || `API Error ${data.code}`,
+            code: data.code 
+        };
+    }
+    
+    // Check for expected fields
+    for (const field of expectedFields) {
+        if (data[field] === undefined || data[field] === null) {
+            return { 
+                valid: false, 
+                error: `Missing required field: ${field}` 
+            };
+        }
+    }
+    
+    return { valid: true };
+};
+
+CONFIG.log = function(level, message, ...args) {
+    try {
+        const logLevels = { debug: 0, info: 1, warn: 2, error: 3 };
+        const currentLevel = logLevels[CONFIG.ERROR_HANDLING?.logLevel] || 3;
+        const messageLevel = logLevels[level] || 0;
+        
+        if (messageLevel >= currentLevel) {
+            const timestamp = new Date().toISOString();
+            const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
+            
+            switch (level) {
+                case 'error':
+                    console.error(prefix, message, ...args);
+                    break;
+                case 'warn':
+                    console.warn(prefix, message, ...args);
+                    break;
+                case 'info':
+                    console.info(prefix, message, ...args);
+                    break;
+                default:
+                    console.log(prefix, message, ...args);
+            }
+        }
+    } catch (error) {
+        // Fallback logging if CONFIG is not properly loaded
+        console.log(`[${level.toUpperCase()}]`, message, ...args);
+    }
+};
+
 // Export configuration
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = CONFIG;
@@ -197,7 +262,5 @@ if (typeof module !== 'undefined' && module.exports) {
     window.CONFIG = CONFIG;
 }
 
-// Simple log (only if debug enabled)
-if (CONFIG.DEBUG.enabled) {
-    console.log('⚙️ HueHue Configuration Loaded');
-}
+// Log initialization
+CONFIG.log('info', '⚙️ HueHue Optimized Configuration Loaded');

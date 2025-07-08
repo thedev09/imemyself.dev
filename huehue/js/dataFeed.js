@@ -1,93 +1,77 @@
-// HueHue Live Data Feed - Firebase + Twelve Data Integration
-class LiveDataFeed {
+// HueHue Optimized Live Data Feed - No Demo Mode, Real Error Handling
+class OptimizedDataFeed {
     constructor() {
-        // API key will be loaded from Firebase
-        this.apiKey = null;
-        this.baseUrl = 'https://api.twelvedata.com';
+        this.baseUrl = CONFIG.TWELVE_DATA.baseUrl;
+        this.apiKey = null; // Will be loaded from Firebase
         
-        // API usage tracking (55 calls/minute limit)
+        // API tracking
         this.apiCalls = 0;
         this.lastResetTime = Date.now();
-        this.maxCallsPerMinute = 55;
+        this.maxCallsPerMinute = CONFIG.TWELVE_DATA.maxCallsPerMinute;
         
-        // Cache for reducing API calls
+        // Cache system
         this.cache = new Map();
-        this.priceCache = new Map();
         
-        // Symbol mapping for Twelve Data
+        // Symbol mapping
         this.symbols = {
             'XAUUSD': 'XAU/USD',
             'USDJPY': 'USD/JPY'
         };
         
-        // Firebase storage reference
+        // Error tracking and circuit breaker
+        this.errorCount = 0;
+        this.lastErrorTime = 0;
+        this.circuitBreakerOpen = false;
+        this.circuitBreakerOpenTime = 0;
+        
+        // Connection state
+        this.isConnected = false;
+        this.isInitialized = false;
+        this.lastError = null;
+        this.lastErrorCode = null;
+        
+        // Firebase reference
         this.firebaseStorage = null;
         
-        // Fallback mode
-        this.useFallback = false;
-        this.isInitialized = false;
-        this.updateInterval = null;
-        
-        console.log('💰 Live Data Feed initialized (Firebase + Twelve Data)');
+        CONFIG.log('info', '📡 Optimized Data Feed initialized');
     }
 
-    // Initialize the live data feed with Firebase
     async initialize() {
         try {
-            console.log('🔌 Connecting to Firebase + Twelve Data...');
+            CONFIG.log('info', '🔌 Initializing data feed...');
+            this.updateConnectionStatus('connecting');
             
-            // Wait for Firebase to be ready
+            // Wait for Firebase
             await this.waitForFirebase();
             
             // Load API key from Firebase
             await this.loadApiKeyFromFirebase();
             
             if (!this.apiKey) {
-                console.warn('⚠️ No API key found, will prompt user');
+                throw new Error('No API key available');
             }
             
-            // Test API connection with timeout
-            const testResult = await this.testConnectionWithTimeout();
+            // Test connection with detailed error handling
+            await this.testConnection();
             
-            if (!testResult.success) {
-                console.warn('⚠️ Twelve Data connection failed, enabling fallback mode');
-                console.warn('Error:', testResult.error);
-                this.useFallback = true;
-                
-                // Initialize fallback mode
-                await this.initializeFallbackMode();
-            } else {
-                console.log('✅ Twelve Data connection successful');
-                console.log(`📊 Plan: ${testResult.plan} | Calls/min: ${this.maxCallsPerMinute}`);
-                this.useFallback = false;
-            }
-            
-            // Load initial data (real or simulated)
-            await this.loadInitialData();
-            
-            // Start real-time updates
-            this.startRealTimeUpdates();
-            
+            this.isConnected = true;
             this.isInitialized = true;
+            this.hideErrorMessage();
+            this.updateConnectionStatus('connected');
+            
+            CONFIG.log('info', '✅ Data feed initialized successfully');
             return true;
             
         } catch (error) {
-            console.error('❌ Failed to initialize data feed:', error);
-            
-            // Enable fallback mode as last resort
-            console.log('🔄 Enabling fallback simulation mode...');
-            this.useFallback = true;
-            await this.initializeFallbackMode();
-            
-            this.isInitialized = true;
-            return true; // Don't fail completely
+            CONFIG.log('error', '❌ Data feed initialization failed:', error);
+            this.handleConnectionError(error);
+            return false;
         }
     }
 
-    // Wait for Firebase to be ready
     async waitForFirebase() {
         let attempts = 0;
-        const maxAttempts = 30; // 3 seconds max wait
+        const maxAttempts = 30;
         
         while (!window.firebaseStorage && attempts < maxAttempts) {
             await this.sleep(100);
@@ -96,46 +80,49 @@ class LiveDataFeed {
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            console.log('🔥 Firebase storage connected');
+            CONFIG.log('info', '🔥 Firebase connected');
         } else {
             throw new Error('Firebase not available after 3 seconds');
         }
     }
 
-    // Load API key from Firebase
     async loadApiKeyFromFirebase() {
         try {
             if (!this.firebaseStorage) {
                 throw new Error('Firebase storage not available');
             }
             
-            // Try to get API key from Firebase
             let apiKey = await this.firebaseStorage.getApiKey();
             
-            // If not found, prompt user and save
             if (!apiKey) {
-                apiKey = prompt('🔑 Enter your Twelve Data API key (will be saved securely to Firebase):');
+                apiKey = prompt('🔑 Enter your Twelve Data API key (will be saved securely):');
                 if (apiKey && apiKey.trim()) {
-                    const saved = await this.firebaseStorage.saveApiKey(apiKey.trim());
-                    if (saved) {
-                        console.log('🔥 API key saved to Firebase');
-                    }
+                    await this.firebaseStorage.saveApiKey(apiKey.trim());
+                    CONFIG.log('info', '🔥 API key saved to Firebase');
                 }
             }
             
             this.apiKey = apiKey;
-            console.log('🔑 API key loaded:', this.apiKey ? 'Success ✅' : 'Missing ❌');
+            CONFIG.log('info', '🔑 API key loaded:', this.apiKey ? 'Success ✅' : 'Missing ❌');
             
         } catch (error) {
-            console.warn('⚠️ Could not load API key from Firebase:', error.message);
-            this.apiKey = null;
+            CONFIG.log('warn', '⚠️ Could not load API key from Firebase:', error.message);
+            // Fallback to config
+            this.apiKey = CONFIG.TWELVE_DATA.apiKey;
+            CONFIG.log('warn', 'Using fallback API key from config');
         }
     }
 
-    // Test API connection with timeout
-    async testConnectionWithTimeout() {
+    async testConnection() {
+        if (this.circuitBreakerOpen) {
+            this.checkCircuitBreaker();
+            if (this.circuitBreakerOpen) {
+                throw new Error('Circuit breaker is open - too many recent failures');
+            }
+        }
+
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TWELVE_DATA.timeoutMs);
         
         try {
             const response = await fetch(
@@ -151,153 +138,73 @@ class LiveDataFeed {
             
             clearTimeout(timeoutId);
             
+            // Handle HTTP errors
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
             }
             
             const data = await response.json();
             
-            if (data.code && data.code !== 200) {
-                throw new Error(data.message || `API Error ${data.code}`);
+            // Validate API response
+            const validation = CONFIG.validateApiResponse(data, ['close']);
+            if (!validation.valid) {
+                this.lastErrorCode = validation.code;
+                throw new Error(validation.error);
             }
             
             this.trackApiCall();
+            this.resetErrorCount();
             
-            return {
-                success: true,
-                plan: 'Grow Plan',
-                data: data
-            };
+            CONFIG.log('info', '✅ API connection test successful');
+            return data;
             
         } catch (error) {
             clearTimeout(timeoutId);
             
-            let errorMessage = error.message;
             if (error.name === 'AbortError') {
-                errorMessage = 'Connection timeout (10s)';
+                throw new Error(`Connection timeout (${CONFIG.TWELVE_DATA.timeoutMs / 1000}s)`);
             }
             
-            return {
-                success: false,
-                error: errorMessage
-            };
+            this.trackError(error);
+            throw error;
         }
     }
 
-    // Initialize fallback simulation mode
-    async initializeFallbackMode() {
-        console.log('🎭 Initializing simulation mode...');
-        
-        // Initialize with realistic prices
-        this.simulatedPrices = {
-            XAUUSD: { 
-                current: 2085.34, 
-                previous: 2072.89,
-                high: 2095.67,
-                low: 2078.12,
-                open: 2081.45
-            },
-            USDJPY: { 
-                current: 150.12, 
-                previous: 150.46,
-                high: 150.78,
-                low: 149.89,
-                open: 150.23
-            }
-        };
-        
-        console.log('✅ Simulation mode ready');
-    }
-
-    // Load initial data for both symbols
-    async loadInitialData() {
-        console.log('📥 Loading initial data...');
-        
-        for (const [symbol, twelveSymbol] of Object.entries(this.symbols)) {
-            try {
-                // Get current price
-                const priceData = await this.getRealTimePrice(symbol);
-                console.log(`✅ ${symbol}: ${this.formatPrice(symbol, priceData.price)} (${priceData.source})`);
-                
-                // Get historical data for indicators
-                const historicalData = await this.getHistoricalData(symbol, '1h', 100);
-                console.log(`📊 ${symbol}: ${historicalData.bars.length} historical bars (${historicalData.source})`);
-                
-            } catch (error) {
-                console.warn(`⚠️ Failed to load ${symbol}:`, error.message);
-            }
-        }
-    }
-
-    // Start real-time update loop
-    startRealTimeUpdates() {
-        // Update prices every 10 seconds (real) or 2 seconds (simulation)
-        const updateInterval = this.useFallback ? 2000 : 10000;
-        
-        this.updateInterval = setInterval(async () => {
-            try {
-                await this.updateAllPrices();
-            } catch (error) {
-                console.warn('Price update failed:', error.message);
-            }
-        }, updateInterval);
-        
-        console.log(`🔄 Real-time updates started (${updateInterval/1000}s interval, ${this.useFallback ? 'simulated' : 'live'} mode)`);
-    }
-
-    // Update all symbol prices
-    async updateAllPrices() {
-        if (!this.useFallback && !this.canMakeApiCall()) {
-            console.log('⏳ Rate limit reached, skipping update');
-            return;
-        }
-        
-        for (const symbol of Object.keys(this.symbols)) {
-            try {
-                const priceData = await this.getRealTimePrice(symbol);
-                
-                // Dispatch price update event
-                window.dispatchEvent(new CustomEvent('huehue-price-update', {
-                    detail: { symbol, priceData }
-                }));
-                
-                // Small delay between calls (only for real API)
-                if (!this.useFallback) {
-                    await this.sleep(100);
-                }
-                
-            } catch (error) {
-                console.warn(`Failed to update ${symbol}:`, error.message);
-            }
-        }
-    }
-
-    // Get real-time price (real or simulated)
     async getRealTimePrice(symbol) {
-        if (this.useFallback) {
-            return this.getSimulatedPrice(symbol);
+        if (!this.isConnected) {
+            throw new Error('Data feed not connected - call initialize() first');
         }
-        
-        // Check cache first (30 second cache)
+
+        if (this.circuitBreakerOpen) {
+            this.checkCircuitBreaker();
+            if (this.circuitBreakerOpen) {
+                throw new Error('Circuit breaker is open - service temporarily unavailable');
+            }
+        }
+
+        // Check cache first
         const cacheKey = `price_${symbol}`;
-        const cached = this.getCachedData(cacheKey, 30000);
+        const cached = this.getCachedData(cacheKey, CONFIG.CACHE.priceMaxAge);
         if (cached) {
+            CONFIG.log('debug', `📦 Using cached price for ${symbol}`);
             return cached;
         }
-        
+
+        // Check rate limit
         if (!this.canMakeApiCall()) {
-            throw new Error('Rate limit exceeded');
+            throw new Error(`Rate limit exceeded (${this.apiCalls}/${this.maxCallsPerMinute} calls/minute)`);
         }
-        
+
         const twelveSymbol = this.symbols[symbol];
         if (!twelveSymbol) {
             throw new Error(`Unknown symbol: ${symbol}`);
         }
-        
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TWELVE_DATA.timeoutMs);
+
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-            
             const response = await fetch(
                 `${this.baseUrl}/quote?symbol=${twelveSymbol}&apikey=${this.apiKey}`,
                 { 
@@ -312,121 +219,91 @@ class LiveDataFeed {
             clearTimeout(timeoutId);
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
             }
             
             const data = await response.json();
             
-            if (data.code && data.code !== 200) {
-                throw new Error(data.message || 'API Error');
+            // Validate response
+            const validation = CONFIG.validateApiResponse(data, ['close', 'change']);
+            if (!validation.valid) {
+                this.lastErrorCode = validation.code;
+                throw new Error(validation.error);
             }
             
             this.trackApiCall();
+            this.resetErrorCount();
             
             // Convert to our format
             const priceData = {
                 symbol: symbol,
-                price: parseFloat(data.close),
-                change: parseFloat(data.change),
-                changePercent: parseFloat(data.percent_change),
+                price: parseFloat(data.close) || 0,
+                change: parseFloat(data.change) || 0,
+                changePercent: parseFloat(data.percent_change) || 0,
                 timestamp: Date.now(),
                 source: 'Twelve Data',
-                high: parseFloat(data.high),
-                low: parseFloat(data.low),
-                open: parseFloat(data.open),
+                high: parseFloat(data.high) || 0,
+                low: parseFloat(data.low) || 0,
+                open: parseFloat(data.open) || 0,
                 volume: parseInt(data.volume) || 0
             };
             
             // Cache the result
             this.setCachedData(cacheKey, priceData);
             
-            console.log(`💰 ${symbol}: ${this.formatPrice(symbol, priceData.price)} (${priceData.change > 0 ? '+' : ''}${priceData.change.toFixed(2)})`);
+            CONFIG.log('debug', `💰 ${symbol}: ${CONFIG.formatPrice(symbol, priceData.price)}`);
             
             return priceData;
             
         } catch (error) {
+            clearTimeout(timeoutId);
+            
             if (error.name === 'AbortError') {
-                console.warn(`⏰ Timeout getting price for ${symbol}, switching to fallback`);
-                this.useFallback = true;
-                return this.getSimulatedPrice(symbol);
+                error.message = `Timeout getting price for ${symbol} (${CONFIG.TWELVE_DATA.timeoutMs / 1000}s)`;
             }
             
-            console.error(`Failed to get price for ${symbol}:`, error);
+            this.trackError(error);
             throw error;
         }
     }
 
-    // Get simulated price data
-    getSimulatedPrice(symbol) {
-        if (!this.simulatedPrices[symbol]) {
-            throw new Error(`No simulation data for ${symbol}`);
-        }
-        
-        const simData = this.simulatedPrices[symbol];
-        
-        // Simulate realistic price movements
-        const volatility = symbol === 'XAUUSD' ? 1.5 : 0.08;
-        const change = (Math.random() - 0.5) * volatility;
-        
-        // Update simulated price
-        simData.previous = simData.current;
-        simData.current += change;
-        
-        // Keep realistic ranges
-        if (symbol === 'XAUUSD') {
-            simData.current = Math.max(2050, Math.min(2120, simData.current));
-        } else {
-            simData.current = Math.max(148, Math.min(152, simData.current));
-        }
-        
-        const priceChange = simData.current - simData.previous;
-        const changePercent = (priceChange / simData.previous) * 100;
-        
-        return {
-            symbol: symbol,
-            price: simData.current,
-            change: priceChange,
-            changePercent: changePercent,
-            timestamp: Date.now(),
-            source: 'Simulation',
-            high: simData.high,
-            low: simData.low,
-            open: simData.open,
-            volume: Math.floor(Math.random() * 50000) + 10000
-        };
-    }
-
-    // Get historical data (real or simulated)
     async getHistoricalData(symbol, period = '1h', limit = 100) {
-        if (this.useFallback) {
-            return this.generateSimulatedHistoricalData(symbol, period, limit);
+        if (!this.isConnected) {
+            throw new Error('Data feed not connected');
         }
-        
-        // Check cache first (5 minute cache)
+
+        if (this.circuitBreakerOpen) {
+            this.checkCircuitBreaker();
+            if (this.circuitBreakerOpen) {
+                throw new Error('Circuit breaker is open - service temporarily unavailable');
+            }
+        }
+
+        // Check cache first
         const cacheKey = `historical_${symbol}_${period}_${limit}`;
-        const cached = this.getCachedData(cacheKey, 300000);
+        const cached = this.getCachedData(cacheKey, CONFIG.CACHE.historicalMaxAge);
         if (cached) {
+            CONFIG.log('debug', `📦 Using cached historical data for ${symbol}`);
             return cached;
         }
-        
+
         if (!this.canMakeApiCall()) {
-            console.warn('Rate limit reached, using simulated historical data');
-            return this.generateSimulatedHistoricalData(symbol, period, limit);
+            throw new Error(`Rate limit exceeded (${this.apiCalls}/${this.maxCallsPerMinute} calls/minute)`);
         }
-        
+
         const twelveSymbol = this.symbols[symbol];
         if (!twelveSymbol) {
             throw new Error(`Unknown symbol: ${symbol}`);
         }
-        
-        // Convert period to Twelve Data format
+
         const interval = period === '1h' ? '1h' : '1day';
-        const outputsize = Math.min(limit, 5000); // Twelve Data limit
-        
+        const outputsize = Math.min(limit, 5000);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TWELVE_DATA.timeoutMs * 1.5);
+
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout for historical
-            
             const response = await fetch(
                 `${this.baseUrl}/time_series?symbol=${twelveSymbol}&interval=${interval}&outputsize=${outputsize}&apikey=${this.apiKey}`,
                 { 
@@ -441,32 +318,45 @@ class LiveDataFeed {
             clearTimeout(timeoutId);
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
             }
             
             const data = await response.json();
             
-            if (data.code && data.code !== 200) {
-                throw new Error(data.message || 'API Error');
+            // Validate response
+            const validation = CONFIG.validateApiResponse(data, ['values']);
+            if (!validation.valid) {
+                this.lastErrorCode = validation.code;
+                throw new Error(validation.error);
             }
             
-            if (!data.values || !Array.isArray(data.values)) {
-                throw new Error('Invalid historical data format');
+            if (!Array.isArray(data.values)) {
+                throw new Error('Invalid historical data format - values is not an array');
             }
             
             this.trackApiCall();
+            this.resetErrorCount();
             
             // Convert to our format
             const bars = data.values
                 .slice(0, limit)
-                .map(bar => ({
-                    timestamp: new Date(bar.datetime).getTime(),
-                    open: parseFloat(bar.open),
-                    high: parseFloat(bar.high),
-                    low: parseFloat(bar.low),
-                    close: parseFloat(bar.close),
-                    volume: parseInt(bar.volume) || 0
-                }))
+                .map(bar => {
+                    try {
+                        return {
+                            timestamp: new Date(bar.datetime).getTime(),
+                            open: parseFloat(bar.open) || 0,
+                            high: parseFloat(bar.high) || 0,
+                            low: parseFloat(bar.low) || 0,
+                            close: parseFloat(bar.close) || 0,
+                            volume: parseInt(bar.volume) || 0
+                        };
+                    } catch (e) {
+                        CONFIG.log('warn', 'Error parsing bar data:', bar);
+                        return null;
+                    }
+                })
+                .filter(bar => bar !== null)
                 .reverse(); // Most recent first
             
             const historicalData = {
@@ -479,60 +369,68 @@ class LiveDataFeed {
             // Cache the result
             this.setCachedData(cacheKey, historicalData);
             
-            console.log(`📊 Historical data for ${symbol}: ${bars.length} bars`);
+            CONFIG.log('debug', `📊 Historical data for ${symbol}: ${bars.length} bars`);
             
             return historicalData;
             
         } catch (error) {
+            clearTimeout(timeoutId);
+            
             if (error.name === 'AbortError') {
-                console.warn(`⏰ Timeout getting historical data for ${symbol}, using simulation`);
+                error.message = `Timeout getting historical data for ${symbol}`;
             }
             
-            console.warn(`Using simulated historical data for ${symbol}:`, error.message);
-            return this.generateSimulatedHistoricalData(symbol, period, limit);
+            this.trackError(error);
+            throw error;
         }
     }
 
-    // Generate simulated historical data
-    generateSimulatedHistoricalData(symbol, period, limit) {
-        const currentPrice = symbol === 'XAUUSD' ? 2085 : 150;
-        const volatility = symbol === 'XAUUSD' ? 3 : 0.2;
+    // Error tracking and circuit breaker
+    trackError(error) {
+        this.errorCount++;
+        this.lastErrorTime = Date.now();
+        this.lastError = error.message;
         
-        const bars = [];
-        let price = currentPrice;
-        const now = Date.now();
-        const intervalMs = period === '1h' ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+        CONFIG.log('error', `API Error ${this.errorCount}:`, error.message);
         
-        for (let i = limit - 1; i >= 0; i--) {
-            const timestamp = now - (i * intervalMs);
-            const change = (Math.random() - 0.5) * volatility;
-            
-            const open = price;
-            const close = price + change;
-            const high = Math.max(open, close) + Math.random() * (volatility / 4);
-            const low = Math.min(open, close) - Math.random() * (volatility / 4);
-            
-            bars.push({
-                timestamp: timestamp,
-                open: open,
-                high: high,
-                low: low,
-                close: close,
-                volume: Math.floor(Math.random() * 50000) + 10000
-            });
-            
-            price = close;
+        // Open circuit breaker if too many errors
+        if (this.errorCount >= CONFIG.ERROR_HANDLING.circuitBreakerThreshold) {
+            this.openCircuitBreaker();
         }
         
-        return {
-            symbol: symbol,
-            period: period,
-            bars: bars,
-            source: 'Simulation'
-        };
+        this.handleConnectionError(error);
     }
 
-    // Rate limiting functions
+    resetErrorCount() {
+        if (this.errorCount > 0) {
+            CONFIG.log('info', '✅ API errors cleared');
+            this.errorCount = 0;
+            this.hideErrorMessage();
+        }
+    }
+
+    openCircuitBreaker() {
+        this.circuitBreakerOpen = true;
+        this.circuitBreakerOpenTime = Date.now();
+        this.isConnected = false;
+        
+        CONFIG.log('error', '🚫 Circuit breaker opened - too many API failures');
+        this.updateConnectionStatus('error');
+        this.showErrorMessage(`Service temporarily unavailable (${this.errorCount} consecutive failures)`);
+    }
+
+    checkCircuitBreaker() {
+        if (this.circuitBreakerOpen) {
+            const timeOpen = Date.now() - this.circuitBreakerOpenTime;
+            if (timeOpen >= CONFIG.ERROR_HANDLING.circuitBreakerTimeout) {
+                this.circuitBreakerOpen = false;
+                this.errorCount = 0;
+                CONFIG.log('info', '🔄 Circuit breaker reset - retrying connection');
+            }
+        }
+    }
+
+    // Rate limiting
     canMakeApiCall() {
         this.resetApiCallsIfNeeded();
         return this.apiCalls < this.maxCallsPerMinute;
@@ -541,15 +439,15 @@ class LiveDataFeed {
     trackApiCall() {
         this.resetApiCallsIfNeeded();
         this.apiCalls++;
-        console.log(`📈 API calls: ${this.apiCalls}/${this.maxCallsPerMinute}`);
+        CONFIG.log('debug', `📈 API calls: ${this.apiCalls}/${this.maxCallsPerMinute}`);
     }
 
     resetApiCallsIfNeeded() {
         const now = Date.now();
-        if (now - this.lastResetTime >= 60000) { // 1 minute
+        if (now - this.lastResetTime >= 60000) {
             this.apiCalls = 0;
             this.lastResetTime = now;
-            console.log('🔄 API call counter reset');
+            CONFIG.log('debug', '🔄 API call counter reset');
         }
     }
 
@@ -573,7 +471,7 @@ class LiveDataFeed {
         });
         
         // Clean old cache entries
-        if (this.cache.size > 100) {
+        if (this.cache.size > CONFIG.CACHE.maxCacheSize) {
             const oldest = Math.min(...Array.from(this.cache.values()).map(v => v.timestamp));
             for (const [k, v] of this.cache.entries()) {
                 if (v.timestamp === oldest) {
@@ -584,51 +482,130 @@ class LiveDataFeed {
         }
     }
 
-    // Utility functions
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    // UI Error Handling
+    handleConnectionError(error) {
+        this.isConnected = false;
+        this.lastError = error.message;
+        
+        // Extract error code if available
+        const codeMatch = error.message.match(/(\d{3})/);
+        this.lastErrorCode = codeMatch ? codeMatch[1] : 'Unknown';
+        
+        this.updateConnectionStatus('error');
+        this.showErrorMessage(error.message);
     }
 
-    formatPrice(symbol, price) {
-        if (symbol === 'XAUUSD') {
-            return `$${price.toFixed(2)}`;
-        } else if (symbol === 'USDJPY') {
-            return `¥${price.toFixed(3)}`;
+    updateConnectionStatus(status) {
+        const statusElement = document.getElementById('connectionStatus');
+        if (!statusElement) return;
+        
+        statusElement.className = `connection-status status-${status}`;
+        
+        switch (status) {
+            case 'connected':
+                statusElement.textContent = 'LIVE DATA';
+                break;
+            case 'connecting':
+                statusElement.textContent = 'CONNECTING';
+                break;
+            case 'error':
+                statusElement.textContent = 'API ERROR';
+                break;
         }
-        return price.toFixed(4);
+    }
+
+    showErrorMessage(message) {
+        const errorElement = document.getElementById('apiErrorMessage');
+        const errorDescription = document.getElementById('errorDescription');
+        const errorStatus = document.getElementById('errorStatus');
+        const errorCode = document.getElementById('errorCode');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorTime = document.getElementById('errorTime');
+        
+        if (errorElement && errorDescription) {
+            errorDescription.textContent = message;
+            
+            if (errorStatus) errorStatus.textContent = this.isConnected ? 'Connected' : 'Disconnected';
+            if (errorCode) errorCode.textContent = this.lastErrorCode || 'Unknown';
+            if (errorMessage) errorMessage.textContent = this.lastError || message;
+            if (errorTime) errorTime.textContent = new Date().toLocaleTimeString();
+            
+            errorElement.classList.add('show');
+        }
+    }
+
+    hideErrorMessage() {
+        const errorElement = document.getElementById('apiErrorMessage');
+        if (errorElement) {
+            errorElement.classList.remove('show');
+        }
+    }
+
+    // Public methods for retrying
+    async retryConnection() {
+        CONFIG.log('info', '🔄 Retrying connection...');
+        this.circuitBreakerOpen = false;
+        this.errorCount = 0;
+        return await this.initialize();
     }
 
     // Health check
     isHealthy() {
-        return this.isInitialized && (this.useFallback || this.canMakeApiCall());
+        return this.isConnected && !this.circuitBreakerOpen && this.canMakeApiCall();
     }
 
     // Get statistics
     getStats() {
         return {
             initialized: this.isInitialized,
-            useFallback: this.useFallback,
+            connected: this.isConnected,
             apiCalls: this.apiCalls,
             maxCalls: this.maxCallsPerMinute,
             cacheSize: this.cache.size,
-            canMakeCall: this.canMakeApiCall(),
-            mode: this.useFallback ? 'Simulation' : 'Live Data'
+            errorCount: this.errorCount,
+            circuitBreakerOpen: this.circuitBreakerOpen,
+            lastError: this.lastError,
+            lastErrorCode: this.lastErrorCode
         };
+    }
+
+    // Utility functions
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     // Cleanup
     disconnect() {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-            this.updateInterval = null;
-        }
-        
+        this.isConnected = false;
         this.isInitialized = false;
-        console.log('📡 Live data feed disconnected');
+        CONFIG.log('info', '📡 Data feed disconnected');
     }
 }
 
+// Global functions for UI
+window.retryConnection = async function() {
+    if (window.dataFeed && typeof window.dataFeed.retryConnection === 'function') {
+        try {
+            const success = await window.dataFeed.retryConnection();
+            if (success) {
+                CONFIG.log('info', '✅ Connection retry successful');
+            } else {
+                CONFIG.log('error', '❌ Connection retry failed');
+            }
+        } catch (error) {
+            CONFIG.log('error', '❌ Connection retry error:', error);
+        }
+    }
+};
+
+window.toggleErrorDetails = function() {
+    const detailsElement = document.getElementById('errorTechnicalDetails');
+    if (detailsElement) {
+        detailsElement.classList.toggle('show');
+    }
+};
+
 // Export for browser
 if (typeof window !== 'undefined') {
-    window.LiveDataFeed = LiveDataFeed;
+    window.OptimizedDataFeed = OptimizedDataFeed;
 }

@@ -1,4 +1,4 @@
-/* HueHue Clean & Simple Design - No Distracting Animations */
+/* HueHue Optimized Clean Design - No Demo/Enhanced Buttons */
 * {
     margin: 0;
     padding: 0;
@@ -52,39 +52,6 @@ body {
     min-width: 0;
 }
 
-.data-source-selector {
-    margin: 10px 0;
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    flex-wrap: wrap;
-}
-
-.source-button {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 8px 12px;
-    border-radius: 15px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    font-size: 0.8em;
-    flex: 1;
-    min-width: 70px;
-    max-width: 100px;
-}
-
-.source-button:hover,
-.source-button:active {
-    background: rgba(0, 212, 255, 0.2);
-}
-
-.source-button.active {
-    background: #00d4ff;
-    color: #000;
-    border-color: #00d4ff;
-}
-
 .last-update {
     color: #a0a0a0;
     font-size: 0.8em;
@@ -107,35 +74,181 @@ body {
     color: #00ff88;
 }
 
-/* Quick Stats */
-.quick-stats {
+/* Connection Status */
+.connection-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font-size: 0.7em;
+    font-weight: 600;
+}
+
+.status-connected {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid #00ff88;
+}
+
+.status-connecting {
+    background: rgba(255, 165, 2, 0.2);
+    color: #ffa502;
+    border: 1px solid #ffa502;
+}
+
+.status-error {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+    border: 1px solid #ff4757;
+}
+
+/* API Error Message Display */
+.api-error-message {
+    background: rgba(255, 71, 87, 0.1);
+    border: 1px solid #ff4757;
+    border-radius: 12px;
+    margin: 15px 0;
+    padding: 15px;
+    display: none;
+    animation: slideIn 0.3s ease-out;
+}
+
+.api-error-message.show {
+    display: block;
+}
+
+.error-content {
     display: flex;
-    justify-content: space-around;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.error-icon {
+    font-size: 1.5em;
+    color: #ff4757;
+    flex-shrink: 0;
+}
+
+.error-details {
+    flex: 1;
+}
+
+.error-title {
+    font-weight: bold;
+    color: #ff4757;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+
+.error-description {
+    color: #ffcccb;
+    font-size: 0.8em;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.error-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.retry-btn, .details-btn {
+    background: rgba(255, 71, 87, 0.2);
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.retry-btn:hover, .details-btn:hover {
+    background: #ff4757;
+    color: white;
+}
+
+.error-technical-details {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 71, 87, 0.3);
+    display: none;
+    font-size: 0.75em;
+}
+
+.error-technical-details.show {
+    display: block;
+}
+
+.tech-detail {
+    margin-bottom: 6px;
+    color: #ffcccb;
+}
+
+.tech-detail strong {
+    color: #ff4757;
+    min-width: 60px;
+    display: inline-block;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Remove market status styles */
+
+/* Performance Summary - Better than bottom stats */
+.performance-summary {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 15px;
-    padding: 15px 10px;
+    padding: 20px;
     margin-bottom: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.stat-item {
+.performance-summary h3 {
+    color: #ffffff;
+    font-size: 1.2em;
+    margin-bottom: 15px;
     text-align: center;
-    flex: 1;
 }
 
-.stat-value {
-    font-size: 1.3em;
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.perf-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 15px 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background-color 0.2s ease;
+}
+
+.perf-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.perf-number {
+    font-size: 1.8em;
     font-weight: bold;
-    color: #00d4ff;
-    display: block;
-    margin-bottom: 3px;
+    margin-bottom: 5px;
 }
 
-.stat-label {
-    font-size: 0.7em;
+.perf-label {
     color: #a0a0a0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.8em;
+    font-weight: 500;
 }
 
 /* Asset Cards - Clean */
@@ -152,10 +265,17 @@ body {
     padding: 15px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: transform 0.2s ease;
+    position: relative;
 }
 
 .asset-card:hover {
     transform: translateY(-2px);
+}
+
+.asset-card.offline {
+    opacity: 0.6;
+    background: rgba(255, 71, 87, 0.05);
+    border-color: rgba(255, 71, 87, 0.2);
 }
 
 .asset-header {
@@ -182,6 +302,10 @@ body {
     color: #00ff88;
     font-weight: 600;
     margin-bottom: 3px;
+}
+
+.asset-price.error {
+    color: #ff4757;
 }
 
 .price-change {
@@ -225,6 +349,11 @@ body {
 .neutral {
     color: #ffa502;
     background: rgba(255, 165, 2, 0.2);
+}
+
+.error {
+    color: #ff4757;
+    background: rgba(255, 71, 87, 0.2);
 }
 
 /* Signal Strength - Simple */
@@ -410,59 +539,7 @@ body {
     word-break: break-word;
 }
 
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 15px 10px;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.stat-number {
-    font-size: 1.3em;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.stat-label {
-    color: #a0a0a0;
-    font-size: 0.8em;
-}
-
-/* Connection Status */
-.connection-status {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 10px;
-    font-size: 0.7em;
-    font-weight: 600;
-}
-
-.status-connected {
-    background: rgba(0, 255, 136, 0.2);
-    color: #00ff88;
-    border: 1px solid #00ff88;
-}
-
-.status-connecting {
-    background: rgba(255, 165, 2, 0.2);
-    color: #ffa502;
-    border: 1px solid #ffa502;
-}
-
-.status-disconnected {
-    background: rgba(255, 71, 87, 0.2);
-    color: #ff4757;
-    border: 1px solid #ff4757;
-}
+/* Remove unused stats grid styles */
 
 /* Mobile Footer */
 .mobile-footer {
@@ -533,20 +610,6 @@ body {
         flex: none;
     }
 
-    .data-source-selector {
-        margin: 20px 0;
-        gap: 10px;
-    }
-
-    .source-button {
-        padding: 12px 25px;
-        border-radius: 25px;
-        font-size: 1.125em;
-        flex: none;
-        min-width: auto;
-        max-width: none;
-    }
-
     .session-indicator {
         position: absolute;
         top: 0;
@@ -559,6 +622,33 @@ body {
     .last-update {
         font-size: 1.125em;
         margin-top: 0;
+    }
+
+    /* Desktop Error Message */
+    .api-error-message {
+        margin: 20px 0;
+        padding: 20px;
+    }
+
+    .error-content {
+        gap: 15px;
+    }
+
+    .error-icon {
+        font-size: 2em;
+    }
+
+    .error-title {
+        font-size: 1.1em;
+    }
+
+    .error-description {
+        font-size: 1em;
+    }
+
+    .retry-btn, .details-btn {
+        padding: 8px 16px;
+        font-size: 0.9em;
     }
 
     /* Desktop Asset Cards */
@@ -720,25 +810,37 @@ body {
         line-height: 1.625;
     }
 
-    /* Desktop Stats Grid */
-    .stats-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 25px;
-        margin-top: 37.5px;
+    /* Remove desktop market status styles */
+
+    /* Desktop Performance Summary */
+    .performance-summary {
+        padding: 31.25px;
+        border-radius: 25px;
+        margin-bottom: 30px;
     }
 
-    .stat-card {
+    .performance-summary h3 {
+        font-size: 1.75em;
+        margin-bottom: 25px;
+    }
+
+    .performance-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+    }
+
+    .perf-card {
         padding: 25px;
         border-radius: 18.75px;
     }
 
-    .stat-number {
-        font-size: 2.5em;
+    .perf-number {
+        font-size: 2.2em;
         margin-bottom: 6.25px;
     }
 
-    .stat-label {
-        font-size: 1.125em;
+    .perf-label {
+        font-size: 1em;
     }
 
     /* Hide mobile footer on desktop */
@@ -784,7 +886,7 @@ body {
         gap: 8px;
     }
     
-    .stats-grid {
+    .performance-grid {
         grid-template-columns: repeat(4, 1fr);
     }
     

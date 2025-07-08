@@ -1,4 +1,4 @@
-// HueHue Technical Indicators Calculator
+// HueHue Technical Indicators Calculator - Fixed
 class TechnicalIndicators {
     constructor() {
         this.cache = new Map();
@@ -7,7 +7,7 @@ class TechnicalIndicators {
 
     // Simple Moving Average
     static sma(data, period) {
-        if (data.length < period) return null;
+        if (!data || data.length < period) return null;
         
         const result = [];
         for (let i = period - 1; i < data.length; i++) {
@@ -19,7 +19,7 @@ class TechnicalIndicators {
 
     // Exponential Moving Average
     static ema(data, period) {
-        if (data.length < period) return null;
+        if (!data || data.length < period) return null;
         
         const multiplier = 2 / (period + 1);
         const result = [];
@@ -39,7 +39,7 @@ class TechnicalIndicators {
 
     // Relative Strength Index
     static rsi(data, period = 14) {
-        if (data.length < period + 1) return null;
+        if (!data || data.length < period + 1) return null;
         
         const changes = [];
         for (let i = 1; i < data.length; i++) {
@@ -51,6 +51,8 @@ class TechnicalIndicators {
         
         const avgGains = this.sma(gains, period);
         const avgLosses = this.sma(losses, period);
+        
+        if (!avgGains || !avgLosses) return null;
         
         const result = [];
         for (let i = 0; i < avgGains.length; i++) {
@@ -68,7 +70,7 @@ class TechnicalIndicators {
 
     // Average True Range
     static atr(highs, lows, closes, period = 14) {
-        if (highs.length < period + 1) return null;
+        if (!highs || !lows || !closes || highs.length < period + 1) return null;
         
         const trueRanges = [];
         
@@ -85,9 +87,11 @@ class TechnicalIndicators {
 
     // Bollinger Bands
     static bollingerBands(data, period = 20, stdDev = 2) {
-        if (data.length < period) return null;
+        if (!data || data.length < period) return null;
         
         const smaValues = this.sma(data, period);
+        if (!smaValues) return null;
+        
         const result = {
             upper: [],
             middle: [],
@@ -115,7 +119,7 @@ class TechnicalIndicators {
 
     // MACD
     static macd(data, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
-        if (data.length < slowPeriod) return null;
+        if (!data || data.length < slowPeriod) return null;
         
         const fastEMA = this.ema(data, fastPeriod);
         const slowEMA = this.ema(data, slowPeriod);
@@ -142,16 +146,21 @@ class TechnicalIndicators {
 
     // Calculate all indicators for a symbol
     async calculateIndicators(symbol, historicalData) {
-        const cacheKey = `indicators_${symbol}_${Date.now() - (Date.now() % 60000)}`; // 1-minute cache
-        const cached = this.getCachedData(cacheKey);
-        
-        if (cached) {
-            this.log(`📦 Using cached indicators for ${symbol}`);
-            return cached;
-        }
-
         try {
-            const bars = historicalData.bars;
+            // Check if CONFIG is available
+            if (typeof CONFIG === 'undefined') {
+                throw new Error('CONFIG not available');
+            }
+
+            const cacheKey = `indicators_${symbol}_${Date.now() - (Date.now() % 60000)}`; // 1-minute cache
+            const cached = this.getCachedData(cacheKey);
+            
+            if (cached) {
+                this.log(`📦 Using cached indicators for ${symbol}`);
+                return cached;
+            }
+
+            const bars = historicalData?.bars;
             if (!bars || bars.length < 100) {
                 throw new Error(`Insufficient data for ${symbol}: ${bars ? bars.length : 0} bars`);
             }
@@ -162,26 +171,37 @@ class TechnicalIndicators {
             const lows = bars.map(bar => bar.low);
             const volumes = bars.map(bar => bar.volume || 0);
 
+            // Get EA params with defaults
+            const eaParams = CONFIG.EA_PARAMS || {
+                emaFastPeriod: 12,
+                emaSlowPeriod: 26,
+                smaTrendPeriod: 80,
+                rsiPeriod: 14,
+                atrPeriod: 14,
+                bbPeriod: 20,
+                bbDev: 2.0
+            };
+
             // Calculate all indicators
             const indicators = {
                 timestamp: Date.now(),
                 symbol: symbol,
                 
                 // Moving Averages
-                emaFast: this.constructor.ema(closes, CONFIG.EA_PARAMS.emaFastPeriod),
-                emaSlow: this.constructor.ema(closes, CONFIG.EA_PARAMS.emaSlowPeriod),
-                smaTrend: this.constructor.sma(closes, CONFIG.EA_PARAMS.smaTrendPeriod),
+                emaFast: TechnicalIndicators.ema(closes, eaParams.emaFastPeriod),
+                emaSlow: TechnicalIndicators.ema(closes, eaParams.emaSlowPeriod),
+                smaTrend: TechnicalIndicators.sma(closes, eaParams.smaTrendPeriod),
                 
                 // Momentum Indicators
-                rsi: this.constructor.rsi(closes, CONFIG.EA_PARAMS.rsiPeriod),
-                macd: this.constructor.macd(closes, 12, 26, 9),
+                rsi: TechnicalIndicators.rsi(closes, eaParams.rsiPeriod),
+                macd: TechnicalIndicators.macd(closes, 12, 26, 9),
                 
                 // Volatility Indicators
-                atr: this.constructor.atr(highs, lows, closes, CONFIG.EA_PARAMS.atrPeriod),
-                bollingerBands: this.constructor.bollingerBands(closes, CONFIG.EA_PARAMS.bbPeriod, CONFIG.EA_PARAMS.bbDev),
+                atr: TechnicalIndicators.atr(highs, lows, closes, eaParams.atrPeriod),
+                bollingerBands: TechnicalIndicators.bollingerBands(closes, eaParams.bbPeriod, eaParams.bbDev),
                 
                 // Volume
-                volumeSMA: this.constructor.sma(volumes, 20),
+                volumeSMA: TechnicalIndicators.sma(volumes, 20),
                 
                 // Raw data for reference
                 currentPrice: closes[closes.length - 1],
@@ -261,7 +281,6 @@ class TechnicalIndicators {
         if (!emaFast || !emaSlow) return 0;
         
         const distance = Math.abs(emaFast - emaSlow);
-        const assetConfig = CONFIG.ASSETS[symbol];
         
         // Convert to points based on asset type
         if (symbol === 'XAUUSD') {
@@ -320,13 +339,27 @@ class TechnicalIndicators {
 
     // Logging
     log(message, ...args) {
-        if (CONFIG.DEBUG.enabled && CONFIG.DEBUG.logLevel !== 'error') {
+        try {
+            if (typeof CONFIG !== 'undefined' && CONFIG.log) {
+                CONFIG.log('debug', `📊 [Indicators] ${message}`, ...args);
+            } else {
+                console.log(`📊 [Indicators] ${message}`, ...args);
+            }
+        } catch (error) {
             console.log(`📊 [Indicators] ${message}`, ...args);
         }
     }
 
     error(message, ...args) {
-        console.error(`❌ [Indicators] ${message}`, ...args);
+        try {
+            if (typeof CONFIG !== 'undefined' && CONFIG.log) {
+                CONFIG.log('error', `❌ [Indicators] ${message}`, ...args);
+            } else {
+                console.error(`❌ [Indicators] ${message}`, ...args);
+            }
+        } catch (error) {
+            console.error(`❌ [Indicators] ${message}`, ...args);
+        }
     }
 }
 
