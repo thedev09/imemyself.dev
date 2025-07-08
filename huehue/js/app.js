@@ -1,4 +1,4 @@
-// HueHue Optimized Main Application with Centralized Signals
+// HueHue Main Application - VPS Compatible Version
 class OptimizedHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
@@ -16,8 +16,7 @@ class OptimizedHueHueApp {
         this.isRunning = false;
         this.updateIntervals = {};
         this.lastSignals = {};
-        this.isMasterSession = false;
-        this.masterCheckInterval = null;
+        this.vpsMode = false;
         
         // Performance stats
         this.performanceStats = {
@@ -32,16 +31,12 @@ class OptimizedHueHueApp {
         this.lastErrorTime = 0;
         this.maxErrors = 10;
         
-        CONFIG.log('info', '🎯 Optimized HueHue Application initialized');
+        CONFIG.log('info', '🎯 HueHue Application initialized');
     }
 
     async initialize() {
         try {
-            if (typeof CONFIG === 'undefined') {
-                throw new Error('CONFIG not loaded - check script loading order');
-            }
-            
-            CONFIG.log('info', '🚀 Starting optimized HueHue initialization...');
+            CONFIG.log('info', '🚀 Starting HueHue initialization...');
             
             // Initialize UI first
             this.updateConnectionStatus('connecting');
@@ -50,56 +45,61 @@ class OptimizedHueHueApp {
             // Wait for Firebase
             await this.waitForFirebase();
             
-            // Initialize core components
-            try {
-                this.dataFeed = new OptimizedDataFeed();
-            } catch (error) {
-                throw new Error(`Failed to initialize data feed: ${error.message}`);
-            }
+            // Check if VPS is active
+            this.vpsMode = await this.checkVPSActive();
             
-            try {
-                this.indicators = new TechnicalIndicators();
-            } catch (error) {
-                throw new Error(`Failed to initialize indicators: ${error.message}`);
-            }
-            
-            try {
-                this.eaLogic = new EALogic();
-            } catch (error) {
-                throw new Error(`Failed to initialize EA logic: ${error.message}`);
-            }
-            
-            // Initialize data feed
-            const dataFeedSuccess = await this.dataFeed.initialize();
-            if (!dataFeedSuccess) {
-                throw new Error('Failed to initialize data feed connection');
+            if (this.vpsMode) {
+                CONFIG.log('info', '🎯 VPS Mode Active - Reading from Firebase only');
+                this.updateConnectionStatus('connected');
+                
+                // Create minimal data feed for compatibility
+                this.dataFeed = {
+                    isHealthy: () => true,
+                    getRealTimePrice: async () => ({ price: 0 }),
+                    getHistoricalData: async () => ({ bars: [] }),
+                    updateConnectionStatus: (status) => this.updateConnectionStatus(status),
+                    hideErrorMessage: () => this.hideErrorMessage()
+                };
+            } else {
+                // Initialize components for standalone mode
+                CONFIG.log('info', '💻 Standalone Mode - Initializing components');
+                
+                try {
+                    this.dataFeed = new OptimizedDataFeed();
+                    this.indicators = new TechnicalIndicators();
+                    this.eaLogic = new EALogic();
+                    
+                    const dataFeedSuccess = await this.dataFeed.initialize();
+                    if (!dataFeedSuccess) {
+                        throw new Error('Failed to initialize data feed');
+                    }
+                } catch (error) {
+                    throw new Error(`Component initialization failed: ${error.message}`);
+                }
             }
             
             // Setup real-time listeners
             this.setupRealtimeListeners();
             
-            // Check if we should be master
-            await this.checkMasterStatus();
-            
-            // Load initial data
+            // Load initial data from Firebase
             await this.loadInitialData();
             
             // Load historical signals
             await this.loadHistoricalSignals();
             
-            // Start appropriate update loops
+            // Start update loops
             this.startUpdateLoops();
             
-            // Initialize UI components
+            // Initialize UI
             this.initializeUI();
             
             this.isRunning = true;
-            CONFIG.log('info', '✅ Optimized HueHue application fully initialized');
+            CONFIG.log('info', '✅ HueHue application ready!');
             
             return true;
             
         } catch (error) {
-            CONFIG.log('error', '❌ Failed to initialize HueHue:', error);
+            CONFIG.log('error', '❌ Failed to initialize:', error);
             this.handleApplicationError(error);
             return false;
         }
@@ -116,100 +116,158 @@ class OptimizedHueHueApp {
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            CONFIG.log('info', '🔥 Firebase connected to main app');
+            CONFIG.log('info', '🔥 Firebase connected');
         } else {
-            CONFIG.log('warn', '⚠️ Firebase not available, continuing without cloud storage');
+            throw new Error('Firebase not available');
         }
+    }
+
+    async checkVPSActive() {
+        if (!this.firebaseStorage) return false;
+        
+        try {
+            // Check for VPS heartbeat
+            const systemDoc = await this.firebaseStorage.getDoc(
+                this.firebaseStorage.doc(this.firebaseStorage.db, 'system', 'generator')
+            );
+            
+            if (systemDoc.exists()) {
+                const data = systemDoc.data();
+                const lastHeartbeat = data.lastHeartbeat || 0;
+                
+                // VPS is active if heartbeat is within 2 minutes
+                if (Date.now() - lastHeartbeat < 120000) {
+                    CONFIG.log('info', `👑 VPS Generator active (${data.type || 'unknown'})`);
+                    return true;
+                }
+            }
+        } catch (error) {
+            CONFIG.log('warn', 'Could not check VPS status:', error);
+        }
+        
+        return false;
     }
 
     setupRealtimeListeners() {
         if (!this.firebaseStorage) return;
         
-        // Listen for real-time signal updates
+        // Listen for signal updates
         this.firebaseStorage.onSignalsUpdate((signals) => {
             this.handleRealtimeSignals(signals);
         });
         
-        // Listen for analysis updates for each symbol
-        const symbols = Object.keys(CONFIG.ASSETS);
-        symbols.forEach(symbol => {
+        // Listen for analysis updates
+        Object.keys(CONFIG.ASSETS).forEach(symbol => {
             this.firebaseStorage.onAnalysisUpdate(symbol, (analysis) => {
                 this.handleAnalysisUpdate(symbol, analysis);
             });
         });
         
-        CONFIG.log('info', '📡 Real-time listeners setup complete');
+        // Listen for price updates in VPS mode
+        if (this.vpsMode) {
+            Object.keys(CONFIG.ASSETS).forEach(symbol => {
+                const priceDoc = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
+                
+                this.firebaseStorage.onSnapshot(priceDoc, (doc) => {
+                    if (doc.exists()) {
+                        const priceData = doc.data();
+                        this.updatePriceDisplay(symbol, priceData);
+                    }
+                });
+            });
+        }
+        
+        CONFIG.log('info', '📡 Real-time listeners ready');
     }
 
-    async checkMasterStatus() {
+    async loadInitialData() {
+        const assets = Object.keys(CONFIG.ASSETS);
+        
+        for (const symbol of assets) {
+            try {
+                // Show loading state
+                this.updateAssetBasicInfo(symbol, {
+                    bias: 'LOADING',
+                    strength: 0
+                });
+                
+                // Load from Firebase
+                if (this.firebaseStorage) {
+                    // Get latest analysis
+                    const analysis = await this.firebaseStorage.getAnalysis(symbol);
+                    if (analysis) {
+                        this.handleAnalysisUpdate(symbol, analysis);
+                    }
+                    
+                    // Get latest price
+                    const priceDoc = await this.firebaseStorage.getDoc(
+                        this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol)
+                    );
+                    
+                    if (priceDoc.exists()) {
+                        const priceData = priceDoc.data();
+                        this.updatePriceDisplay(symbol, priceData);
+                    }
+                }
+                
+            } catch (error) {
+                CONFIG.log('error', `Failed to load ${symbol}:`, error);
+                this.handleAssetError(symbol, error);
+            }
+        }
+    }
+
+    async loadHistoricalSignals() {
         if (!this.firebaseStorage) return;
         
         try {
-            this.isMasterSession = await this.firebaseStorage.checkAndBecomeMaster();
-            
-            if (this.isMasterSession) {
-                CONFIG.log('info', '👑 This session is the MASTER - will calculate and broadcast analysis');
-                
-                // Update heartbeat every minute
-                this.masterCheckInterval = setInterval(async () => {
-                    const stillMaster = await this.firebaseStorage.updateMasterHeartbeat();
-                    if (!stillMaster) {
-                        this.isMasterSession = false;
-                        CONFIG.log('warn', '👥 Lost master status');
-                    }
-                }, 60000);
-            } else {
-                CONFIG.log('info', '👥 This session is a FOLLOWER - will receive analysis updates');
-                
-                // Check periodically if we should become master
-                this.masterCheckInterval = setInterval(async () => {
-                    if (!this.isMasterSession) {
-                        this.isMasterSession = await this.firebaseStorage.checkAndBecomeMaster();
-                        if (this.isMasterSession) {
-                            CONFIG.log('info', '👑 Promoted to MASTER session');
-                            this.startMasterUpdates();
-                        }
-                    }
-                }, 180000); // Check every 3 minutes
+            const signals = await this.firebaseStorage.getSignals(20);
+            if (signals && signals.length > 0) {
+                this.handleRealtimeSignals(signals);
             }
         } catch (error) {
-            CONFIG.log('error', 'Error checking master status:', error);
+            CONFIG.log('warn', 'Could not load historical signals:', error);
         }
     }
 
     startUpdateLoops() {
-        // All sessions get price updates
-        this.updateIntervals.prices = setInterval(async () => {
-            await this.updateAllPrices();
-        }, CONFIG.UPDATE_INTERVALS.priceUpdate);
-        
-        // Dashboard updates for all
+        // Dashboard updates
         this.updateIntervals.dashboard = setInterval(() => {
             this.updateDashboard();
         }, CONFIG.UPDATE_INTERVALS.dashboardRefresh);
         
-        // Only master calculates indicators and signals
-        if (this.isMasterSession) {
-            this.startMasterUpdates();
+        // In standalone mode, update prices and signals
+        if (!this.vpsMode) {
+            this.updateIntervals.prices = setInterval(async () => {
+                await this.updateAllPrices();
+            }, CONFIG.UPDATE_INTERVALS.priceUpdate);
+            
+            this.updateIntervals.signals = setInterval(async () => {
+                await this.updateSignalsStandalone();
+            }, CONFIG.UPDATE_INTERVALS.indicatorUpdate);
         }
         
         CONFIG.log('info', '🔄 Update loops started');
     }
 
-    startMasterUpdates() {
-        // Master calculates and broadcasts signals
-        this.updateIntervals.signals = setInterval(async () => {
-            await this.calculateAndBroadcastSignals();
-        }, CONFIG.UPDATE_INTERVALS.indicatorUpdate);
+    async updateAllPrices() {
+        if (!this.isRunning || this.vpsMode || !this.dataFeed?.isHealthy()) return;
         
-        // Immediate calculation
-        setTimeout(() => this.calculateAndBroadcastSignals(), 5000);
+        const assets = Object.keys(CONFIG.ASSETS);
+        
+        for (const symbol of assets) {
+            try {
+                const priceData = await this.dataFeed.getRealTimePrice(symbol);
+                this.updatePriceDisplay(symbol, priceData);
+                await this.sleep(200);
+            } catch (error) {
+                CONFIG.log('warn', `Price update failed for ${symbol}:`, error);
+            }
+        }
     }
 
-    async calculateAndBroadcastSignals() {
-        if (!this.isRunning || !this.dataFeed?.isHealthy() || !this.isMasterSession) return;
-        
-        CONFIG.log('info', '🧮 Master calculating signals...');
+    async updateSignalsStandalone() {
+        if (!this.isRunning || this.vpsMode || !this.dataFeed?.isHealthy()) return;
         
         const assets = Object.keys(CONFIG.ASSETS);
         
@@ -223,41 +281,36 @@ class OptimizedHueHueApp {
                 const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
                 const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
                 
-                if (signal && this.firebaseStorage) {
-                    // Save analysis to Firebase for all sessions
-                    await this.firebaseStorage.saveAnalysis(symbol, {
-                        ...signal,
-                        price: priceData.price,
-                        change: priceData.change,
-                        changePercent: priceData.changePercent
-                    });
+                if (signal) {
+                    this.handleAnalysisUpdate(symbol, signal);
                     
-                    // Check for trading signal
-                    const tradingSignal = this.eaLogic.generateTradingSignal(signal);
-                    if (tradingSignal) {
-                        await this.firebaseStorage.saveSignal(tradingSignal);
+                    // Save to Firebase
+                    if (this.firebaseStorage) {
+                        await this.firebaseStorage.saveAnalysis(symbol, signal);
+                        
+                        // Check for trading signal
+                        const tradingSignal = this.eaLogic.generateTradingSignal(signal);
+                        if (tradingSignal) {
+                            await this.firebaseStorage.saveSignal(tradingSignal);
+                        }
                     }
                 }
                 
-                // Small delay between symbols
                 await this.sleep(500);
-                
             } catch (error) {
-                CONFIG.log('warn', `Failed to calculate signals for ${symbol}:`, error.message);
+                CONFIG.log('warn', `Signal update failed for ${symbol}:`, error);
             }
         }
     }
 
     handleRealtimeSignals(signals) {
-        CONFIG.log('info', `📡 Received ${signals.length} real-time signals`);
+        CONFIG.log('info', `📡 Received ${signals.length} signals`);
         
         const signalsList = document.getElementById('signalsList');
         if (!signalsList) return;
         
-        // Clear and rebuild list
         signalsList.innerHTML = '';
         
-        // Show most recent 10
         const recentSignals = signals.slice(0, 10);
         
         recentSignals.forEach(signal => {
@@ -276,112 +329,12 @@ class OptimizedHueHueApp {
     handleAnalysisUpdate(symbol, analysis) {
         CONFIG.log('info', `📊 Analysis update for ${symbol}: ${analysis.bias} (${analysis.strength}/6)`);
         
-        // Update UI with centralized analysis
-        this.updateAssetCard(symbol, analysis, { 
+        this.lastSignals[symbol] = analysis;
+        this.updateAssetCard(symbol, analysis, {
             price: analysis.price,
             change: analysis.change,
             changePercent: analysis.changePercent
         });
-        
-        // Store as last signal
-        this.lastSignals[symbol] = analysis;
-    }
-
-    async loadHistoricalSignals() {
-        if (!this.firebaseStorage) {
-            CONFIG.log('info', '📊 No Firebase storage, skipping historical signals');
-            return;
-        }
-        
-        try {
-            CONFIG.log('info', '📥 Loading recent signals from Firebase...');
-            
-            const allSignals = await this.firebaseStorage.getSignals(50);
-            
-            if (allSignals && allSignals.length > 0) {
-                this.handleRealtimeSignals(allSignals);
-                CONFIG.log('info', `✅ Loaded ${allSignals.length} recent signals`);
-            } else {
-                CONFIG.log('info', '📊 No signals found in Firebase');
-            }
-            
-        } catch (error) {
-            CONFIG.log('warn', '⚠️ Could not load historical signals:', error);
-        }
-    }
-
-    async loadInitialData() {
-        const assets = Object.keys(CONFIG.ASSETS);
-        
-        // First, try to load cached analysis from Firebase
-        if (this.firebaseStorage) {
-            for (const symbol of assets) {
-                try {
-                    const cachedAnalysis = await this.firebaseStorage.getAnalysis(symbol);
-                    if (cachedAnalysis && Date.now() - cachedAnalysis.timestamp < 300000) { // 5 minutes
-                        this.handleAnalysisUpdate(symbol, cachedAnalysis);
-                    }
-                } catch (error) {
-                    CONFIG.log('warn', `Could not load cached analysis for ${symbol}`);
-                }
-            }
-        }
-        
-        // Then load current prices
-        for (const symbol of assets) {
-            try {
-                CONFIG.log('debug', `📥 Loading initial data for ${symbol}...`);
-                
-                const priceData = await Promise.race([
-                    this.dataFeed.getRealTimePrice(symbol),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Price fetch timeout')), 10000))
-                ]);
-                
-                this.updatePriceDisplay(symbol, priceData);
-                
-                // If no cached analysis, show loading state
-                if (!this.lastSignals[symbol]) {
-                    this.updateAssetBasicInfo(symbol, {
-                        bias: 'LOADING',
-                        strength: 0
-                    });
-                }
-                
-                CONFIG.log('debug', `✅ Basic data loaded for ${symbol}`);
-                
-            } catch (error) {
-                CONFIG.log('error', `❌ Failed to load initial data for ${symbol}:`, error.message);
-                this.handleAssetError(symbol, error);
-            }
-        }
-        
-        // If we're master, calculate indicators after initial load
-        if (this.isMasterSession) {
-            setTimeout(() => this.calculateAndBroadcastSignals(), 3000);
-        }
-    }
-
-    async updateAllPrices() {
-        if (!this.isRunning || !this.dataFeed?.isHealthy()) {
-            return;
-        }
-        
-        const assets = Object.keys(CONFIG.ASSETS);
-        
-        for (const symbol of assets) {
-            try {
-                const priceData = await this.dataFeed.getRealTimePrice(symbol);
-                this.updatePriceDisplay(symbol, priceData);
-                this.clearAssetError(symbol);
-                
-                await this.sleep(200);
-                
-            } catch (error) {
-                CONFIG.log('warn', `Failed to update price for ${symbol}:`, error.message);
-                this.handleAssetError(symbol, error);
-            }
-        }
     }
 
     updateAssetCard(symbol, signal, priceData) {
@@ -438,7 +391,7 @@ class OptimizedHueHueApp {
             if (!confluenceItems?.length || !signal?.conditions) return;
             
             const conditionNames = ['trend', 'strength', 'rsi', 'position', 'priceAction', 'volume'];
-            const conditionLabels = ['Trend', 'Strength', 'RSI', 'Position', 'Price Action', 'Volume'];
+            const conditionLabels = ['Trend', 'Strength', 'RSI', 'Position', 'Action', 'Volume'];
             
             conditionNames.forEach((conditionName, index) => {
                 try {
@@ -531,7 +484,7 @@ class OptimizedHueHueApp {
             }
             
         } catch (error) {
-            CONFIG.log('warn', `Error updating basic asset info for ${symbol}:`, error);
+            CONFIG.log('warn', `Error updating basic info for ${symbol}:`, error);
         }
     }
 
@@ -556,29 +509,8 @@ class OptimizedHueHueApp {
                 biasElement.className = 'bias-label error';
             }
             
-            CONFIG.log('error', `Asset ${symbol} error:`, error.message);
-            
         } catch (e) {
             CONFIG.log('error', 'Error handling asset error:', e);
-        }
-    }
-
-    clearAssetError(symbol) {
-        try {
-            const symbolLower = symbol.toLowerCase();
-            const assetCard = document.querySelector(`[data-symbol="${symbolLower}"]`);
-            const priceElement = document.getElementById(`${symbolLower}-price`);
-            
-            if (assetCard) {
-                assetCard.classList.remove('offline');
-            }
-            
-            if (priceElement) {
-                priceElement.classList.remove('error');
-            }
-            
-        } catch (error) {
-            CONFIG.log('warn', 'Error clearing asset error:', error);
         }
     }
 
@@ -599,16 +531,16 @@ class OptimizedHueHueApp {
             const strength = signal.strength || 0;
             const maxStrength = signal.maxStrength || 6;
             
-            const firebaseIndicator = signal.id ? ' 🔥' : '';
+            const sourceIcon = signal.source === 'vps_smart_hybrid' ? ' 🚀' : ' 🔥';
             
             signalDiv.innerHTML = `
                 <div class="signal-meta">
-                    <span class="signal-asset">${signal.symbol} ${signal.action}${firebaseIndicator}</span>
+                    <span class="signal-asset">${signal.symbol} ${signal.action}${sourceIcon}</span>
                     <span class="signal-time">${dateStr} ${timeStr}</span>
                 </div>
                 <div class="signal-details">
                     Entry: ${formattedPrice} | Strength: ${strength}/${maxStrength}
-                    ${signal.id ? ' | ✅ Synced' : ' | ⚠️ Local only'}
+                    ${signal.id ? ' | ✅ Synced' : ' | ⚠️ Local'}
                 </div>
             `;
             
@@ -647,9 +579,7 @@ class OptimizedHueHueApp {
                 s.timestamp && new Date(s.timestamp) >= thisWeek
             );
             
-            const strongSignals = realSignals.filter(s => 
-                s.strength >= 5
-            );
+            const strongSignals = realSignals.filter(s => s.strength >= 5);
             
             this.updateElementSafely('dailySignals', todaySignals.length);
             this.updateElementSafely('weeklySignals', weekSignals.length);
@@ -667,10 +597,8 @@ class OptimizedHueHueApp {
                 this.updateElementSafely('avgStrength', '0.0');
             }
             
-            CONFIG.log('debug', `Performance stats: ${todaySignals.length} today, ${weekSignals.length} this week, ${strongSignals.length} strong`);
-            
         } catch (error) {
-            CONFIG.log('warn', 'Error updating performance stats:', error);
+            CONFIG.log('warn', 'Error updating stats:', error);
         }
     }
 
@@ -685,7 +613,6 @@ class OptimizedHueHueApp {
         try {
             this.updateTime();
             this.updateSession();
-            this.updateMasterStatus();
         } catch (error) {
             CONFIG.log('warn', 'Error updating dashboard:', error);
         }
@@ -701,10 +628,10 @@ class OptimizedHueHueApp {
             if (!sessionIndicator) return;
             
             const session = CONFIG.getCurrentSession();
-            const masterIndicator = this.isMasterSession ? ' 👑' : '';
+            const modeIndicator = this.vpsMode ? ' 🚀 VPS' : ' 💻 Local';
             const sessionText = session.active ? 
-                `${session.emoji} ${session.name} Session${masterIndicator}` : 
-                `🌙 Market Quiet${masterIndicator}`;
+                `${session.emoji} ${session.name} Session${modeIndicator}` : 
+                `🌙 Market Quiet${modeIndicator}`;
             
             sessionIndicator.textContent = sessionText;
             sessionIndicator.className = session.active ? 
@@ -716,31 +643,34 @@ class OptimizedHueHueApp {
         }
     }
 
-    updateMasterStatus() {
-        const statusElement = document.getElementById('connectionStatus');
-        if (statusElement && statusElement.textContent === 'LIVE DATA') {
-            statusElement.textContent = this.isMasterSession ? 'LIVE DATA 👑' : 'LIVE DATA';
-        }
-    }
-
     updateConnectionStatus(status) {
-        if (this.dataFeed?.updateConnectionStatus) {
-            this.dataFeed.updateConnectionStatus(status);
+        const statusElement = document.getElementById('connectionStatus');
+        if (!statusElement) return;
+        
+        statusElement.className = `connection-status status-${status}`;
+        
+        switch (status) {
+            case 'connected':
+                statusElement.textContent = this.vpsMode ? 'VPS MODE' : 'LIVE DATA';
+                break;
+            case 'connecting':
+                statusElement.textContent = 'CONNECTING';
+                break;
+            case 'error':
+                statusElement.textContent = 'ERROR';
+                break;
         }
     }
 
     hideErrorMessage() {
-        if (this.dataFeed?.hideErrorMessage) {
-            this.dataFeed.hideErrorMessage();
+        const errorElement = document.getElementById('apiErrorMessage');
+        if (errorElement) {
+            errorElement.classList.remove('show');
         }
     }
 
     initializeUI() {
-        try {
-            CONFIG.log('info', '🎨 UI initialized');
-        } catch (error) {
-            CONFIG.log('warn', 'Error initializing UI:', error);
-        }
+        CONFIG.log('info', '🎨 UI initialized');
     }
 
     handleApplicationError(error) {
@@ -749,27 +679,24 @@ class OptimizedHueHueApp {
         
         CONFIG.log('error', `Application error ${this.errorCount}:`, error.message);
         
+        // Show error to user
+        const errorElement = document.getElementById('apiErrorMessage');
+        if (errorElement) {
+            const errorDescription = document.getElementById('errorDescription');
+            if (errorDescription) {
+                errorDescription.textContent = error.message;
+            }
+            errorElement.classList.add('show');
+        }
+        
         if (this.errorCount >= this.maxErrors) {
-            CONFIG.log('error', '🚨 Too many application errors, stopping updates');
+            CONFIG.log('error', '🚨 Too many errors, stopping');
             this.stop();
         }
     }
 
     showSignalDetails(signal) {
         CONFIG.log('info', '📊 Signal details:', signal);
-    }
-
-    showBrowserNotification(signal) {
-        try {
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(`HueHue Signal: ${signal.action} ${signal.symbol}`, {
-                    body: `Strength: ${signal.strength}/6`,
-                    icon: '/favicon.ico'
-                });
-            }
-        } catch (error) {
-            CONFIG.log('warn', 'Error showing notification:', error);
-        }
     }
 
     updateElementSafely(elementId, value) {
@@ -798,19 +725,15 @@ class OptimizedHueHueApp {
                 clearInterval(interval);
             });
             
-            if (this.masterCheckInterval) {
-                clearInterval(this.masterCheckInterval);
-            }
-            
-            if (this.dataFeed) {
+            if (this.dataFeed?.disconnect) {
                 this.dataFeed.disconnect();
             }
             
-            if (this.firebaseStorage) {
+            if (this.firebaseStorage?.cleanup) {
                 this.firebaseStorage.cleanup();
             }
             
-            CONFIG.log('info', '🛑 Optimized HueHue application stopped');
+            CONFIG.log('info', '🛑 Application stopped');
         } catch (error) {
             CONFIG.log('error', 'Error stopping application:', error);
         }
@@ -827,38 +750,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    CONFIG.log('info', '🚀 Starting Optimized HueHue Application...');
+    CONFIG.log('info', '🚀 Starting HueHue Application...');
     
     try {
         optimizedHueHueApp = new OptimizedHueHueApp();
         
-        if (!optimizedHueHueApp) {
-            throw new Error('Failed to create application instance');
-        }
-        
         const initialized = await optimizedHueHueApp.initialize();
         
         if (initialized) {
-            CONFIG.log('info', '✅ Optimized HueHue is now running!');
+            CONFIG.log('info', '✅ HueHue is running!');
             
             if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission();
             }
-            
         } else {
-            CONFIG.log('error', '❌ Failed to start Optimized HueHue');
+            CONFIG.log('error', '❌ Failed to start HueHue');
         }
     } catch (error) {
-        CONFIG.log('error', '❌ Critical error starting Optimized HueHue:', error);
-        
-        const errorElement = document.getElementById('apiErrorMessage');
-        if (errorElement) {
-            const errorDescription = document.getElementById('errorDescription');
-            if (errorDescription) {
-                errorDescription.textContent = `Application failed to start: ${error.message}`;
-            }
-            errorElement.classList.add('show');
-        }
+        CONFIG.log('error', '❌ Critical error:', error);
     }
 });
 
@@ -869,20 +778,20 @@ window.addEventListener('beforeunload', () => {
             optimizedHueHueApp.stop();
         }
     } catch (error) {
-        CONFIG.log('error', 'Error during page unload:', error);
+        CONFIG.log('error', 'Error during unload:', error);
     }
 });
 
 // Global error handlers
 window.addEventListener('error', (event) => {
-    CONFIG.log('error', 'Global error caught:', event.error);
+    CONFIG.log('error', 'Global error:', event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
-    CONFIG.log('error', 'Unhandled promise rejection:', event.reason);
+    CONFIG.log('error', 'Unhandled rejection:', event.reason);
 });
 
-// Expose app to global scope for debugging
+// Expose for debugging
 if (CONFIG.ERROR_HANDLING.logLevel === 'debug') {
     window.optimizedHueHueApp = optimizedHueHueApp;
 }
