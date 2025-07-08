@@ -1,4 +1,4 @@
-// HueHue Optimized Main Application - Performance Enhanced Version
+// HueHue Optimized Main Application with Centralized Signals
 class OptimizedHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
@@ -16,15 +16,8 @@ class OptimizedHueHueApp {
         this.isRunning = false;
         this.updateIntervals = {};
         this.lastSignals = {};
-        
-        // Performance tracking
-        this.loadStartTime = Date.now();
-        this.performanceMetrics = {
-            firebaseInit: 0,
-            dataFeedInit: 0,
-            initialDataLoad: 0,
-            totalInit: 0
-        };
+        this.isMasterSession = false;
+        this.masterCheckInterval = null;
         
         // Performance stats
         this.performanceStats = {
@@ -44,369 +37,350 @@ class OptimizedHueHueApp {
 
     async initialize() {
         try {
-            CONFIG.log('info', '🚀 Starting optimized HueHue initialization...');
-            const startTime = Date.now();
-            
-            // Initialize UI first (instant feedback)
-            this.updateConnectionStatus('connecting');
-            this.hideErrorMessage();
-            this.showLoadingState();
-            
-            // Parallel initialization of independent components
-            const [firebaseReady, componentsReady] = await Promise.all([
-                this.initializeFirebase(),
-                this.initializeComponents()
-            ]);
-            
-            if (!firebaseReady || !componentsReady) {
-                throw new Error('Failed to initialize core components');
+            if (typeof CONFIG === 'undefined') {
+                throw new Error('CONFIG not loaded - check script loading order');
             }
             
-            // Initialize data feed with Firebase (now that we have API key)
+            CONFIG.log('info', '🚀 Starting optimized HueHue initialization...');
+            
+            // Initialize UI first
+            this.updateConnectionStatus('connecting');
+            this.hideErrorMessage();
+            
+            // Wait for Firebase
+            await this.waitForFirebase();
+            
+            // Initialize core components
+            try {
+                this.dataFeed = new OptimizedDataFeed();
+            } catch (error) {
+                throw new Error(`Failed to initialize data feed: ${error.message}`);
+            }
+            
+            try {
+                this.indicators = new TechnicalIndicators();
+            } catch (error) {
+                throw new Error(`Failed to initialize indicators: ${error.message}`);
+            }
+            
+            try {
+                this.eaLogic = new EALogic();
+            } catch (error) {
+                throw new Error(`Failed to initialize EA logic: ${error.message}`);
+            }
+            
+            // Initialize data feed
             const dataFeedSuccess = await this.dataFeed.initialize();
             if (!dataFeedSuccess) {
                 throw new Error('Failed to initialize data feed connection');
             }
             
-            // Parallel data loading
-            await Promise.all([
-                this.loadInitialDataOptimized(),
-                this.loadHistoricalSignalsAsync() // Non-blocking
-            ]);
+            // Setup real-time listeners
+            this.setupRealtimeListeners();
             
-            // Start update loops
-            this.startOptimizedUpdates();
+            // Check if we should be master
+            await this.checkMasterStatus();
+            
+            // Load initial data
+            await this.loadInitialData();
+            
+            // Load historical signals
+            await this.loadHistoricalSignals();
+            
+            // Start appropriate update loops
+            this.startUpdateLoops();
             
             // Initialize UI components
             this.initializeUI();
-            this.hideLoadingState();
             
             this.isRunning = true;
-            
-            const totalTime = Date.now() - startTime;
-            CONFIG.log('info', `✅ HueHue initialized in ${totalTime}ms`);
-            this.logPerformanceMetrics();
+            CONFIG.log('info', '✅ Optimized HueHue application fully initialized');
             
             return true;
             
         } catch (error) {
             CONFIG.log('error', '❌ Failed to initialize HueHue:', error);
             this.handleApplicationError(error);
-            this.hideLoadingState();
             return false;
         }
     }
 
-    async initializeFirebase() {
-        const startTime = Date.now();
+    async waitForFirebase() {
         let attempts = 0;
-        const maxAttempts = 20; // Reduced from 30
+        const maxAttempts = 30;
         
         while (!window.firebaseStorage && attempts < maxAttempts) {
-            await this.sleep(50); // Reduced from 100ms
+            await this.sleep(100);
             attempts++;
         }
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            this.performanceMetrics.firebaseInit = Date.now() - startTime;
-            CONFIG.log('info', `🔥 Firebase connected in ${this.performanceMetrics.firebaseInit}ms`);
-            return true;
-        }
-        
-        CONFIG.log('warn', '⚠️ Firebase not available, continuing without cloud storage');
-        return true; // Don't block app if Firebase fails
-    }
-
-    async initializeComponents() {
-        try {
-            // Initialize all components in parallel
-            const results = await Promise.allSettled([
-                new Promise(resolve => {
-                    this.dataFeed = new OptimizedDataFeed();
-                    resolve(true);
-                }),
-                new Promise(resolve => {
-                    this.indicators = new TechnicalIndicators();
-                    resolve(true);
-                }),
-                new Promise(resolve => {
-                    this.eaLogic = new EALogic();
-                    resolve(true);
-                })
-            ]);
-            
-            return results.every(r => r.status === 'fulfilled');
-        } catch (error) {
-            CONFIG.log('error', 'Failed to initialize components:', error);
-            return false;
+            CONFIG.log('info', '🔥 Firebase connected to main app');
+        } else {
+            CONFIG.log('warn', '⚠️ Firebase not available, continuing without cloud storage');
         }
     }
 
-    async loadInitialDataOptimized() {
-        const startTime = Date.now();
-        const assets = Object.keys(CONFIG.ASSETS);
+    setupRealtimeListeners() {
+        if (!this.firebaseStorage) return;
         
-        // Load all assets in parallel with proper error handling
-        const results = await Promise.allSettled(
-            assets.map(symbol => this.loadAssetDataQuick(symbol))
-        );
-        
-        // Process results
-        results.forEach((result, index) => {
-            const symbol = assets[index];
-            if (result.status === 'rejected') {
-                CONFIG.log('warn', `Failed to load ${symbol}:`, result.reason);
-                this.handleAssetError(symbol, result.reason);
-            }
+        // Listen for real-time signal updates
+        this.firebaseStorage.onSignalsUpdate((signals) => {
+            this.handleRealtimeSignals(signals);
         });
         
-        this.performanceMetrics.initialDataLoad = Date.now() - startTime;
-        CONFIG.log('info', `📊 Initial data loaded in ${this.performanceMetrics.initialDataLoad}ms`);
-        
-        // Load full indicators after initial display (non-blocking)
-        setTimeout(() => this.loadIndicatorsOptimized(), 100);
-    }
-
-    async loadAssetDataQuick(symbol) {
-        try {
-            // Just get current price first (fastest)
-            const priceData = await Promise.race([
-                this.dataFeed.getRealTimePrice(symbol),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Price timeout')), 5000))
-            ]);
-            
-            // Update UI immediately
-            this.updatePriceDisplay(symbol, priceData);
-            this.updateAssetBasicInfo(symbol, {
-                bias: 'ANALYZING',
-                strength: 0
+        // Listen for analysis updates for each symbol
+        const symbols = Object.keys(CONFIG.ASSETS);
+        symbols.forEach(symbol => {
+            this.firebaseStorage.onAnalysisUpdate(symbol, (analysis) => {
+                this.handleAnalysisUpdate(symbol, analysis);
             });
-            
-            return priceData;
-            
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async loadIndicatorsOptimized() {
-        if (!this.isRunning) return;
+        });
         
-        const assets = Object.keys(CONFIG.ASSETS);
-        
-        // Process assets in parallel
-        await Promise.allSettled(
-            assets.map(symbol => this.processAssetIndicators(symbol))
-        );
+        CONFIG.log('info', '📡 Real-time listeners setup complete');
     }
 
-    async processAssetIndicators(symbol) {
-        try {
-            // Get data with shorter timeout
-            const [historicalData, priceData] = await Promise.all([
-                Promise.race([
-                    this.dataFeed.getHistoricalData(symbol, '1h', 100),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Historical timeout')), 8000))
-                ]),
-                this.dataFeed.getRealTimePrice(symbol)
-            ]);
-            
-            // Calculate indicators
-            const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
-            
-            // Analyze signal
-            const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
-            
-            if (signal) {
-                this.lastSignals[symbol] = signal;
-                this.updateAssetCard(symbol, signal, priceData);
-            }
-            
-        } catch (error) {
-            CONFIG.log('warn', `Indicator processing failed for ${symbol}:`, error.message);
-        }
-    }
-
-    async loadHistoricalSignalsAsync() {
-        // Non-blocking Firebase load
+    async checkMasterStatus() {
         if (!this.firebaseStorage) return;
         
         try {
-            const allSignals = await this.firebaseStorage.getSignals(20); // Reduced from 50
+            this.isMasterSession = await this.firebaseStorage.checkAndBecomeMaster();
             
-            if (allSignals && allSignals.length > 0) {
-                // Update UI in chunks to prevent blocking
-                this.updateSignalsUI(allSignals.slice(0, 10));
-                this.updateQuickStatsFromSignals(allSignals);
+            if (this.isMasterSession) {
+                CONFIG.log('info', '👑 This session is the MASTER - will calculate and broadcast analysis');
+                
+                // Update heartbeat every minute
+                this.masterCheckInterval = setInterval(async () => {
+                    const stillMaster = await this.firebaseStorage.updateMasterHeartbeat();
+                    if (!stillMaster) {
+                        this.isMasterSession = false;
+                        CONFIG.log('warn', '👥 Lost master status');
+                    }
+                }, 60000);
+            } else {
+                CONFIG.log('info', '👥 This session is a FOLLOWER - will receive analysis updates');
+                
+                // Check periodically if we should become master
+                this.masterCheckInterval = setInterval(async () => {
+                    if (!this.isMasterSession) {
+                        this.isMasterSession = await this.firebaseStorage.checkAndBecomeMaster();
+                        if (this.isMasterSession) {
+                            CONFIG.log('info', '👑 Promoted to MASTER session');
+                            this.startMasterUpdates();
+                        }
+                    }
+                }, 180000); // Check every 3 minutes
             }
-            
         } catch (error) {
-            CONFIG.log('warn', 'Could not load historical signals:', error);
+            CONFIG.log('error', 'Error checking master status:', error);
         }
     }
 
-    updateSignalsUI(signals) {
+    startUpdateLoops() {
+        // All sessions get price updates
+        this.updateIntervals.prices = setInterval(async () => {
+            await this.updateAllPrices();
+        }, CONFIG.UPDATE_INTERVALS.priceUpdate);
+        
+        // Dashboard updates for all
+        this.updateIntervals.dashboard = setInterval(() => {
+            this.updateDashboard();
+        }, CONFIG.UPDATE_INTERVALS.dashboardRefresh);
+        
+        // Only master calculates indicators and signals
+        if (this.isMasterSession) {
+            this.startMasterUpdates();
+        }
+        
+        CONFIG.log('info', '🔄 Update loops started');
+    }
+
+    startMasterUpdates() {
+        // Master calculates and broadcasts signals
+        this.updateIntervals.signals = setInterval(async () => {
+            await this.calculateAndBroadcastSignals();
+        }, CONFIG.UPDATE_INTERVALS.indicatorUpdate);
+        
+        // Immediate calculation
+        setTimeout(() => this.calculateAndBroadcastSignals(), 5000);
+    }
+
+    async calculateAndBroadcastSignals() {
+        if (!this.isRunning || !this.dataFeed?.isHealthy() || !this.isMasterSession) return;
+        
+        CONFIG.log('info', '🧮 Master calculating signals...');
+        
+        const assets = Object.keys(CONFIG.ASSETS);
+        
+        for (const symbol of assets) {
+            try {
+                const [historicalData, priceData] = await Promise.all([
+                    this.dataFeed.getHistoricalData(symbol, '1h', 100),
+                    this.dataFeed.getRealTimePrice(symbol)
+                ]);
+                
+                const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
+                const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
+                
+                if (signal && this.firebaseStorage) {
+                    // Save analysis to Firebase for all sessions
+                    await this.firebaseStorage.saveAnalysis(symbol, {
+                        ...signal,
+                        price: priceData.price,
+                        change: priceData.change,
+                        changePercent: priceData.changePercent
+                    });
+                    
+                    // Check for trading signal
+                    const tradingSignal = this.eaLogic.generateTradingSignal(signal);
+                    if (tradingSignal) {
+                        await this.firebaseStorage.saveSignal(tradingSignal);
+                    }
+                }
+                
+                // Small delay between symbols
+                await this.sleep(500);
+                
+            } catch (error) {
+                CONFIG.log('warn', `Failed to calculate signals for ${symbol}:`, error.message);
+            }
+        }
+    }
+
+    handleRealtimeSignals(signals) {
+        CONFIG.log('info', `📡 Received ${signals.length} real-time signals`);
+        
         const signalsList = document.getElementById('signalsList');
         if (!signalsList) return;
         
-        // Use DocumentFragment for better performance
-        const fragment = document.createDocumentFragment();
+        // Clear and rebuild list
         signalsList.innerHTML = '';
         
-        signals.forEach(signal => {
+        // Show most recent 10
+        const recentSignals = signals.slice(0, 10);
+        
+        recentSignals.forEach(signal => {
             try {
                 const element = this.createSignalElement(signal);
-                if (element) fragment.appendChild(element);
+                if (element) signalsList.appendChild(element);
             } catch (error) {
                 CONFIG.log('warn', 'Error creating signal element:', error);
             }
         });
         
-        signalsList.appendChild(fragment);
-        this.updateElementSafely('signalCount', `${signals.length} recent signals`);
+        this.updateElementSafely('signalCount', `${recentSignals.length} recent signals`);
+        this.updateQuickStatsFromSignals(signals);
     }
 
-    startOptimizedUpdates() {
+    handleAnalysisUpdate(symbol, analysis) {
+        CONFIG.log('info', `📊 Analysis update for ${symbol}: ${analysis.bias} (${analysis.strength}/6)`);
+        
+        // Update UI with centralized analysis
+        this.updateAssetCard(symbol, analysis, { 
+            price: analysis.price,
+            change: analysis.change,
+            changePercent: analysis.changePercent
+        });
+        
+        // Store as last signal
+        this.lastSignals[symbol] = analysis;
+    }
+
+    async loadHistoricalSignals() {
+        if (!this.firebaseStorage) {
+            CONFIG.log('info', '📊 No Firebase storage, skipping historical signals');
+            return;
+        }
+        
         try {
-            // Stagger update intervals to prevent simultaneous calls
+            CONFIG.log('info', '📥 Loading recent signals from Firebase...');
             
-            // Price updates every 30 seconds
-            this.updateIntervals.prices = setInterval(async () => {
-                await this.updatePricesOptimized();
-            }, CONFIG.UPDATE_INTERVALS.priceUpdate);
+            const allSignals = await this.firebaseStorage.getSignals(50);
             
-            // Indicator updates every 10 minutes (staggered by 30s)
-            setTimeout(() => {
-                this.updateIntervals.signals = setInterval(async () => {
-                    await this.updateSignalsOptimized();
-                }, CONFIG.UPDATE_INTERVALS.indicatorUpdate);
-            }, 30000);
+            if (allSignals && allSignals.length > 0) {
+                this.handleRealtimeSignals(allSignals);
+                CONFIG.log('info', `✅ Loaded ${allSignals.length} recent signals`);
+            } else {
+                CONFIG.log('info', '📊 No signals found in Firebase');
+            }
             
-            // Dashboard refresh every 10 seconds
-            this.updateIntervals.dashboard = setInterval(() => {
-                this.updateDashboard();
-            }, CONFIG.UPDATE_INTERVALS.dashboardRefresh);
-            
-            // Health check every minute (staggered by 45s)
-            setTimeout(() => {
-                this.updateIntervals.healthCheck = setInterval(() => {
-                    this.performHealthCheck();
-                }, CONFIG.UPDATE_INTERVALS.healthCheck);
-            }, 45000);
-            
-            CONFIG.log('info', '🔄 Optimized update loops started');
         } catch (error) {
-            CONFIG.log('error', 'Error starting updates:', error);
+            CONFIG.log('warn', '⚠️ Could not load historical signals:', error);
         }
     }
 
-    async updatePricesOptimized() {
-        if (!this.isRunning || !this.dataFeed?.isHealthy()) return;
-        
+    async loadInitialData() {
         const assets = Object.keys(CONFIG.ASSETS);
         
-        // Update all prices in parallel
-        await Promise.allSettled(
-            assets.map(symbol => 
-                this.dataFeed.getRealTimePrice(symbol)
-                    .then(priceData => {
-                        this.updatePriceDisplay(symbol, priceData);
-                        this.clearAssetError(symbol);
-                    })
-                    .catch(error => {
-                        CONFIG.log('warn', `Price update failed for ${symbol}:`, error.message);
-                        this.handleAssetError(symbol, error);
-                    })
-            )
-        );
-    }
-
-    async updateSignalsOptimized() {
-        if (!this.isRunning || !this.dataFeed?.isHealthy()) return;
-        
-        const assets = Object.keys(CONFIG.ASSETS);
-        
-        // Process all assets in parallel
-        await Promise.allSettled(
-            assets.map(async symbol => {
+        // First, try to load cached analysis from Firebase
+        if (this.firebaseStorage) {
+            for (const symbol of assets) {
                 try {
-                    const [historicalData, priceData] = await Promise.all([
-                        this.dataFeed.getHistoricalData(symbol, '1h', 100),
-                        this.dataFeed.getRealTimePrice(symbol)
-                    ]);
-                    
-                    const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
-                    const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
-                    
-                    if (signal) {
-                        const tradingSignal = this.eaLogic.generateTradingSignal(signal);
-                        if (tradingSignal) {
-                            this.handleNewTradingSignal(tradingSignal);
-                        }
-                        
-                        this.lastSignals[symbol] = signal;
-                        this.updateAssetCard(symbol, signal, priceData);
-                        this.clearAssetError(symbol);
+                    const cachedAnalysis = await this.firebaseStorage.getAnalysis(symbol);
+                    if (cachedAnalysis && Date.now() - cachedAnalysis.timestamp < 300000) { // 5 minutes
+                        this.handleAnalysisUpdate(symbol, cachedAnalysis);
                     }
                 } catch (error) {
-                    CONFIG.log('warn', `Signal update failed for ${symbol}:`, error.message);
-                    this.handleAssetError(symbol, error);
+                    CONFIG.log('warn', `Could not load cached analysis for ${symbol}`);
                 }
-            })
-        );
+            }
+        }
+        
+        // Then load current prices
+        for (const symbol of assets) {
+            try {
+                CONFIG.log('debug', `📥 Loading initial data for ${symbol}...`);
+                
+                const priceData = await Promise.race([
+                    this.dataFeed.getRealTimePrice(symbol),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Price fetch timeout')), 10000))
+                ]);
+                
+                this.updatePriceDisplay(symbol, priceData);
+                
+                // If no cached analysis, show loading state
+                if (!this.lastSignals[symbol]) {
+                    this.updateAssetBasicInfo(symbol, {
+                        bias: 'LOADING',
+                        strength: 0
+                    });
+                }
+                
+                CONFIG.log('debug', `✅ Basic data loaded for ${symbol}`);
+                
+            } catch (error) {
+                CONFIG.log('error', `❌ Failed to load initial data for ${symbol}:`, error.message);
+                this.handleAssetError(symbol, error);
+            }
+        }
+        
+        // If we're master, calculate indicators after initial load
+        if (this.isMasterSession) {
+            setTimeout(() => this.calculateAndBroadcastSignals(), 3000);
+        }
     }
 
-    showLoadingState() {
-        // Add loading indicators to asset cards
+    async updateAllPrices() {
+        if (!this.isRunning || !this.dataFeed?.isHealthy()) {
+            return;
+        }
+        
         const assets = Object.keys(CONFIG.ASSETS);
-        assets.forEach(symbol => {
-            const symbolLower = symbol.toLowerCase();
-            const priceElement = document.getElementById(`${symbolLower}-price`);
-            const biasElement = document.getElementById(`${symbolLower}-bias`);
-            
-            if (priceElement) priceElement.textContent = 'Loading...';
-            if (biasElement) {
-                biasElement.textContent = 'LOADING';
-                biasElement.className = 'bias-label neutral';
+        
+        for (const symbol of assets) {
+            try {
+                const priceData = await this.dataFeed.getRealTimePrice(symbol);
+                this.updatePriceDisplay(symbol, priceData);
+                this.clearAssetError(symbol);
+                
+                await this.sleep(200);
+                
+            } catch (error) {
+                CONFIG.log('warn', `Failed to update price for ${symbol}:`, error.message);
+                this.handleAssetError(symbol, error);
             }
-        });
-    }
-
-    hideLoadingState() {
-        // Loading state is replaced by actual data
-    }
-
-    logPerformanceMetrics() {
-        this.performanceMetrics.totalInit = Date.now() - this.loadStartTime;
-        CONFIG.log('info', '📊 Performance Metrics:', {
-            firebaseInit: `${this.performanceMetrics.firebaseInit}ms`,
-            dataFeedInit: `${this.performanceMetrics.dataFeedInit}ms`,
-            initialDataLoad: `${this.performanceMetrics.initialDataLoad}ms`,
-            totalInit: `${this.performanceMetrics.totalInit}ms`
-        });
-    }
-
-    // Keep all other methods unchanged...
-    // (Include all the remaining methods from the original app.js without modification)
-
-    performHealthCheck() {
-        try {
-            if (!this.dataFeed?.isHealthy()) {
-                CONFIG.log('warn', 'Data feed health check failed');
-                setTimeout(() => {
-                    this.dataFeed?.retryConnection();
-                }, 5000);
-            }
-            
-            if (Date.now() - this.lastErrorTime > 300000) {
-                this.errorCount = 0;
-            }
-            
-        } catch (error) {
-            CONFIG.log('error', 'Health check error:', error);
         }
     }
 
@@ -608,47 +582,6 @@ class OptimizedHueHueApp {
         }
     }
 
-    async handleNewTradingSignal(tradingSignal) {
-        try {
-            CONFIG.log('info', `🚨 NEW TRADING SIGNAL: ${tradingSignal.action} ${tradingSignal.symbol}`);
-            
-            this.addSignalToList(tradingSignal, true);
-            this.showBrowserNotification(tradingSignal);
-            
-        } catch (error) {
-            CONFIG.log('error', 'Error handling new trading signal:', error);
-        }
-    }
-
-    addSignalToList(signal, saveToFirebase = true) {
-        try {
-            const signalsList = document.getElementById('signalsList');
-            if (!signalsList || !signal?.symbol || !signal?.action) return;
-            
-            const signalElement = this.createSignalElement(signal);
-            if (signalElement) {
-                if (saveToFirebase) {
-                    signalsList.insertBefore(signalElement, signalsList.firstChild);
-                } else {
-                    signalsList.appendChild(signalElement);
-                }
-                
-                while (signalsList.children.length > 10) {
-                    signalsList.removeChild(signalsList.lastChild);
-                }
-            }
-            
-            if (saveToFirebase && this.firebaseStorage) {
-                this.firebaseStorage.saveSignal(signal).catch(error => {
-                    CONFIG.log('warn', 'Could not save signal to Firebase:', error);
-                });
-            }
-            
-        } catch (error) {
-            CONFIG.log('warn', 'Error adding signal to list:', error);
-        }
-    }
-
     createSignalElement(signal) {
         try {
             if (!signal?.symbol || !signal?.action) return null;
@@ -675,7 +608,7 @@ class OptimizedHueHueApp {
                 </div>
                 <div class="signal-details">
                     Entry: ${formattedPrice} | Strength: ${strength}/${maxStrength}
-                    ${signal.id ? ' | ✅ Saved to Firebase' : ' | ⚠️ Local only'}
+                    ${signal.id ? ' | ✅ Synced' : ' | ⚠️ Local only'}
                 </div>
             `;
             
@@ -734,6 +667,8 @@ class OptimizedHueHueApp {
                 this.updateElementSafely('avgStrength', '0.0');
             }
             
+            CONFIG.log('debug', `Performance stats: ${todaySignals.length} today, ${weekSignals.length} this week, ${strongSignals.length} strong`);
+            
         } catch (error) {
             CONFIG.log('warn', 'Error updating performance stats:', error);
         }
@@ -750,6 +685,7 @@ class OptimizedHueHueApp {
         try {
             this.updateTime();
             this.updateSession();
+            this.updateMasterStatus();
         } catch (error) {
             CONFIG.log('warn', 'Error updating dashboard:', error);
         }
@@ -765,9 +701,10 @@ class OptimizedHueHueApp {
             if (!sessionIndicator) return;
             
             const session = CONFIG.getCurrentSession();
+            const masterIndicator = this.isMasterSession ? ' 👑' : '';
             const sessionText = session.active ? 
-                `${session.emoji} ${session.name} Session` : 
-                '🌙 Market Quiet';
+                `${session.emoji} ${session.name} Session${masterIndicator}` : 
+                `🌙 Market Quiet${masterIndicator}`;
             
             sessionIndicator.textContent = sessionText;
             sessionIndicator.className = session.active ? 
@@ -776,6 +713,13 @@ class OptimizedHueHueApp {
                 
         } catch (error) {
             CONFIG.log('warn', 'Error updating session:', error);
+        }
+    }
+
+    updateMasterStatus() {
+        const statusElement = document.getElementById('connectionStatus');
+        if (statusElement && statusElement.textContent === 'LIVE DATA') {
+            statusElement.textContent = this.isMasterSession ? 'LIVE DATA 👑' : 'LIVE DATA';
         }
     }
 
@@ -854,8 +798,16 @@ class OptimizedHueHueApp {
                 clearInterval(interval);
             });
             
+            if (this.masterCheckInterval) {
+                clearInterval(this.masterCheckInterval);
+            }
+            
             if (this.dataFeed) {
                 this.dataFeed.disconnect();
+            }
+            
+            if (this.firebaseStorage) {
+                this.firebaseStorage.cleanup();
             }
             
             CONFIG.log('info', '🛑 Optimized HueHue application stopped');
