@@ -1,16 +1,18 @@
-// HueHue Optimized Live Data Feed - No Demo Mode, Real Error Handling
+// HueHue Optimized Live Data Feed - Enhanced Performance Version
 class OptimizedDataFeed {
     constructor() {
         this.baseUrl = CONFIG.TWELVE_DATA.baseUrl;
-        this.apiKey = null; // Will be loaded from Firebase
+        this.apiKey = null;
         
         // API tracking
         this.apiCalls = 0;
         this.lastResetTime = Date.now();
         this.maxCallsPerMinute = CONFIG.TWELVE_DATA.maxCallsPerMinute;
         
-        // Cache system
+        // Enhanced cache system with batch support
         this.cache = new Map();
+        this.batchQueue = new Map();
+        this.batchTimer = null;
         
         // Symbol mapping
         this.symbols = {
@@ -33,33 +35,50 @@ class OptimizedDataFeed {
         // Firebase reference
         this.firebaseStorage = null;
         
+        // Performance metrics
+        this.performanceMetrics = {
+            apiCallsSaved: 0,
+            cacheHits: 0,
+            cacheMisses: 0
+        };
+        
         CONFIG.log('info', '📡 Optimized Data Feed initialized');
     }
 
     async initialize() {
         try {
             CONFIG.log('info', '🔌 Initializing data feed...');
+            const startTime = Date.now();
             this.updateConnectionStatus('connecting');
             
-            // Wait for Firebase
-            await this.waitForFirebase();
+            // Parallel initialization
+            const [firebaseReady, apiKeyLoaded] = await Promise.all([
+                this.waitForFirebase(),
+                Promise.resolve() // API key will be loaded after Firebase
+            ]);
             
             // Load API key from Firebase
-            await this.loadApiKeyFromFirebase();
+            if (this.firebaseStorage) {
+                await this.loadApiKeyFromFirebase();
+            } else {
+                // Use config fallback
+                this.apiKey = CONFIG.TWELVE_DATA.apiKey;
+            }
             
             if (!this.apiKey) {
                 throw new Error('No API key available');
             }
             
-            // Test connection with detailed error handling
-            await this.testConnection();
+            // Quick connection test with shorter timeout
+            await this.quickConnectionTest();
             
             this.isConnected = true;
             this.isInitialized = true;
             this.hideErrorMessage();
             this.updateConnectionStatus('connected');
             
-            CONFIG.log('info', '✅ Data feed initialized successfully');
+            const initTime = Date.now() - startTime;
+            CONFIG.log('info', `✅ Data feed initialized in ${initTime}ms`);
             return true;
             
         } catch (error) {
@@ -71,58 +90,54 @@ class OptimizedDataFeed {
 
     async waitForFirebase() {
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 20; // Reduced from 30
         
         while (!window.firebaseStorage && attempts < maxAttempts) {
-            await this.sleep(100);
+            await this.sleep(50); // Reduced from 100ms
             attempts++;
         }
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            CONFIG.log('info', '🔥 Firebase connected');
+            CONFIG.log('info', '🔥 Firebase connected to data feed');
+            return true;
         } else {
-            throw new Error('Firebase not available after 3 seconds');
+            CONFIG.log('warn', '⚠️ Firebase not available for data feed');
+            return false;
         }
     }
 
     async loadApiKeyFromFirebase() {
         try {
             if (!this.firebaseStorage) {
-                throw new Error('Firebase storage not available');
+                this.apiKey = CONFIG.TWELVE_DATA.apiKey;
+                return;
             }
             
-            let apiKey = await this.firebaseStorage.getApiKey();
+            // Try to get from Firebase first
+            const storedKey = await this.firebaseStorage.getApiKey();
             
-            if (!apiKey) {
-                apiKey = prompt('🔑 Enter your Twelve Data API key (will be saved securely):');
-                if (apiKey && apiKey.trim()) {
-                    await this.firebaseStorage.saveApiKey(apiKey.trim());
-                    CONFIG.log('info', '🔥 API key saved to Firebase');
+            if (storedKey) {
+                this.apiKey = storedKey;
+                CONFIG.log('info', '🔑 API key loaded from Firebase');
+            } else {
+                // Use config key and save to Firebase
+                this.apiKey = CONFIG.TWELVE_DATA.apiKey;
+                if (this.apiKey) {
+                    await this.firebaseStorage.saveApiKey(this.apiKey);
+                    CONFIG.log('info', '🔑 API key saved to Firebase');
                 }
             }
             
-            this.apiKey = apiKey;
-            CONFIG.log('info', '🔑 API key loaded:', this.apiKey ? 'Success ✅' : 'Missing ❌');
-            
         } catch (error) {
             CONFIG.log('warn', '⚠️ Could not load API key from Firebase:', error.message);
-            // Fallback to config
             this.apiKey = CONFIG.TWELVE_DATA.apiKey;
-            CONFIG.log('warn', 'Using fallback API key from config');
         }
     }
 
-    async testConnection() {
-        if (this.circuitBreakerOpen) {
-            this.checkCircuitBreaker();
-            if (this.circuitBreakerOpen) {
-                throw new Error('Circuit breaker is open - too many recent failures');
-            }
-        }
-
+    async quickConnectionTest() {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TWELVE_DATA.timeoutMs);
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
         
         try {
             const response = await fetch(
@@ -138,15 +153,13 @@ class OptimizedDataFeed {
             
             clearTimeout(timeoutId);
             
-            // Handle HTTP errors
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const data = await response.json();
             
-            // Validate API response
             const validation = CONFIG.validateApiResponse(data, ['close']);
             if (!validation.valid) {
                 this.lastErrorCode = validation.code;
@@ -163,7 +176,7 @@ class OptimizedDataFeed {
             clearTimeout(timeoutId);
             
             if (error.name === 'AbortError') {
-                throw new Error(`Connection timeout (${CONFIG.TWELVE_DATA.timeoutMs / 1000}s)`);
+                throw new Error('Connection timeout (5s)');
             }
             
             this.trackError(error);
@@ -173,26 +186,35 @@ class OptimizedDataFeed {
 
     async getRealTimePrice(symbol) {
         if (!this.isConnected) {
-            throw new Error('Data feed not connected - call initialize() first');
+            throw new Error('Data feed not connected');
         }
 
         if (this.circuitBreakerOpen) {
             this.checkCircuitBreaker();
             if (this.circuitBreakerOpen) {
-                throw new Error('Circuit breaker is open - service temporarily unavailable');
+                throw new Error('Circuit breaker is open');
             }
         }
 
-        // Check cache first
+        // Enhanced cache check
         const cacheKey = `price_${symbol}`;
         const cached = this.getCachedData(cacheKey, CONFIG.CACHE.priceMaxAge);
         if (cached) {
-            CONFIG.log('debug', `📦 Using cached price for ${symbol}`);
+            this.performanceMetrics.cacheHits++;
+            CONFIG.log('debug', `📦 Cache hit for ${symbol} price`);
             return cached;
         }
 
+        this.performanceMetrics.cacheMisses++;
+
         // Check rate limit
         if (!this.canMakeApiCall()) {
+            // Return stale cache if available
+            const staleCache = this.getCachedData(cacheKey, CONFIG.CACHE.priceMaxAge * 2);
+            if (staleCache) {
+                CONFIG.log('warn', `⚠️ Rate limited, using stale cache for ${symbol}`);
+                return staleCache;
+            }
             throw new Error(`Rate limit exceeded (${this.apiCalls}/${this.maxCallsPerMinute} calls/minute)`);
         }
 
@@ -202,7 +224,7 @@ class OptimizedDataFeed {
         }
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TWELVE_DATA.timeoutMs);
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // Reduced from 10s
 
         try {
             const response = await fetch(
@@ -220,13 +242,12 @@ class OptimizedDataFeed {
             
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const data = await response.json();
             
-            // Validate response
-            const validation = CONFIG.validateApiResponse(data, ['close', 'change']);
+            const validation = CONFIG.validateApiResponse(data, ['close']);
             if (!validation.valid) {
                 this.lastErrorCode = validation.code;
                 throw new Error(validation.error);
@@ -235,7 +256,7 @@ class OptimizedDataFeed {
             this.trackApiCall();
             this.resetErrorCount();
             
-            // Convert to our format
+            // Convert to our format with all available data
             const priceData = {
                 symbol: symbol,
                 price: parseFloat(data.close) || 0,
@@ -246,11 +267,15 @@ class OptimizedDataFeed {
                 high: parseFloat(data.high) || 0,
                 low: parseFloat(data.low) || 0,
                 open: parseFloat(data.open) || 0,
-                volume: parseInt(data.volume) || 0
+                volume: parseInt(data.volume) || 0,
+                previousClose: parseFloat(data.previous_close) || 0
             };
             
-            // Cache the result
+            // Enhanced caching
             this.setCachedData(cacheKey, priceData);
+            
+            // Also cache as historical data point
+            this.updateHistoricalCache(symbol, priceData);
             
             CONFIG.log('debug', `💰 ${symbol}: ${CONFIG.formatPrice(symbol, priceData.price)}`);
             
@@ -260,10 +285,18 @@ class OptimizedDataFeed {
             clearTimeout(timeoutId);
             
             if (error.name === 'AbortError') {
-                error.message = `Timeout getting price for ${symbol} (${CONFIG.TWELVE_DATA.timeoutMs / 1000}s)`;
+                error.message = `Timeout getting price for ${symbol} (8s)`;
             }
             
             this.trackError(error);
+            
+            // Try to return stale cache on error
+            const staleCache = this.getCachedData(cacheKey, CONFIG.CACHE.priceMaxAge * 3);
+            if (staleCache) {
+                CONFIG.log('warn', `⚠️ API error, using stale cache for ${symbol}`);
+                return staleCache;
+            }
+            
             throw error;
         }
     }
@@ -276,20 +309,29 @@ class OptimizedDataFeed {
         if (this.circuitBreakerOpen) {
             this.checkCircuitBreaker();
             if (this.circuitBreakerOpen) {
-                throw new Error('Circuit breaker is open - service temporarily unavailable');
+                throw new Error('Circuit breaker is open');
             }
         }
 
-        // Check cache first
+        // Enhanced cache check
         const cacheKey = `historical_${symbol}_${period}_${limit}`;
         const cached = this.getCachedData(cacheKey, CONFIG.CACHE.historicalMaxAge);
         if (cached) {
-            CONFIG.log('debug', `📦 Using cached historical data for ${symbol}`);
+            this.performanceMetrics.cacheHits++;
+            CONFIG.log('debug', `📦 Cache hit for ${symbol} historical data`);
             return cached;
         }
 
+        this.performanceMetrics.cacheMisses++;
+
         if (!this.canMakeApiCall()) {
-            throw new Error(`Rate limit exceeded (${this.apiCalls}/${this.maxCallsPerMinute} calls/minute)`);
+            // Return stale cache if available
+            const staleCache = this.getCachedData(cacheKey, CONFIG.CACHE.historicalMaxAge * 2);
+            if (staleCache) {
+                CONFIG.log('warn', `⚠️ Rate limited, using stale historical cache for ${symbol}`);
+                return staleCache;
+            }
+            throw new Error(`Rate limit exceeded`);
         }
 
         const twelveSymbol = this.symbols[symbol];
@@ -298,10 +340,10 @@ class OptimizedDataFeed {
         }
 
         const interval = period === '1h' ? '1h' : '1day';
-        const outputsize = Math.min(limit, 5000);
+        const outputsize = Math.min(limit, 500); // Reduced from 5000
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), CONFIG.TWELVE_DATA.timeoutMs * 1.5);
+        const timeoutId = setTimeout(() => controller.abort(), 12000); // Reduced from 15s
 
         try {
             const response = await fetch(
@@ -319,12 +361,11 @@ class OptimizedDataFeed {
             
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
             const data = await response.json();
             
-            // Validate response
             const validation = CONFIG.validateApiResponse(data, ['values']);
             if (!validation.valid) {
                 this.lastErrorCode = validation.code;
@@ -332,41 +373,41 @@ class OptimizedDataFeed {
             }
             
             if (!Array.isArray(data.values)) {
-                throw new Error('Invalid historical data format - values is not an array');
+                throw new Error('Invalid historical data format');
             }
             
             this.trackApiCall();
             this.resetErrorCount();
             
-            // Convert to our format
-            const bars = data.values
-                .slice(0, limit)
-                .map(bar => {
-                    try {
-                        return {
-                            timestamp: new Date(bar.datetime).getTime(),
-                            open: parseFloat(bar.open) || 0,
-                            high: parseFloat(bar.high) || 0,
-                            low: parseFloat(bar.low) || 0,
-                            close: parseFloat(bar.close) || 0,
-                            volume: parseInt(bar.volume) || 0
-                        };
-                    } catch (e) {
-                        CONFIG.log('warn', 'Error parsing bar data:', bar);
-                        return null;
-                    }
-                })
-                .filter(bar => bar !== null)
-                .reverse(); // Most recent first
+            // Convert to our format with optimized parsing
+            const bars = [];
+            for (let i = 0; i < Math.min(data.values.length, limit); i++) {
+                const bar = data.values[i];
+                try {
+                    bars.push({
+                        timestamp: new Date(bar.datetime).getTime(),
+                        open: parseFloat(bar.open) || 0,
+                        high: parseFloat(bar.high) || 0,
+                        low: parseFloat(bar.low) || 0,
+                        close: parseFloat(bar.close) || 0,
+                        volume: parseInt(bar.volume) || 0
+                    });
+                } catch (e) {
+                    CONFIG.log('warn', 'Error parsing bar data:', e);
+                }
+            }
+            
+            bars.reverse(); // Most recent first
             
             const historicalData = {
                 symbol: symbol,
                 period: period,
                 bars: bars,
-                source: 'Twelve Data'
+                source: 'Twelve Data',
+                timestamp: Date.now()
             };
             
-            // Cache the result
+            // Enhanced caching with longer TTL for historical data
             this.setCachedData(cacheKey, historicalData);
             
             CONFIG.log('debug', `📊 Historical data for ${symbol}: ${bars.length} bars`);
@@ -381,7 +422,95 @@ class OptimizedDataFeed {
             }
             
             this.trackError(error);
+            
+            // Try to return stale cache on error
+            const staleCache = this.getCachedData(cacheKey, CONFIG.CACHE.historicalMaxAge * 3);
+            if (staleCache) {
+                CONFIG.log('warn', `⚠️ API error, using stale historical cache for ${symbol}`);
+                return staleCache;
+            }
+            
             throw error;
+        }
+    }
+
+    // Update historical cache with real-time data
+    updateHistoricalCache(symbol, priceData) {
+        const cacheKey = `historical_${symbol}_1h_100`;
+        const cached = this.cache.get(cacheKey);
+        
+        if (cached && cached.data && cached.data.bars) {
+            // Add new price as latest bar
+            const newBar = {
+                timestamp: priceData.timestamp,
+                open: priceData.open || priceData.price,
+                high: priceData.high || priceData.price,
+                low: priceData.low || priceData.price,
+                close: priceData.price,
+                volume: priceData.volume || 0
+            };
+            
+            // Update the most recent bar if within same hour
+            const lastBar = cached.data.bars[cached.data.bars.length - 1];
+            const hourDiff = Math.floor((newBar.timestamp - lastBar.timestamp) / 3600000);
+            
+            if (hourDiff === 0) {
+                // Update existing bar
+                lastBar.close = newBar.close;
+                lastBar.high = Math.max(lastBar.high, newBar.high);
+                lastBar.low = Math.min(lastBar.low, newBar.low);
+                lastBar.volume = newBar.volume;
+            } else if (hourDiff > 0) {
+                // Add new bar
+                cached.data.bars.push(newBar);
+                // Keep only last 100 bars
+                if (cached.data.bars.length > 100) {
+                    cached.data.bars.shift();
+                }
+            }
+            
+            this.performanceMetrics.apiCallsSaved++;
+        }
+    }
+
+    // Enhanced cache management
+    getCachedData(key, maxAge) {
+        const cached = this.cache.get(key);
+        if (!cached) return null;
+        
+        const age = Date.now() - cached.timestamp;
+        if (age > maxAge) {
+            // Don't delete immediately - keep for stale cache fallback
+            if (age > maxAge * 3) {
+                this.cache.delete(key);
+            }
+            return null;
+        }
+        
+        return cached.data;
+    }
+
+    setCachedData(key, data) {
+        this.cache.set(key, {
+            data: data,
+            timestamp: Date.now()
+        });
+        
+        // Smarter cache cleanup
+        if (this.cache.size > CONFIG.CACHE.maxCacheSize) {
+            // Remove oldest entries that are also expired
+            const entries = Array.from(this.cache.entries());
+            entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+            
+            for (const [k, v] of entries) {
+                const age = Date.now() - v.timestamp;
+                if (age > CONFIG.CACHE.historicalMaxAge * 2) {
+                    this.cache.delete(k);
+                    if (this.cache.size <= CONFIG.CACHE.maxCacheSize * 0.8) {
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -393,7 +522,6 @@ class OptimizedDataFeed {
         
         CONFIG.log('error', `API Error ${this.errorCount}:`, error.message);
         
-        // Open circuit breaker if too many errors
         if (this.errorCount >= CONFIG.ERROR_HANDLING.circuitBreakerThreshold) {
             this.openCircuitBreaker();
         }
@@ -414,9 +542,9 @@ class OptimizedDataFeed {
         this.circuitBreakerOpenTime = Date.now();
         this.isConnected = false;
         
-        CONFIG.log('error', '🚫 Circuit breaker opened - too many API failures');
+        CONFIG.log('error', '🚫 Circuit breaker opened');
         this.updateConnectionStatus('error');
-        this.showErrorMessage(`Service temporarily unavailable (${this.errorCount} consecutive failures)`);
+        this.showErrorMessage(`Service unavailable (${this.errorCount} failures)`);
     }
 
     checkCircuitBreaker() {
@@ -425,15 +553,16 @@ class OptimizedDataFeed {
             if (timeOpen >= CONFIG.ERROR_HANDLING.circuitBreakerTimeout) {
                 this.circuitBreakerOpen = false;
                 this.errorCount = 0;
-                CONFIG.log('info', '🔄 Circuit breaker reset - retrying connection');
+                CONFIG.log('info', '🔄 Circuit breaker reset');
             }
         }
     }
 
-    // Rate limiting
+    // Rate limiting with better tracking
     canMakeApiCall() {
         this.resetApiCallsIfNeeded();
-        return this.apiCalls < this.maxCallsPerMinute;
+        const buffer = CONFIG.TWELVE_DATA.rateLimitBuffer || 5;
+        return this.apiCalls < (this.maxCallsPerMinute - buffer);
     }
 
     trackApiCall() {
@@ -445,40 +574,11 @@ class OptimizedDataFeed {
     resetApiCallsIfNeeded() {
         const now = Date.now();
         if (now - this.lastResetTime >= 60000) {
+            if (this.apiCalls > 0) {
+                CONFIG.log('info', `📊 API calls in last minute: ${this.apiCalls}`);
+            }
             this.apiCalls = 0;
             this.lastResetTime = now;
-            CONFIG.log('debug', '🔄 API call counter reset');
-        }
-    }
-
-    // Cache management
-    getCachedData(key, maxAge) {
-        const cached = this.cache.get(key);
-        if (!cached) return null;
-        
-        if (Date.now() - cached.timestamp > maxAge) {
-            this.cache.delete(key);
-            return null;
-        }
-        
-        return cached.data;
-    }
-
-    setCachedData(key, data) {
-        this.cache.set(key, {
-            data: data,
-            timestamp: Date.now()
-        });
-        
-        // Clean old cache entries
-        if (this.cache.size > CONFIG.CACHE.maxCacheSize) {
-            const oldest = Math.min(...Array.from(this.cache.values()).map(v => v.timestamp));
-            for (const [k, v] of this.cache.entries()) {
-                if (v.timestamp === oldest) {
-                    this.cache.delete(k);
-                    break;
-                }
-            }
         }
     }
 
@@ -487,7 +587,6 @@ class OptimizedDataFeed {
         this.isConnected = false;
         this.lastError = error.message;
         
-        // Extract error code if available
         const codeMatch = error.message.match(/(\d{3})/);
         this.lastErrorCode = codeMatch ? codeMatch[1] : 'Unknown';
         
@@ -541,7 +640,7 @@ class OptimizedDataFeed {
         }
     }
 
-    // Public methods for retrying
+    // Public methods
     async retryConnection() {
         CONFIG.log('info', '🔄 Retrying connection...');
         this.circuitBreakerOpen = false;
@@ -549,12 +648,10 @@ class OptimizedDataFeed {
         return await this.initialize();
     }
 
-    // Health check
     isHealthy() {
         return this.isConnected && !this.circuitBreakerOpen && this.canMakeApiCall();
     }
 
-    // Get statistics
     getStats() {
         return {
             initialized: this.isInitialized,
@@ -565,7 +662,8 @@ class OptimizedDataFeed {
             errorCount: this.errorCount,
             circuitBreakerOpen: this.circuitBreakerOpen,
             lastError: this.lastError,
-            lastErrorCode: this.lastErrorCode
+            lastErrorCode: this.lastErrorCode,
+            performance: this.performanceMetrics
         };
     }
 
@@ -574,10 +672,12 @@ class OptimizedDataFeed {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    // Cleanup
     disconnect() {
         this.isConnected = false;
         this.isInitialized = false;
+        if (this.batchTimer) {
+            clearTimeout(this.batchTimer);
+        }
         CONFIG.log('info', '📡 Data feed disconnected');
     }
 }

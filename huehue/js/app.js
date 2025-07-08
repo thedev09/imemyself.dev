@@ -1,7 +1,6 @@
-// HueHue Optimized Main Application - Single Mode, Real Error Handling
+// HueHue Optimized Main Application - Performance Enhanced Version
 class OptimizedHueHueApp {
     constructor() {
-        // Ensure CONFIG is available before proceeding
         if (typeof CONFIG === 'undefined') {
             console.error('❌ CONFIG not available - check script loading order');
             return;
@@ -17,6 +16,15 @@ class OptimizedHueHueApp {
         this.isRunning = false;
         this.updateIntervals = {};
         this.lastSignals = {};
+        
+        // Performance tracking
+        this.loadStartTime = Date.now();
+        this.performanceMetrics = {
+            firebaseInit: 0,
+            dataFeedInit: 0,
+            initialDataLoad: 0,
+            totalInit: 0
+        };
         
         // Performance stats
         this.performanceStats = {
@@ -36,298 +44,364 @@ class OptimizedHueHueApp {
 
     async initialize() {
         try {
-            // Ensure CONFIG is available
-            if (typeof CONFIG === 'undefined') {
-                throw new Error('CONFIG not loaded - check script loading order');
-            }
-            
             CONFIG.log('info', '🚀 Starting optimized HueHue initialization...');
+            const startTime = Date.now();
             
-            // Initialize UI first
+            // Initialize UI first (instant feedback)
             this.updateConnectionStatus('connecting');
             this.hideErrorMessage();
+            this.showLoadingState();
             
-            // Wait for Firebase
-            await this.waitForFirebase();
+            // Parallel initialization of independent components
+            const [firebaseReady, componentsReady] = await Promise.all([
+                this.initializeFirebase(),
+                this.initializeComponents()
+            ]);
             
-            // Initialize core components with error handling
-            try {
-                this.dataFeed = new OptimizedDataFeed();
-            } catch (error) {
-                throw new Error(`Failed to initialize data feed: ${error.message}`);
+            if (!firebaseReady || !componentsReady) {
+                throw new Error('Failed to initialize core components');
             }
             
-            try {
-                this.indicators = new TechnicalIndicators();
-            } catch (error) {
-                throw new Error(`Failed to initialize indicators: ${error.message}`);
-            }
-            
-            try {
-                this.eaLogic = new EALogic();
-            } catch (error) {
-                throw new Error(`Failed to initialize EA logic: ${error.message}`);
-            }
-            
-            // Initialize data feed
+            // Initialize data feed with Firebase (now that we have API key)
             const dataFeedSuccess = await this.dataFeed.initialize();
             if (!dataFeedSuccess) {
                 throw new Error('Failed to initialize data feed connection');
             }
             
-            // Load historical signals from Firebase
-            await this.loadHistoricalSignals();
+            // Parallel data loading
+            await Promise.all([
+                this.loadInitialDataOptimized(),
+                this.loadHistoricalSignalsAsync() // Non-blocking
+            ]);
             
-            // Load initial data for both assets
-            await this.loadInitialData();
-            
-            // Start real-time updates
-            this.startRealTimeUpdates();
+            // Start update loops
+            this.startOptimizedUpdates();
             
             // Initialize UI components
             this.initializeUI();
+            this.hideLoadingState();
             
             this.isRunning = true;
-            CONFIG.log('info', '✅ Optimized HueHue application fully initialized');
+            
+            const totalTime = Date.now() - startTime;
+            CONFIG.log('info', `✅ HueHue initialized in ${totalTime}ms`);
+            this.logPerformanceMetrics();
             
             return true;
             
         } catch (error) {
             CONFIG.log('error', '❌ Failed to initialize HueHue:', error);
             this.handleApplicationError(error);
+            this.hideLoadingState();
             return false;
         }
     }
 
-    async waitForFirebase() {
+    async initializeFirebase() {
+        const startTime = Date.now();
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 20; // Reduced from 30
         
         while (!window.firebaseStorage && attempts < maxAttempts) {
-            await this.sleep(100);
+            await this.sleep(50); // Reduced from 100ms
             attempts++;
         }
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            CONFIG.log('info', '🔥 Firebase connected to main app');
-        } else {
-            CONFIG.log('warn', '⚠️ Firebase not available, continuing without cloud storage');
-        }
-    }
-
-    async loadHistoricalSignals() {
-        if (!this.firebaseStorage) {
-            CONFIG.log('info', '📊 No Firebase storage, skipping historical signals');
-            return;
+            this.performanceMetrics.firebaseInit = Date.now() - startTime;
+            CONFIG.log('info', `🔥 Firebase connected in ${this.performanceMetrics.firebaseInit}ms`);
+            return true;
         }
         
+        CONFIG.log('warn', '⚠️ Firebase not available, continuing without cloud storage');
+        return true; // Don't block app if Firebase fails
+    }
+
+    async initializeComponents() {
         try {
-            CONFIG.log('info', '📥 Loading recent signals from Firebase...');
+            // Initialize all components in parallel
+            const results = await Promise.allSettled([
+                new Promise(resolve => {
+                    this.dataFeed = new OptimizedDataFeed();
+                    resolve(true);
+                }),
+                new Promise(resolve => {
+                    this.indicators = new TechnicalIndicators();
+                    resolve(true);
+                }),
+                new Promise(resolve => {
+                    this.eaLogic = new EALogic();
+                    resolve(true);
+                })
+            ]);
             
-            const allSignals = await this.firebaseStorage.getSignals(50);
-            
-            if (allSignals && allSignals.length > 0) {
-                const sortedSignals = allSignals
-                    .sort((a, b) => b.timestamp - a.timestamp)
-                    .slice(0, 10);
-                
-                const signalsList = document.getElementById('signalsList');
-                if (signalsList) {
-                    signalsList.innerHTML = '';
-                    
-                    sortedSignals.forEach(signal => {
-                        try {
-                            this.addSignalToList(signal, false);
-                        } catch (error) {
-                            CONFIG.log('warn', 'Error adding signal to list:', error);
-                        }
-                    });
-                }
-                
-                this.updateElementSafely('signalCount', `${sortedSignals.length} recent signals`);
-                this.updateQuickStatsFromSignals(allSignals);
-                
-                CONFIG.log('info', `✅ Loaded ${sortedSignals.length} recent signals`);
-            } else {
-                CONFIG.log('info', '📊 No signals found in Firebase');
-            }
-            
+            return results.every(r => r.status === 'fulfilled');
         } catch (error) {
-            CONFIG.log('warn', '⚠️ Could not load historical signals:', error);
+            CONFIG.log('error', 'Failed to initialize components:', error);
+            return false;
         }
     }
 
-    async loadInitialData() {
+    async loadInitialDataOptimized() {
+        const startTime = Date.now();
         const assets = Object.keys(CONFIG.ASSETS);
         
-        for (const symbol of assets) {
-            try {
-                CONFIG.log('debug', `📥 Loading initial data for ${symbol}...`);
-                
-                // Get current price with timeout
-                const priceData = await Promise.race([
-                    this.dataFeed.getRealTimePrice(symbol),
-                    new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Price fetch timeout')), 10000))
-                ]);
-                
-                this.updatePriceDisplay(symbol, priceData);
-                this.updateAssetBasicInfo(symbol, {
-                    bias: 'LOADING',
-                    strength: 0
-                });
-                
-                CONFIG.log('debug', `✅ Basic data loaded for ${symbol}`);
-                
-            } catch (error) {
-                CONFIG.log('error', `❌ Failed to load initial data for ${symbol}:`, error.message);
-                this.handleAssetError(symbol, error);
-            }
-        }
+        // Load all assets in parallel with proper error handling
+        const results = await Promise.allSettled(
+            assets.map(symbol => this.loadAssetDataQuick(symbol))
+        );
         
-        // Load indicators in background
-        setTimeout(() => this.loadIndicatorsBackground(), 3000);
+        // Process results
+        results.forEach((result, index) => {
+            const symbol = assets[index];
+            if (result.status === 'rejected') {
+                CONFIG.log('warn', `Failed to load ${symbol}:`, result.reason);
+                this.handleAssetError(symbol, result.reason);
+            }
+        });
+        
+        this.performanceMetrics.initialDataLoad = Date.now() - startTime;
+        CONFIG.log('info', `📊 Initial data loaded in ${this.performanceMetrics.initialDataLoad}ms`);
+        
+        // Load full indicators after initial display (non-blocking)
+        setTimeout(() => this.loadIndicatorsOptimized(), 100);
     }
 
-    async loadIndicatorsBackground() {
+    async loadAssetDataQuick(symbol) {
+        try {
+            // Just get current price first (fastest)
+            const priceData = await Promise.race([
+                this.dataFeed.getRealTimePrice(symbol),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Price timeout')), 5000))
+            ]);
+            
+            // Update UI immediately
+            this.updatePriceDisplay(symbol, priceData);
+            this.updateAssetBasicInfo(symbol, {
+                bias: 'ANALYZING',
+                strength: 0
+            });
+            
+            return priceData;
+            
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async loadIndicatorsOptimized() {
         if (!this.isRunning) return;
         
         const assets = Object.keys(CONFIG.ASSETS);
         
-        for (const symbol of assets) {
-            try {
-                // Get historical data with timeout
-                const historicalData = await Promise.race([
+        // Process assets in parallel
+        await Promise.allSettled(
+            assets.map(symbol => this.processAssetIndicators(symbol))
+        );
+    }
+
+    async processAssetIndicators(symbol) {
+        try {
+            // Get data with shorter timeout
+            const [historicalData, priceData] = await Promise.all([
+                Promise.race([
                     this.dataFeed.getHistoricalData(symbol, '1h', 100),
                     new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Historical data timeout')), 15000))
-                ]);
-                
-                // Calculate indicators
-                const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
-                
-                // Get current price
-                const priceData = await this.dataFeed.getRealTimePrice(symbol);
-                
-                // Analyze signal
-                const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
-                
-                if (signal) {
-                    this.lastSignals[symbol] = signal;
-                    this.updateAssetCard(symbol, signal, priceData);
-                }
-                
-            } catch (error) {
-                CONFIG.log('warn', `⚠️ Background indicator load failed for ${symbol}:`, error.message);
-                this.handleAssetError(symbol, error);
+                        setTimeout(() => reject(new Error('Historical timeout')), 8000))
+                ]),
+                this.dataFeed.getRealTimePrice(symbol)
+            ]);
+            
+            // Calculate indicators
+            const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
+            
+            // Analyze signal
+            const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
+            
+            if (signal) {
+                this.lastSignals[symbol] = signal;
+                this.updateAssetCard(symbol, signal, priceData);
             }
+            
+        } catch (error) {
+            CONFIG.log('warn', `Indicator processing failed for ${symbol}:`, error.message);
         }
     }
 
-    startRealTimeUpdates() {
+    async loadHistoricalSignalsAsync() {
+        // Non-blocking Firebase load
+        if (!this.firebaseStorage) return;
+        
         try {
-            // Price updates every 15 seconds
+            const allSignals = await this.firebaseStorage.getSignals(20); // Reduced from 50
+            
+            if (allSignals && allSignals.length > 0) {
+                // Update UI in chunks to prevent blocking
+                this.updateSignalsUI(allSignals.slice(0, 10));
+                this.updateQuickStatsFromSignals(allSignals);
+            }
+            
+        } catch (error) {
+            CONFIG.log('warn', 'Could not load historical signals:', error);
+        }
+    }
+
+    updateSignalsUI(signals) {
+        const signalsList = document.getElementById('signalsList');
+        if (!signalsList) return;
+        
+        // Use DocumentFragment for better performance
+        const fragment = document.createDocumentFragment();
+        signalsList.innerHTML = '';
+        
+        signals.forEach(signal => {
+            try {
+                const element = this.createSignalElement(signal);
+                if (element) fragment.appendChild(element);
+            } catch (error) {
+                CONFIG.log('warn', 'Error creating signal element:', error);
+            }
+        });
+        
+        signalsList.appendChild(fragment);
+        this.updateElementSafely('signalCount', `${signals.length} recent signals`);
+    }
+
+    startOptimizedUpdates() {
+        try {
+            // Stagger update intervals to prevent simultaneous calls
+            
+            // Price updates every 30 seconds
             this.updateIntervals.prices = setInterval(async () => {
-                await this.updateAllPrices();
+                await this.updatePricesOptimized();
             }, CONFIG.UPDATE_INTERVALS.priceUpdate);
             
-            // Indicator updates every 3 minutes
-            this.updateIntervals.signals = setInterval(async () => {
-                await this.updateSignalsWithErrorHandling();
-            }, CONFIG.UPDATE_INTERVALS.indicatorUpdate);
+            // Indicator updates every 10 minutes (staggered by 30s)
+            setTimeout(() => {
+                this.updateIntervals.signals = setInterval(async () => {
+                    await this.updateSignalsOptimized();
+                }, CONFIG.UPDATE_INTERVALS.indicatorUpdate);
+            }, 30000);
             
-            // Dashboard refresh every 5 seconds
+            // Dashboard refresh every 10 seconds
             this.updateIntervals.dashboard = setInterval(() => {
                 this.updateDashboard();
             }, CONFIG.UPDATE_INTERVALS.dashboardRefresh);
             
-            // Health check every minute
-            this.updateIntervals.healthCheck = setInterval(() => {
-                this.performHealthCheck();
-            }, CONFIG.UPDATE_INTERVALS.healthCheck);
+            // Health check every minute (staggered by 45s)
+            setTimeout(() => {
+                this.updateIntervals.healthCheck = setInterval(() => {
+                    this.performHealthCheck();
+                }, CONFIG.UPDATE_INTERVALS.healthCheck);
+            }, 45000);
             
-            CONFIG.log('info', '🔄 Real-time update loops started');
+            CONFIG.log('info', '🔄 Optimized update loops started');
         } catch (error) {
-            CONFIG.log('error', 'Error starting real-time updates:', error);
+            CONFIG.log('error', 'Error starting updates:', error);
         }
     }
 
-    async updateAllPrices() {
-        if (!this.isRunning || !this.dataFeed?.isHealthy()) {
-            return;
-        }
+    async updatePricesOptimized() {
+        if (!this.isRunning || !this.dataFeed?.isHealthy()) return;
         
         const assets = Object.keys(CONFIG.ASSETS);
         
-        for (const symbol of assets) {
-            try {
-                const priceData = await this.dataFeed.getRealTimePrice(symbol);
-                this.updatePriceDisplay(symbol, priceData);
-                this.clearAssetError(symbol);
-                
-                // Small delay between calls
-                await this.sleep(200);
-                
-            } catch (error) {
-                CONFIG.log('warn', `Failed to update price for ${symbol}:`, error.message);
-                this.handleAssetError(symbol, error);
-            }
-        }
+        // Update all prices in parallel
+        await Promise.allSettled(
+            assets.map(symbol => 
+                this.dataFeed.getRealTimePrice(symbol)
+                    .then(priceData => {
+                        this.updatePriceDisplay(symbol, priceData);
+                        this.clearAssetError(symbol);
+                    })
+                    .catch(error => {
+                        CONFIG.log('warn', `Price update failed for ${symbol}:`, error.message);
+                        this.handleAssetError(symbol, error);
+                    })
+            )
+        );
     }
 
-    async updateSignalsWithErrorHandling() {
-        if (!this.isRunning || !this.dataFeed?.isHealthy()) {
-            return;
-        }
+    async updateSignalsOptimized() {
+        if (!this.isRunning || !this.dataFeed?.isHealthy()) return;
         
         const assets = Object.keys(CONFIG.ASSETS);
         
-        for (const symbol of assets) {
-            try {
-                const [historicalData, priceData] = await Promise.all([
-                    this.dataFeed.getHistoricalData(symbol, '1h', 100),
-                    this.dataFeed.getRealTimePrice(symbol)
-                ]);
-                
-                const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
-                const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
-                
-                if (signal) {
-                    // Check for new trading signal
-                    const tradingSignal = this.eaLogic.generateTradingSignal(signal);
+        // Process all assets in parallel
+        await Promise.allSettled(
+            assets.map(async symbol => {
+                try {
+                    const [historicalData, priceData] = await Promise.all([
+                        this.dataFeed.getHistoricalData(symbol, '1h', 100),
+                        this.dataFeed.getRealTimePrice(symbol)
+                    ]);
                     
-                    if (tradingSignal) {
-                        this.handleNewTradingSignal(tradingSignal);
+                    const indicators = await this.indicators.calculateIndicators(symbol, historicalData);
+                    const signal = this.eaLogic.analyzeSignal(symbol, indicators, priceData);
+                    
+                    if (signal) {
+                        const tradingSignal = this.eaLogic.generateTradingSignal(signal);
+                        if (tradingSignal) {
+                            this.handleNewTradingSignal(tradingSignal);
+                        }
+                        
+                        this.lastSignals[symbol] = signal;
+                        this.updateAssetCard(symbol, signal, priceData);
+                        this.clearAssetError(symbol);
                     }
-                    
-                    this.lastSignals[symbol] = signal;
-                    this.updateAssetCard(symbol, signal, priceData);
-                    this.clearAssetError(symbol);
+                } catch (error) {
+                    CONFIG.log('warn', `Signal update failed for ${symbol}:`, error.message);
+                    this.handleAssetError(symbol, error);
                 }
-                
-                // Small delay between symbols
-                await this.sleep(500);
-                
-            } catch (error) {
-                CONFIG.log('warn', `Failed to update signals for ${symbol}:`, error.message);
-                this.handleAssetError(symbol, error);
-            }
-        }
+            })
+        );
     }
+
+    showLoadingState() {
+        // Add loading indicators to asset cards
+        const assets = Object.keys(CONFIG.ASSETS);
+        assets.forEach(symbol => {
+            const symbolLower = symbol.toLowerCase();
+            const priceElement = document.getElementById(`${symbolLower}-price`);
+            const biasElement = document.getElementById(`${symbolLower}-bias`);
+            
+            if (priceElement) priceElement.textContent = 'Loading...';
+            if (biasElement) {
+                biasElement.textContent = 'LOADING';
+                biasElement.className = 'bias-label neutral';
+            }
+        });
+    }
+
+    hideLoadingState() {
+        // Loading state is replaced by actual data
+    }
+
+    logPerformanceMetrics() {
+        this.performanceMetrics.totalInit = Date.now() - this.loadStartTime;
+        CONFIG.log('info', '📊 Performance Metrics:', {
+            firebaseInit: `${this.performanceMetrics.firebaseInit}ms`,
+            dataFeedInit: `${this.performanceMetrics.dataFeedInit}ms`,
+            initialDataLoad: `${this.performanceMetrics.initialDataLoad}ms`,
+            totalInit: `${this.performanceMetrics.totalInit}ms`
+        });
+    }
+
+    // Keep all other methods unchanged...
+    // (Include all the remaining methods from the original app.js without modification)
 
     performHealthCheck() {
         try {
             if (!this.dataFeed?.isHealthy()) {
                 CONFIG.log('warn', 'Data feed health check failed');
-                // Attempt to reconnect
                 setTimeout(() => {
                     this.dataFeed?.retryConnection();
                 }, 5000);
             }
             
-            // Reset error count periodically
-            if (Date.now() - this.lastErrorTime > 300000) { // 5 minutes
+            if (Date.now() - this.lastErrorTime > 300000) {
                 this.errorCount = 0;
             }
             
@@ -340,12 +414,10 @@ class OptimizedHueHueApp {
         try {
             const symbolLower = symbol.toLowerCase();
             
-            // Update price if provided
             if (priceData) {
                 this.updatePriceDisplay(symbol, priceData);
             }
             
-            // Update bias
             if (signal?.bias) {
                 const biasElement = document.getElementById(`${symbolLower}-bias`);
                 if (biasElement) {
@@ -354,7 +426,6 @@ class OptimizedHueHueApp {
                 }
             }
             
-            // Update signal strength
             if (signal?.strength !== undefined) {
                 const strengthElement = document.getElementById(`${symbolLower}-strength`);
                 const strengthBar = document.getElementById(`${symbolLower}-bar`);
@@ -366,7 +437,6 @@ class OptimizedHueHueApp {
                     const percentage = (signal.strength / maxStrength) * 100;
                     strengthBar.style.width = `${percentage}%`;
                     
-                    // Update bar color based on strength
                     if (signal.strength >= 5) {
                         strengthBar.style.background = 'linear-gradient(90deg, #00ff88, #00d4ff)';
                     } else if (signal.strength >= 4) {
@@ -377,7 +447,6 @@ class OptimizedHueHueApp {
                 }
             }
             
-            // Update confluence grid
             if (signal?.conditions) {
                 this.updateConfluenceGrid(symbol, signal);
             }
@@ -439,7 +508,6 @@ class OptimizedHueHueApp {
                 priceElement.textContent = formattedPrice;
                 priceElement.classList.remove('error');
                 
-                // Simple price update animation
                 priceElement.style.transform = 'scale(1.05)';
                 setTimeout(() => {
                     if (priceElement.style) {
@@ -448,7 +516,6 @@ class OptimizedHueHueApp {
                 }, 200);
             }
             
-            // Update price change
             if (changeElement && priceData.change !== undefined) {
                 const changeText = `${priceData.change > 0 ? '+' : ''}${priceData.change.toFixed(2)}`;
                 const changePercent = priceData.changePercent ? 
@@ -467,7 +534,6 @@ class OptimizedHueHueApp {
         try {
             const symbolLower = symbol.toLowerCase();
             
-            // Update bias
             if (info.bias) {
                 const biasElement = document.getElementById(`${symbolLower}-bias`);
                 if (biasElement) {
@@ -476,7 +542,6 @@ class OptimizedHueHueApp {
                 }
             }
             
-            // Update strength
             if (info.strength !== undefined) {
                 const strengthElement = document.getElementById(`${symbolLower}-strength`);
                 const strengthBar = document.getElementById(`${symbolLower}-bar`);
@@ -547,10 +612,7 @@ class OptimizedHueHueApp {
         try {
             CONFIG.log('info', `🚨 NEW TRADING SIGNAL: ${tradingSignal.action} ${tradingSignal.symbol}`);
             
-            // Add to UI
             this.addSignalToList(tradingSignal, true);
-            
-            // Show notification
             this.showBrowserNotification(tradingSignal);
             
         } catch (error) {
@@ -571,13 +633,11 @@ class OptimizedHueHueApp {
                     signalsList.appendChild(signalElement);
                 }
                 
-                // Limit displayed signals to 10
                 while (signalsList.children.length > 10) {
                     signalsList.removeChild(signalsList.lastChild);
                 }
             }
             
-            // Save to Firebase if requested
             if (saveToFirebase && this.firebaseStorage) {
                 this.firebaseStorage.saveSignal(signal).catch(error => {
                     CONFIG.log('warn', 'Could not save signal to Firebase:', error);
@@ -619,7 +679,6 @@ class OptimizedHueHueApp {
                 </div>
             `;
             
-            // Add click handler
             signalDiv.addEventListener('click', () => {
                 this.showSignalDetails(signal);
             });
@@ -634,7 +693,6 @@ class OptimizedHueHueApp {
 
     updateQuickStatsFromSignals(signals) {
         if (!signals?.length) {
-            // Set realistic zeros when no signals
             this.updateElementSafely('dailySignals', '0');
             this.updateElementSafely('weeklySignals', '0');
             this.updateElementSafely('avgStrength', '0.0');
@@ -646,7 +704,6 @@ class OptimizedHueHueApp {
             const today = new Date().toDateString();
             const thisWeek = this.getWeekStart();
             
-            // Only count actual trading signals, not analysis signals
             const realSignals = signals.filter(s => s.type === 'TRADING_SIGNAL' || s.action);
             
             const todaySignals = realSignals.filter(s => 
@@ -661,12 +718,10 @@ class OptimizedHueHueApp {
                 s.strength >= 5
             );
             
-            // Update with real counts
             this.updateElementSafely('dailySignals', todaySignals.length);
             this.updateElementSafely('weeklySignals', weekSignals.length);
             this.updateElementSafely('strongSignals', strongSignals.length);
             
-            // Calculate average strength of real signals only
             if (realSignals.length > 0) {
                 const validSignals = realSignals.filter(s => s.strength && !isNaN(s.strength));
                 if (validSignals.length > 0) {
@@ -679,45 +734,15 @@ class OptimizedHueHueApp {
                 this.updateElementSafely('avgStrength', '0.0');
             }
             
-            CONFIG.log('debug', `Performance stats: ${todaySignals.length} today, ${weekSignals.length} this week, ${strongSignals.length} strong`);
-            
         } catch (error) {
             CONFIG.log('warn', 'Error updating performance stats:', error);
-        }
-    }
-
-    updateMarketStatus() {
-        try {
-            // Update market session
-            const session = CONFIG.getCurrentSession();
-            const sessionText = session.active ? 
-                `${session.emoji} ${session.name}` : 
-                '🌙 Closed';
-            
-            this.updateElementSafely('marketSession', sessionText);
-            
-            // Update API calls used
-            if (this.dataFeed) {
-                const stats = this.dataFeed.getStats();
-                this.updateElementSafely('apiCallsUsed', `${stats.apiCalls || 0}/${stats.maxCalls || 55}`);
-            }
-            
-            // Update last data update time
-            this.updateElementSafely('lastDataUpdate', new Date().toLocaleTimeString('en-US', {
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit'
-            }));
-            
-        } catch (error) {
-            CONFIG.log('warn', 'Error updating market status:', error);
         }
     }
 
     getWeekStart() {
         const now = new Date();
         const dayOfWeek = now.getDay();
-        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
+        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
         return new Date(now.setDate(diff));
     }
 
@@ -725,7 +750,6 @@ class OptimizedHueHueApp {
         try {
             this.updateTime();
             this.updateSession();
-            // Remove updateMarketStatus() call since we removed the top bar
         } catch (error) {
             CONFIG.log('warn', 'Error updating dashboard:', error);
         }
@@ -769,7 +793,6 @@ class OptimizedHueHueApp {
 
     initializeUI() {
         try {
-            // No data source buttons to initialize anymore
             CONFIG.log('info', '🎨 UI initialized');
         } catch (error) {
             CONFIG.log('warn', 'Error initializing UI:', error);
@@ -847,7 +870,6 @@ let optimizedHueHueApp;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if CONFIG is loaded
     if (typeof CONFIG === 'undefined') {
         console.error('❌ CONFIG not loaded - check script loading order');
         return;
@@ -858,7 +880,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         optimizedHueHueApp = new OptimizedHueHueApp();
         
-        // Check if constructor succeeded
         if (!optimizedHueHueApp) {
             throw new Error('Failed to create application instance');
         }
@@ -868,7 +889,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (initialized) {
             CONFIG.log('info', '✅ Optimized HueHue is now running!');
             
-            // Request notification permission
             if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission();
             }
@@ -879,7 +899,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         CONFIG.log('error', '❌ Critical error starting Optimized HueHue:', error);
         
-        // Show basic error message if UI is available
         const errorElement = document.getElementById('apiErrorMessage');
         if (errorElement) {
             const errorDescription = document.getElementById('errorDescription');
