@@ -1,11 +1,11 @@
-// HueHue Configuration - Updated for Live Data
+// HueHue Configuration - Simple Fix
 const CONFIG = {
     // Twelve Data API Configuration
     TWELVE_DATA: {
         baseUrl: 'https://api.twelvedata.com',
-        apiKey: 'b1b1a8bf0e4b4848b1a68bd4bb7ceb9c', // Your actual API key
-        maxCallsPerMinute: 55, // Your Grow plan limit
-        rateLimitBuffer: 5 // Keep 5 calls as buffer
+        apiKey: 'b1b1a8bf0e4b4848b1a68bd4bb7ceb9c',
+        maxCallsPerMinute: 55,
+        rateLimitBuffer: 5
     },
 
     // Trading Assets
@@ -20,8 +20,8 @@ const CONFIG = {
             contractSize: 100,
             minMove: 0.01,
             tradingHours: {
-                start: 23, // Sunday 23:00 UTC
-                end: 21,   // Friday 21:00 UTC
+                start: 23,
+                end: 21,
             }
         },
         USDJPY: {
@@ -34,74 +34,65 @@ const CONFIG = {
             contractSize: 100000,
             minMove: 0.001,
             tradingHours: {
-                start: 23, // Sunday 23:00 UTC
-                end: 21,   // Friday 21:00 UTC
+                start: 23,
+                end: 21,
             }
         }
     },
 
-    // EA Parameters (exactly matching your MT5 EA)
+    // EA Parameters
     EA_PARAMS: {
-        // Risk Management
-        autoStopTarget: 10.0,        // Auto-stop profit target (%)
-        maxDrawdown: 10.0,           // Maximum drawdown (%)
-        dailyDrawdown: 4.0,          // Daily drawdown limit (%)
-        riskPercent: 2.0,            // Risk per trade (%)
-        maxTradesPerDay: 4,          // Maximum trades per day
-
-        // Position Management
-        stopLossATRMult: 1.8,        // Stop loss ATR multiplier
-        takeProfitRatio: 2.8,        // Risk:Reward ratio
-        baseMinPosition: 0.5,        // Min lots for base account
-        baseMaxPosition: 2.0,        // Max lots for base account
-        baseAccountSize: 50000.0,    // Base account size for scaling
-
-        // Technical Indicators
-        emaFastPeriod: 12,           // Fast EMA period
-        emaSlowPeriod: 26,           // Slow EMA period
-        smaTrendPeriod: 80,          // Trend SMA period
-        rsiPeriod: 14,               // RSI period
-        atrPeriod: 14,               // ATR period
-        bbPeriod: 20,                // Bollinger Bands period
-        bbDev: 2.0,                  // Bollinger Bands deviation
-
-        // Entry Conditions
-        rsiOversold: 40.0,           // RSI oversold level
-        rsiOverbought: 60.0,         // RSI overbought level
-        minTrendStrength: 3.0,       // Minimum trend strength (points)
-        volumeMultiplier: 1.2,       // Volume multiplier
-
-        // Signal Threshold
-        minSignalStrength: 4,        // Minimum conditions met (4/6)
-        maxSignalStrength: 6         // Maximum possible conditions
+        autoStopTarget: 10.0,
+        maxDrawdown: 10.0,
+        dailyDrawdown: 4.0,
+        riskPercent: 2.0,
+        maxTradesPerDay: 4,
+        stopLossATRMult: 1.8,
+        takeProfitRatio: 2.8,
+        baseMinPosition: 0.5,
+        baseMaxPosition: 2.0,
+        baseAccountSize: 50000.0,
+        emaFastPeriod: 12,
+        emaSlowPeriod: 26,
+        smaTrendPeriod: 80,
+        rsiPeriod: 14,
+        atrPeriod: 14,
+        bbPeriod: 20,
+        bbDev: 2.0,
+        rsiOversold: 40.0,
+        rsiOverbought: 60.0,
+        minTrendStrength: 3.0,
+        volumeMultiplier: 1.2,
+        minSignalStrength: 4,
+        maxSignalStrength: 6
     },
 
     // Trading Hours
     TRADING_HOURS: {
-        start: 2,                    // Trading start hour (UTC)
-        end: 21,                     // Trading end hour (UTC)
-        fridayClose: 20,             // Friday close hour (UTC)
-        newsAvoidance: [7, 8, 12, 14] // Hours to avoid (major news)
+        start: 2,
+        end: 21,
+        fridayClose: 20,
+        newsAvoidance: [7, 8, 12, 14]
     },
 
-    // Update Intervals (optimized for API limits)
+    // Update Intervals (optimized)
     UPDATE_INTERVALS: {
-        priceUpdate: 10000,          // 10 seconds (to respect rate limits)
-        indicatorUpdate: 60000,      // 1 minute
-        signalCheck: 30000,          // 30 seconds
-        dashboardRefresh: 5000,      // 5 seconds (UI only)
-        dataBackup: 24 * 60 * 60 * 1000 // 24 hours
+        priceUpdate: 15000,          // 15 seconds
+        indicatorUpdate: 120000,     // 2 minutes
+        signalCheck: 60000,          // 1 minute
+        dashboardRefresh: 5000,      // 5 seconds
+        dataBackup: 24 * 60 * 60 * 1000
     },
 
     // Cache Settings
     CACHE: {
-        priceMaxAge: 30000,          // 30 seconds for prices
-        historicalMaxAge: 300000,    // 5 minutes for historical data
-        indicatorMaxAge: 60000,      // 1 minute for indicators
-        maxCacheSize: 100            // Maximum cache entries
+        priceMaxAge: 30000,
+        historicalMaxAge: 300000,
+        indicatorMaxAge: 60000,
+        maxCacheSize: 100
     },
 
-    // UI Settings
+    // UI Settings (simplified)
     UI: {
         theme: 'dark',
         animations: true,
@@ -127,30 +118,30 @@ const CONFIG = {
         NEUTRAL: 'NEUTRAL'
     },
 
-    // Confluence Conditions (matching your EA exactly)
+    // Confluence Conditions
     CONFLUENCE_CONDITIONS: {
-        TREND: 'trend',              // Price vs SMA + EMA alignment
-        STRENGTH: 'strength',        // EMA distance (trend strength)
-        RSI: 'rsi',                 // RSI momentum
-        POSITION: 'position',        // BB position + EMA relationship
-        PRICE_ACTION: 'priceAction', // Candle pattern + momentum
-        VOLUME: 'volume'            // Volume + volatility
+        TREND: 'trend',
+        STRENGTH: 'strength',
+        RSI: 'rsi',
+        POSITION: 'position',
+        PRICE_ACTION: 'priceAction',
+        VOLUME: 'volume'
     },
 
-    // Debug and Development
+    // Debug Settings (reduced for production)
     DEBUG: {
-        enabled: true,               // Enable debug logging
-        mockData: false,             // Use mock data instead of real APIs
-        logLevel: 'info',            // log, info, warn, error
-        showAPIRequests: true,       // Log API requests
-        showRateLimit: true,         // Show rate limit info
-        showCacheHits: false         // Show cache hit/miss info
+        enabled: false,              // Set to false for production
+        mockData: false,
+        logLevel: 'error',
+        showAPIRequests: false,
+        showRateLimit: false,
+        showCacheHits: false
     },
 
-    // Data Source Priorities
+    // Data Sources
     DATA_SOURCES: {
-        primary: 'twelve_data',      // Primary: Twelve Data
-        fallback: 'simulation',      // Fallback: Simulation
+        primary: 'twelve_data',
+        fallback: 'simulation',
         available: ['twelve_data', 'simulation']
     }
 };
@@ -165,13 +156,8 @@ CONFIG.isValidTradingTime = function() {
     const hour = now.getUTCHours();
     const dayOfWeek = now.getUTCDay();
     
-    // No weekend trading
     if (dayOfWeek === 0 || dayOfWeek === 6) return false;
-    
-    // Trading hours check
     if (hour < CONFIG.TRADING_HOURS.start || hour > CONFIG.TRADING_HOURS.end) return false;
-    
-    // Friday early close
     if (dayOfWeek === 5 && hour >= CONFIG.TRADING_HOURS.fridayClose) return false;
     
     return true;
@@ -180,23 +166,28 @@ CONFIG.isValidTradingTime = function() {
 CONFIG.getCurrentSession = function() {
     const hour = new Date().getUTCHours();
     
-    for (const [sessionName, session] of Object.entries(CONFIG.MARKET_SESSIONS)) {
-        let startHour = session.start;
-        let endHour = session.end;
-        
-        // Handle sessions that cross midnight
-        if (startHour > endHour) {
-            if (hour >= startHour || hour < endHour) {
-                return { name: sessionName, ...session, active: true };
-            }
-        } else {
-            if (hour >= startHour && hour < endHour) {
-                return { name: sessionName, ...session, active: true };
-            }
-        }
+    // London + NY overlap (most important)
+    if (hour >= 13 && hour < 16) {
+        return { name: 'LONDON_NY', emoji: '🇬🇧🇺🇸', active: true };
+    }
+    // London session
+    else if (hour >= 7 && hour < 16) {
+        return { name: 'LONDON', emoji: '🇬🇧', active: true };
+    }
+    // New York session
+    else if (hour >= 13 && hour < 22) {
+        return { name: 'NEW_YORK', emoji: '🇺🇸', active: true };
+    }
+    // Tokyo session
+    else if ((hour >= 23) || (hour < 8)) {
+        return { name: 'TOKYO', emoji: '🇯🇵', active: true };
+    }
+    // Sydney session
+    else if ((hour >= 21) || (hour < 6)) {
+        return { name: 'SYDNEY', emoji: '🇦🇺', active: true };
     }
     
-    return { name: 'CLOSED', active: false };
+    return { name: 'CLOSED', emoji: '🌙', active: false };
 };
 
 // Export configuration
@@ -206,12 +197,7 @@ if (typeof module !== 'undefined' && module.exports) {
     window.CONFIG = CONFIG;
 }
 
-// Debug log
+// Simple log (only if debug enabled)
 if (CONFIG.DEBUG.enabled) {
     console.log('⚙️ HueHue Configuration Loaded');
-    console.log('📊 Assets:', Object.keys(CONFIG.ASSETS));
-    console.log('🔧 EA Params loaded');
-    console.log('📡 Data source:', CONFIG.DATA_SOURCES.primary);
-    console.log('⏰ Update intervals set');
-    console.log('💾 Cache settings configured');
 }

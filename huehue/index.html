@@ -12,13 +12,13 @@
             <h1>HueHue Signal Dashboard <span class="connection-status status-connecting" id="connectionStatus">CONNECTING</span></h1>
             
             <div class="data-source-selector">
-                <button class="source-button active" data-source="twelve">🔥 Firebase + Live Data</button>
-                <button class="source-button" data-source="demo">🎭 Demo Mode</button>
-                <button class="source-button" data-source="enhanced">⚡ Enhanced</button>
+                <button class="source-button active" data-source="live">🔴 LIVE DATA</button>
+                <button class="source-button" data-source="demo">🎭 DEMO MODE</button>
+                <button class="source-button" data-source="enhanced">⚡ ENHANCED</button>
             </div>
             
             <div class="session-indicator session-active" id="sessionIndicator">
-                🌍 London Session Active
+                🌍 Detecting Session...
             </div>
             <div class="last-update" id="lastUpdate">
                 Last Update: <span id="updateTime">--:--:--</span>
@@ -107,11 +107,30 @@
             </div>
         </div>
 
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat-item">
+                <span class="stat-value" id="dailySignals">0</span>
+                <span class="stat-label">Today's Signals</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="winRate">--</span>
+                <span class="stat-label">Win Rate</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="avgStrength">--</span>
+                <span class="stat-label">Avg Strength</span>
+            </div>
+        </div>
+
         <!-- Recent Signals Section -->
         <div class="signals-section">
             <div class="signals-header">
-                <h2>Recent Signals <span style="font-size: 0.8em; color: #00ff88;">🔥 Saved to Firebase</span></h2>
-                <span id="signalCount">Initializing...</span>
+                <h2>Recent Signals</h2>
+                <div class="signals-header-right">
+                    <span id="signalCount">Loading...</span>
+                    <a href="signals-history.html" class="view-all-btn">📊 View All History</a>
+                </div>
             </div>
             
             <div class="signals-list" id="signalsList">
@@ -149,7 +168,7 @@
     </div>
 
     <!-- Load JavaScript modules in correct order -->
-    <!-- 🔥 Firebase MUST be first -->
+    <!-- Firebase MUST be first -->
     <script src="firebase-config.js"></script>
     
     <!-- Then your other scripts -->
