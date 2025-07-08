@@ -2,46 +2,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HueHue - Real-time Trading Signal Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>HueHue - Trading Signals</title>
     <link rel="stylesheet" href="css/main.css">
+    <meta name="theme-color" content="#0f0f23">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
     <div class="container">
+        <!-- Mobile Header -->
         <div class="header">
-            <h1>HueHue Signal Dashboard <span class="connection-status status-connecting" id="connectionStatus">CONNECTING</span></h1>
-            
-            <div class="data-source-selector">
-                <button class="source-button active" data-source="live">🔴 LIVE DATA</button>
-                <button class="source-button" data-source="demo">🎭 DEMO MODE</button>
-                <button class="source-button" data-source="enhanced">⚡ ENHANCED</button>
+            <div class="header-top">
+                <h1>HueHue Signals</h1>
+                <span class="connection-status status-connecting" id="connectionStatus">CONNECTING</span>
             </div>
             
             <div class="session-indicator session-active" id="sessionIndicator">
                 🌍 Detecting Session...
             </div>
+            
+            <div class="data-source-selector">
+                <button class="source-button active" data-source="live">🔴 LIVE</button>
+                <button class="source-button" data-source="demo">🎭 DEMO</button>
+                <button class="source-button" data-source="enhanced">⚡ ENHANCED</button>
+            </div>
+            
             <div class="last-update" id="lastUpdate">
-                Last Update: <span id="updateTime">--:--:--</span>
+                <span id="updateTime">--:--:--</span>
             </div>
         </div>
 
+        <!-- Quick Stats - Mobile First -->
+        <div class="quick-stats">
+            <div class="stat-item">
+                <span class="stat-value" id="dailySignals">0</span>
+                <span class="stat-label">Today</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="winRate">--</span>
+                <span class="stat-label">Win Rate</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="avgStrength">--</span>
+                <span class="stat-label">Strength</span>
+            </div>
+        </div>
+
+        <!-- Asset Cards - Mobile Stack -->
         <div class="main-grid">
             <!-- XAUUSD Card -->
             <div class="asset-card" data-symbol="xauusd">
                 <div class="asset-header">
-                    <div class="asset-name">XAUUSD</div>
-                    <div>
+                    <div class="asset-info">
+                        <div class="asset-name">XAUUSD</div>
                         <div class="asset-price" id="xauusd-price">Loading...</div>
                         <div class="price-change" id="xauusd-change">--</div>
                     </div>
-                </div>
-                
-                <div class="bias-indicator">
-                    <div class="bias-label neutral" id="xauusd-bias">LOADING</div>
+                    <div class="bias-indicator">
+                        <div class="bias-label neutral" id="xauusd-bias">LOADING</div>
+                    </div>
                 </div>
                 
                 <div class="signal-strength">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="strength-header">
                         <span>Signal Strength</span>
                         <span id="xauusd-strength">0/6</span>
                     </div>
@@ -52,36 +76,31 @@
 
                 <div class="confluence-grid" id="xauusd-confluence">
                     <div class="confluence-item">Trend</div>
-                    <div class="confluence-item">Strength</div>
                     <div class="confluence-item">RSI</div>
                     <div class="confluence-item">Position</div>
-                    <div class="confluence-item">Price Action</div>
+                    <div class="confluence-item">Strength</div>
+                    <div class="confluence-item">Action</div>
                     <div class="confluence-item">Volume</div>
                 </div>
-
-                <div class="mini-chart">
-                    <div class="chart-line"></div>
-                </div>
                 
-                <div class="data-source-info" id="xauusd-source">Firebase + Twelve Data</div>
+                <div class="data-source-info" id="xauusd-source">Twelve Data</div>
             </div>
 
             <!-- USDJPY Card -->
             <div class="asset-card" data-symbol="usdjpy">
                 <div class="asset-header">
-                    <div class="asset-name">USDJPY</div>
-                    <div>
+                    <div class="asset-info">
+                        <div class="asset-name">USDJPY</div>
                         <div class="asset-price" id="usdjpy-price">Loading...</div>
                         <div class="price-change" id="usdjpy-change">--</div>
                     </div>
-                </div>
-                
-                <div class="bias-indicator">
-                    <div class="bias-label neutral" id="usdjpy-bias">LOADING</div>
+                    <div class="bias-indicator">
+                        <div class="bias-label neutral" id="usdjpy-bias">LOADING</div>
+                    </div>
                 </div>
                 
                 <div class="signal-strength">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="strength-header">
                         <span>Signal Strength</span>
                         <span id="usdjpy-strength">0/6</span>
                     </div>
@@ -92,44 +111,24 @@
 
                 <div class="confluence-grid" id="usdjpy-confluence">
                     <div class="confluence-item">Trend</div>
-                    <div class="confluence-item">Strength</div>
                     <div class="confluence-item">RSI</div>
                     <div class="confluence-item">Position</div>
-                    <div class="confluence-item">Price Action</div>
+                    <div class="confluence-item">Strength</div>
+                    <div class="confluence-item">Action</div>
                     <div class="confluence-item">Volume</div>
                 </div>
-
-                <div class="mini-chart">
-                    <div class="chart-line"></div>
-                </div>
                 
-                <div class="data-source-info" id="usdjpy-source">Firebase + Twelve Data</div>
+                <div class="data-source-info" id="usdjpy-source">Twelve Data</div>
             </div>
         </div>
 
-        <!-- Quick Stats -->
-        <div class="quick-stats">
-            <div class="stat-item">
-                <span class="stat-value" id="dailySignals">0</span>
-                <span class="stat-label">Today's Signals</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="winRate">--</span>
-                <span class="stat-label">Win Rate</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="avgStrength">--</span>
-                <span class="stat-label">Avg Strength</span>
-            </div>
-        </div>
-
-        <!-- Recent Signals Section -->
+        <!-- Recent Signals Section - Mobile Optimized -->
         <div class="signals-section">
             <div class="signals-header">
                 <h2>Recent Signals</h2>
                 <div class="signals-header-right">
                     <span id="signalCount">Loading...</span>
-                    <a href="signals-history.html" class="view-all-btn">📊 View All History</a>
+                    <a href="signals-history.html" class="view-all-btn">📊 View All</a>
                 </div>
             </div>
             
@@ -140,38 +139,43 @@
                         <span class="signal-time">Starting</span>
                     </div>
                     <div class="signal-details">
-                        🔥 Connecting to Firebase + Twelve Data live feeds...
+                        🔥 Connecting to Firebase + Twelve Data...
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Performance Stats -->
+        <!-- Performance Stats - Mobile Grid -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-number" style="color: #00ff88;" id="win-rate">--</div>
-                <div class="stat-label">Win Rate Today</div>
+                <div class="stat-label">Win Rate</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" style="color: #00d4ff;" id="total-pnl">--</div>
-                <div class="stat-label">Today's P&L</div>
+                <div class="stat-label">P&L</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" style="color: #ffa502;" id="avg-rr">2.8:1</div>
-                <div class="stat-label">Avg Risk:Reward</div>
+                <div class="stat-label">Risk:Reward</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" style="color: #ff6b35;" id="signals-week">--</div>
-                <div class="stat-label">Signals This Week</div>
+                <div class="stat-label">This Week</div>
+            </div>
+        </div>
+
+        <!-- Mobile Footer -->
+        <div class="mobile-footer">
+            <div class="footer-info">
+                <span>HueHue Trading Dashboard</span>
+                <span>Real-time signals from Firebase</span>
             </div>
         </div>
     </div>
 
     <!-- Load JavaScript modules in correct order -->
-    <!-- Firebase MUST be first -->
     <script src="firebase-config.js"></script>
-    
-    <!-- Then your other scripts -->
     <script src="js/config.js"></script>
     <script src="js/indicators.js"></script>
     <script src="js/eaLogic.js"></script>
