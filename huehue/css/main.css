@@ -1,4 +1,4 @@
-/* HueHue Mobile-First Responsive Design */
+/* HueHue Clean & Simple Design - No Distracting Animations */
 * {
     margin: 0;
     padding: 0;
@@ -17,7 +17,6 @@ body {
     color: #ffffff;
     min-height: 100vh;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
 }
 
 .container {
@@ -27,7 +26,7 @@ body {
     min-height: 100vh;
 }
 
-/* Mobile-First Header */
+/* Clean Header */
 .header {
     text-align: center;
     margin-bottom: 20px;
@@ -68,7 +67,7 @@ body {
     padding: 8px 12px;
     border-radius: 15px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.2s ease;
     font-size: 0.8em;
     flex: 1;
     min-width: 70px;
@@ -78,12 +77,12 @@ body {
 .source-button:hover,
 .source-button:active {
     background: rgba(0, 212, 255, 0.2);
-    border-color: #00d4ff;
 }
 
 .source-button.active {
-    background: linear-gradient(45deg, #00d4ff, #ff6b35);
-    border-color: transparent;
+    background: #00d4ff;
+    color: #000;
+    border-color: #00d4ff;
 }
 
 .last-update {
@@ -96,7 +95,6 @@ body {
     background: rgba(255, 255, 255, 0.1);
     padding: 6px 12px;
     border-radius: 15px;
-    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     font-size: 0.8em;
     margin: 10px auto;
@@ -106,15 +104,10 @@ body {
 .session-active {
     background: rgba(0, 255, 136, 0.2);
     border-color: #00ff88;
-    animation: sessionPulse 3s infinite;
+    color: #00ff88;
 }
 
-@keyframes sessionPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
-}
-
-/* Quick Stats - Mobile Optimized */
+/* Quick Stats */
 .quick-stats {
     display: flex;
     justify-content: space-around;
@@ -122,7 +115,6 @@ body {
     border-radius: 15px;
     padding: 15px 10px;
     margin-bottom: 20px;
-    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -146,7 +138,7 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Asset Cards - Mobile Stack */
+/* Asset Cards - Clean */
 .main-grid {
     display: flex;
     flex-direction: column;
@@ -158,28 +150,12 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 15px;
     padding: 15px;
-    backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
+    transition: transform 0.2s ease;
 }
 
-.asset-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-    animation: scan 4s linear infinite;
-    opacity: 0.7;
-}
-
-@keyframes scan {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+.asset-card:hover {
+    transform: translateY(-2px);
 }
 
 .asset-header {
@@ -215,15 +191,13 @@ body {
 
 .price-up { 
     color: #00ff88; 
-    text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
 }
 
 .price-down { 
     color: #ff4757; 
-    text-shadow: 0 0 5px rgba(255, 71, 87, 0.3);
 }
 
-/* Bias Indicator - Mobile Compact */
+/* Simple Bias Indicator */
 .bias-indicator {
     text-align: center;
     min-width: 70px;
@@ -233,7 +207,6 @@ body {
     font-size: 1.1em;
     font-weight: bold;
     text-transform: uppercase;
-    transition: all 0.3s ease;
     padding: 5px 8px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.1);
@@ -242,22 +215,19 @@ body {
 .bullish {
     color: #00ff88;
     background: rgba(0, 255, 136, 0.2);
-    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
 }
 
 .bearish {
     color: #ff4757;
     background: rgba(255, 71, 87, 0.2);
-    text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
 }
 
 .neutral {
     color: #ffa502;
     background: rgba(255, 165, 2, 0.2);
-    text-shadow: 0 0 10px rgba(255, 165, 2, 0.5);
 }
 
-/* Signal Strength - Mobile */
+/* Signal Strength - Simple */
 .signal-strength {
     margin: 15px 0;
 }
@@ -281,11 +251,11 @@ body {
 .strength-fill {
     height: 100%;
     border-radius: 3px;
-    transition: width 0.5s ease;
+    transition: width 0.3s ease;
     background: linear-gradient(90deg, #ff4757, #ffa502, #00ff88);
 }
 
-/* Confluence Grid - Mobile 3x2 */
+/* Clean Confluence Grid */
 .confluence-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -299,7 +269,7 @@ body {
     border-radius: 6px;
     text-align: center;
     font-size: 0.7em;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
     line-height: 1.2;
 }
@@ -325,12 +295,11 @@ body {
     color: #a0a0a0;
 }
 
-/* Signals Section - Mobile */
+/* Signals Section */
 .signals-section {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 15px;
     padding: 15px;
-    backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 20px;
 }
@@ -372,7 +341,7 @@ body {
     text-decoration: none;
     font-size: 0.8em;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: background-color 0.2s ease;
     white-space: nowrap;
 }
 
@@ -385,23 +354,25 @@ body {
 .signals-list {
     max-height: 300px;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
-/* Signal Items - Mobile Optimized */
+/* Simple Signal Items */
 .signal-item {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 10px;
     padding: 12px;
     margin-bottom: 8px;
     border-left: 3px solid;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
     cursor: pointer;
 }
 
-.signal-item:active {
+.signal-item:hover {
     background: rgba(255, 255, 255, 0.08);
-    transform: scale(0.98);
+}
+
+.signal-item:active {
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .signal-buy {
@@ -439,7 +410,7 @@ body {
     word-break: break-word;
 }
 
-/* Stats Grid - Mobile 2x2 */
+/* Stats Grid */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -452,7 +423,6 @@ body {
     border-radius: 12px;
     padding: 15px 10px;
     text-align: center;
-    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -467,7 +437,7 @@ body {
     font-size: 0.8em;
 }
 
-/* Connection Status - Mobile */
+/* Connection Status */
 .connection-status {
     display: inline-block;
     padding: 4px 8px;
@@ -486,18 +456,12 @@ body {
     background: rgba(255, 165, 2, 0.2);
     color: #ffa502;
     border: 1px solid #ffa502;
-    animation: connecting 1.5s infinite;
 }
 
 .status-disconnected {
     background: rgba(255, 71, 87, 0.2);
     color: #ff4757;
     border: 1px solid #ff4757;
-}
-
-@keyframes connecting {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
 }
 
 /* Mobile Footer */
@@ -516,7 +480,7 @@ body {
     font-size: 0.7em;
 }
 
-/* Scrollbar Styling for Mobile */
+/* Scrollbar */
 .signals-list::-webkit-scrollbar {
     width: 4px;
 }
@@ -531,11 +495,270 @@ body {
     border-radius: 2px;
 }
 
-/* Tablet Responsive (768px and up) */
-@media (min-width: 768px) {
+/* ========================================
+   DESKTOP OPTIMIZATIONS (1024px and up)
+   ======================================== */
+@media (min-width: 1024px) {
+    /* 80% Scale for Desktop */
+    html {
+        font-size: 12.8px;
+    }
+    
+    body {
+        zoom: 0.8;
+    }
+    
+    .container {
+        max-width: 1400px;
+        padding: 25px;
+        margin: 0 auto;
+    }
+
+    /* Desktop Header */
+    .header {
+        text-align: center;
+        margin-bottom: 30px;
+        position: relative;
+        padding: 0;
+    }
+
+    .header-top {
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+
+    .header h1 {
+        font-size: 3.125em;
+        margin-bottom: 10px;
+        flex: none;
+    }
+
+    .data-source-selector {
+        margin: 20px 0;
+        gap: 10px;
+    }
+
+    .source-button {
+        padding: 12px 25px;
+        border-radius: 25px;
+        font-size: 1.125em;
+        flex: none;
+        min-width: auto;
+        max-width: none;
+    }
+
+    .session-indicator {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 0;
+        font-size: 1.125em;
+        padding: 10px 20px;
+    }
+
+    .last-update {
+        font-size: 1.125em;
+        margin-top: 0;
+    }
+
+    /* Desktop Asset Cards */
+    .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 30px;
+    }
+
+    .asset-card {
+        padding: 31.25px;
+        border-radius: 25px;
+    }
+
+    .asset-header {
+        margin-bottom: 25px;
+    }
+
+    .asset-info {
+        text-align: left;
+    }
+
+    .asset-name {
+        font-size: 2.25em;
+        margin-bottom: 0;
+    }
+
+    .asset-price {
+        font-size: 1.5em;
+        margin-bottom: 5px;
+    }
+
+    .price-change {
+        font-size: 1.125em;
+    }
+
+    /* Desktop Bias Indicator */
+    .bias-indicator {
+        text-align: center;
+        margin: 25px 0;
+        min-width: auto;
+    }
+
+    .bias-label {
+        font-size: 3.125em;
+        padding: 0;
+        background: none;
+        border-radius: 0;
+        margin-bottom: 12.5px;
+    }
+
+    /* Desktop Signal Strength */
+    .signal-strength {
+        margin: 25px 0;
+    }
+
+    .strength-header {
+        font-size: 1em;
+        margin-bottom: 12.5px;
+    }
+
+    .strength-bar {
+        height: 10px;
+        border-radius: 5px;
+    }
+
+    /* Desktop Confluence Grid */
+    .confluence-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12.5px;
+        margin: 25px 0;
+    }
+
+    .confluence-item {
+        padding: 10px;
+        font-size: 1em;
+        border-radius: 10px;
+    }
+
+    .data-source-info {
+        font-size: 0.875em;
+        bottom: 12.5px;
+        right: 15px;
+    }
+
+    /* Desktop Stats */
+    .quick-stats {
+        padding: 25px;
+        margin-bottom: 30px;
+        border-radius: 18.75px;
+    }
+
+    .stat-value {
+        font-size: 2.25em;
+        margin-bottom: 6.25px;
+    }
+
+    .stat-label {
+        font-size: 1.125em;
+    }
+
+    /* Desktop Signals Section */
+    .signals-section {
+        padding: 31.25px;
+        border-radius: 25px;
+        margin-bottom: 30px;
+    }
+
+    .signals-header {
+        margin-bottom: 25px;
+        flex-wrap: nowrap;
+    }
+
+    .signals-header h2 {
+        font-size: 1.75em;
+    }
+
+    #signalCount {
+        font-size: 1em;
+    }
+
+    .view-all-btn {
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-size: 1.125em;
+    }
+
+    .signals-list {
+        max-height: 500px;
+    }
+
+    .signals-list::-webkit-scrollbar {
+        width: 7.5px;
+    }
+
+    /* Desktop Signal Items */
+    .signal-item {
+        padding: 18.75px;
+        border-radius: 12.5px;
+        margin-bottom: 12.5px;
+        border-left-width: 5px;
+    }
+
+    .signal-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .signal-asset {
+        font-size: 1.375em;
+    }
+
+    .signal-time {
+        font-size: 1.125em;
+    }
+
+    .signal-details {
+        font-size: 1.125em;
+        line-height: 1.625;
+    }
+
+    /* Desktop Stats Grid */
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 25px;
+        margin-top: 37.5px;
+    }
+
+    .stat-card {
+        padding: 25px;
+        border-radius: 18.75px;
+    }
+
+    .stat-number {
+        font-size: 2.5em;
+        margin-bottom: 6.25px;
+    }
+
+    .stat-label {
+        font-size: 1.125em;
+    }
+
+    /* Hide mobile footer on desktop */
+    .mobile-footer {
+        display: none;
+    }
+
+    /* Desktop Connection Status */
+    .connection-status {
+        padding: 6.25px 12.5px;
+        border-radius: 15px;
+        font-size: 1em;
+    }
+}
+
+/* Tablet Responsive (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
     .container {
         padding: 20px;
-        max-width: 1200px;
+        max-width: 1000px;
     }
     
     .header h1 {
@@ -578,76 +801,7 @@ body {
     }
 }
 
-/* Desktop Responsive (1024px and up) */
-@media (min-width: 1024px) {
-    .container {
-        padding: 25px;
-    }
-    
-    .header h1 {
-        font-size: 2.5em;
-    }
-    
-    .session-indicator {
-        position: absolute;
-        top: 0;
-        right: 0;
-        margin: 0;
-    }
-    
-    .header {
-        position: relative;
-    }
-    
-    .asset-card {
-        padding: 25px;
-    }
-    
-    .bias-label {
-        font-size: 2.5em;
-    }
-    
-    .confluence-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-    }
-    
-    .confluence-item {
-        padding: 8px;
-        font-size: 0.8em;
-    }
-}
-
-/* Reduce animations on slow devices */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-    
-    .asset-card::before {
-        display: none;
-    }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    body {
-        background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%);
-    }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-    .asset-card,
-    .signals-section,
-    .stat-card {
-        border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-}
-
-/* Large text support */
+/* Small mobile devices */
 @media (min-width: 320px) and (max-width: 767px) and (orientation: portrait) {
     body {
         font-size: 14px;
