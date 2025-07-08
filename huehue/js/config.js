@@ -138,31 +138,34 @@ CONFIG.isValidTradingTime = function() {
     return true;
 };
 
+// Replace the getCurrentSession function in config.js with this:
+
 CONFIG.getCurrentSession = function() {
     const hour = new Date().getUTCHours();
     
+    // Check each session in order of priority
     // London + NY overlap (most important)
     if (hour >= 13 && hour < 16) {
-        return { name: 'LONDON_NY', emoji: '🇬🇧🇺🇸', active: true };
-    }
-    // London session
-    else if (hour >= 7 && hour < 16) {
-        return { name: 'LONDON', emoji: '🇬🇧', active: true };
+        return { name: 'London + NY', emoji: '🇬🇧🇺🇸', active: true };
     }
     // New York session
     else if (hour >= 13 && hour < 22) {
-        return { name: 'NEW_YORK', emoji: '🇺🇸', active: true };
+        return { name: 'New York', emoji: '🇺🇸', active: true };
+    }
+    // London session
+    else if (hour >= 7 && hour < 16) {
+        return { name: 'London', emoji: '🇬🇧', active: true };
     }
     // Tokyo session
     else if ((hour >= 23) || (hour < 8)) {
-        return { name: 'TOKYO', emoji: '🇯🇵', active: true };
+        return { name: 'Tokyo', emoji: '🇯🇵', active: true };
     }
     // Sydney session
     else if ((hour >= 21) || (hour < 6)) {
-        return { name: 'SYDNEY', emoji: '🇦🇺', active: true };
+        return { name: 'Sydney', emoji: '🇦🇺', active: true };
     }
     
-    return { name: 'CLOSED', emoji: '🌙', active: false };
+    return { name: 'Closed', emoji: '🌙', active: false };
 };
 
 CONFIG.shouldAvoidNews = function() {
@@ -263,4 +266,4 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // Log initialization
-CONFIG.log('info', '⚙️ HueHue Optimized Configuration Loaded');
+CONFIG.log('info', '⚙️ HueHue Optimized Configuration Loaded'); 

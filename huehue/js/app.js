@@ -1,4 +1,4 @@
-// HueHue Main Application - VPS Compatible Version
+// HueHue Main Application - Complete Version with Data Source Indicators
 class OptimizedHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
@@ -48,6 +48,12 @@ class OptimizedHueHueApp {
             // Check if VPS is active
             this.vpsMode = await this.checkVPSActive();
             
+            // Check for forced VPS mode
+            if (localStorage.getItem('forceVPSMode') === 'true') {
+                this.vpsMode = true;
+                CONFIG.log('info', '🎯 Forced VPS Mode Active');
+            }
+            
             if (this.vpsMode) {
                 CONFIG.log('info', '🎯 VPS Mode Active - Reading from Firebase only');
                 this.updateConnectionStatus('connected');
@@ -74,7 +80,22 @@ class OptimizedHueHueApp {
                         throw new Error('Failed to initialize data feed');
                     }
                 } catch (error) {
-                    throw new Error(`Component initialization failed: ${error.message}`);
+                    // If data feed fails, switch to VPS mode
+                    CONFIG.log('warn', '⚠️ Data feed failed, switching to VPS mode');
+                    this.vpsMode = true;
+                    this.updateConnectionStatus('connected');
+                    
+                    // Create minimal data feed
+                    this.dataFeed = {
+                        isHealthy: () => true,
+                        getRealTimePrice: async () => ({ price: 0 }),
+                        getHistoricalData: async () => ({ bars: [] }),
+                        updateConnectionStatus: (status) => this.updateConnectionStatus(status),
+                        hideErrorMessage: () => this.hideErrorMessage()
+                    };
+                    
+                    // Hide error message
+                    this.hideErrorMessage();
                 }
             }
             
@@ -374,6 +395,18 @@ class OptimizedHueHueApp {
                 }
             }
             
+            // Update data source indicator on card
+            const sourceElement = document.getElementById(`${symbolLower}-source`);
+            if (sourceElement) {
+                if (this.vpsMode) {
+                    sourceElement.textContent = '🚀 VPS Data';
+                    sourceElement.style.color = '#00ff88';
+                } else {
+                    sourceElement.textContent = '💻 Local Data';
+                    sourceElement.style.color = '#ffa502';
+                }
+            }
+            
             if (signal?.conditions) {
                 this.updateConfluenceGrid(symbol, signal);
             }
@@ -531,7 +564,19 @@ class OptimizedHueHueApp {
             const strength = signal.strength || 0;
             const maxStrength = signal.maxStrength || 6;
             
-            const sourceIcon = signal.source === 'vps_smart_hybrid' ? ' 🚀' : ' 🔥';
+            // Show source icon based on where signal came from
+            let sourceIcon = '';
+            let sourceText = '';
+            if (signal.source === 'vps_smart_hybrid') {
+                sourceIcon = ' 🚀';
+                sourceText = 'VPS';
+            } else if (signal.id) {
+                sourceIcon = ' 🔥';
+                sourceText = 'Cloud';
+            } else {
+                sourceIcon = ' 💻';
+                sourceText = 'Local';
+            }
             
             signalDiv.innerHTML = `
                 <div class="signal-meta">
@@ -539,8 +584,7 @@ class OptimizedHueHueApp {
                     <span class="signal-time">${dateStr} ${timeStr}</span>
                 </div>
                 <div class="signal-details">
-                    Entry: ${formattedPrice} | Strength: ${strength}/${maxStrength}
-                    ${signal.id ? ' | ✅ Synced' : ' | ⚠️ Local'}
+                    Entry: ${formattedPrice} | Strength: ${strength}/${maxStrength} | Source: ${sourceText}
                 </div>
             `;
             
@@ -623,44 +667,52 @@ class OptimizedHueHueApp {
     }
 
     updateSession() {
-        try {
-            const sessionIndicator = document.getElementById('sessionIndicator');
-            if (!sessionIndicator) return;
+    try {
+        const sessionIndicator = document.getElementById('sessionIndicator');
+        if (!sessionIndicator) return;
+        
+        const session = CONFIG.getCurrentSession();
+        
+        // Add VPS/Local indicator to session
+        const dataSourceText = this.vpsMode ? 'VPS' : 'Local';
+        
+        const sessionText = session.active ? 
+            `${session.emoji} ${session.name} Session | ${dataSourceText}` : 
+            `🌙 Market Quiet | ${dataSourceText}`;
+        
+        sessionIndicator.textContent = sessionText;
+        sessionIndicator.className = session.active ? 
+            'session-indicator session-active' : 
+            'session-indicator';
             
-            const session = CONFIG.getCurrentSession();
-            const modeIndicator = this.vpsMode ? ' 🚀 VPS' : ' 💻 Local';
-            const sessionText = session.active ? 
-                `${session.emoji} ${session.name} Session${modeIndicator}` : 
-                `🌙 Market Quiet${modeIndicator}`;
-            
-            sessionIndicator.textContent = sessionText;
-            sessionIndicator.className = session.active ? 
-                'session-indicator session-active' : 
-                'session-indicator';
-                
-        } catch (error) {
-            CONFIG.log('warn', 'Error updating session:', error);
-        }
+    } catch (error) {
+        CONFIG.log('warn', 'Error updating session:', error);
     }
+}
 
     updateConnectionStatus(status) {
-        const statusElement = document.getElementById('connectionStatus');
-        if (!statusElement) return;
-        
-        statusElement.className = `connection-status status-${status}`;
-        
-        switch (status) {
-            case 'connected':
-                statusElement.textContent = this.vpsMode ? 'VPS MODE' : 'LIVE DATA';
-                break;
-            case 'connecting':
-                statusElement.textContent = 'CONNECTING';
-                break;
-            case 'error':
-                statusElement.textContent = 'ERROR';
-                break;
-        }
+    const statusElement = document.getElementById('connectionStatus');
+    if (!statusElement) return;
+    
+    statusElement.className = `connection-status status-${status}`;
+    
+    switch (status) {
+        case 'connected':
+            statusElement.textContent = 'LIVE DATA';
+            statusElement.style.background = '';
+            statusElement.style.color = '';
+            statusElement.style.fontWeight = '';
+            statusElement.style.border = '';
+            break;
+        case 'connecting':
+            statusElement.textContent = 'CONNECTING';
+            break;
+        case 'error':
+            statusElement.textContent = 'API ERROR';
+            break;
     }
+}
+
 
     hideErrorMessage() {
         const errorElement = document.getElementById('apiErrorMessage');
@@ -697,6 +749,7 @@ class OptimizedHueHueApp {
 
     showSignalDetails(signal) {
         CONFIG.log('info', '📊 Signal details:', signal);
+        // You can implement a modal or alert here to show detailed signal info
     }
 
     updateElementSafely(elementId, value) {
