@@ -1,10 +1,11 @@
-// HueHue Main Application - Live Trading Dashboard
+// HueHue Main Application - Firebase + Live Trading Dashboard
 class HueHueApp {
     constructor() {
         // Initialize components
         this.dataFeed = new LiveDataFeed();
         this.indicators = new TechnicalIndicators();
         this.eaLogic = new EALogic();
+        this.firebaseStorage = null; // Will be set when Firebase is ready
         
         // Application state
         this.isRunning = false;
@@ -28,6 +29,9 @@ class HueHueApp {
             // Show loading state
             this.showLoadingState();
             
+            // Wait for Firebase to be ready
+            await this.waitForFirebase();
+            
             // Initialize live data feed
             const dataFeedInitialized = await this.dataFeed.initialize();
             if (!dataFeedInitialized) {
@@ -35,6 +39,9 @@ class HueHueApp {
             }
             
             this.updateConnectionStatus('connected');
+            
+            // Load historical signals from Firebase
+            await this.loadHistoricalSignals();
             
             // Load initial data for both assets
             await this.loadInitialData();
@@ -46,7 +53,7 @@ class HueHueApp {
             this.initializeUI();
             
             this.isRunning = true;
-            console.log('✅ HueHue application fully initialized');
+            console.log('✅ HueHue application fully initialized with Firebase');
             
             // Hide loading and show dashboard
             this.hideLoadingState();
@@ -58,6 +65,59 @@ class HueHueApp {
             this.updateConnectionStatus('disconnected');
             this.showErrorState(error.message);
             return false;
+        }
+    }
+
+    // Wait for Firebase to be ready
+    async waitForFirebase() {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+        
+        while (!window.firebaseStorage && attempts < maxAttempts) {
+            await this.sleep(100);
+            attempts++;
+        }
+        
+        if (window.firebaseStorage) {
+            this.firebaseStorage = window.firebaseStorage;
+            console.log('🔥 Firebase connected to main app');
+        } else {
+            console.warn('⚠️ Firebase not available, continuing without cloud storage');
+        }
+    }
+
+    // Load historical signals from Firebase
+    async loadHistoricalSignals() {
+        if (!this.firebaseStorage) {
+            console.log('📊 No Firebase storage, skipping historical signals');
+            return;
+        }
+        
+        try {
+            console.log('📥 Loading historical signals from Firebase...');
+            const signals = await this.firebaseStorage.getSignals(20);
+            
+            // Clear initialization message
+            const signalsList = document.getElementById('signalsList');
+            if (signalsList && signals.length > 0) {
+                signalsList.innerHTML = '';
+            }
+            
+            // Add each signal to UI
+            signals.forEach(signal => {
+                this.addSignalToList(signal, false); // false = don't save to Firebase again
+            });
+            
+            console.log(`✅ Loaded ${signals.length} historical signals from Firebase`);
+            
+            // Update signal count
+            const signalCount = document.getElementById('signalCount');
+            if (signalCount) {
+                signalCount.textContent = `${signals.length} signals loaded from Firebase`;
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Could not load historical signals:', error);
         }
     }
 
@@ -268,12 +328,22 @@ class HueHueApp {
         }
     }
 
-    // Handle new trading signal
-    handleNewTradingSignal(tradingSignal) {
+    // Handle new trading signal with Firebase storage
+    async handleNewTradingSignal(tradingSignal) {
         console.log(`🚨 NEW TRADING SIGNAL: ${tradingSignal.action} ${tradingSignal.symbol}`);
         
-        // Add to signals list
-        this.addSignalToList(tradingSignal);
+        // Save to Firebase first
+        if (this.firebaseStorage) {
+            try {
+                await this.firebaseStorage.saveSignal(tradingSignal);
+                console.log('🔥 Signal saved to Firebase');
+            } catch (error) {
+                console.warn('⚠️ Could not save signal to Firebase:', error);
+            }
+        }
+        
+        // Add to UI
+        this.addSignalToList(tradingSignal, false); // false = already saved to Firebase
         
         // Update performance stats
         this.updatePerformanceStats();
@@ -288,12 +358,13 @@ class HueHueApp {
     }
 
     // Add signal to the UI list
-    addSignalToList(signal) {
+    addSignalToList(signal, saveToFirebase = true) {
         const signalsList = document.getElementById('signalsList');
         if (!signalsList) return;
         
-        // Clear initialization message
-        if (signalsList.children.length === 1 && signalsList.children[0].textContent.includes('Connecting')) {
+        // Clear initialization message if this is the first signal
+        if (signalsList.children.length === 1 && 
+            signalsList.children[0].textContent.includes('Connecting')) {
             signalsList.innerHTML = '';
         }
         
@@ -308,12 +379,19 @@ class HueHueApp {
         // Update signal count
         const signalCount = document.getElementById('signalCount');
         if (signalCount) {
-            const todayStats = this.eaLogic.getTodayStats();
-            signalCount.textContent = `${todayStats.signalsToday} signals today`;
+            const totalSignals = signalsList.children.length;
+            signalCount.textContent = `${totalSignals} signals (🔥 Firebase synced)`;
+        }
+        
+        // Save to Firebase if requested and not already saved
+        if (saveToFirebase && this.firebaseStorage) {
+            this.firebaseStorage.saveSignal(signal).catch(error => {
+                console.warn('Could not save signal to Firebase:', error);
+            });
         }
     }
 
-    // Create signal element for the list
+    // Create signal element for the list with Firebase indicator
     createSignalElement(signal) {
         const signalDiv = document.createElement('div');
         signalDiv.className = `signal-item signal-${signal.action.toLowerCase()}`;
@@ -324,15 +402,18 @@ class HueHueApp {
         const formattedSL = this.formatPrice(signal.symbol, signal.stopLoss);
         const formattedTP = this.formatPrice(signal.symbol, signal.takeProfit);
         
+        // Add Firebase indicator if signal has an ID (meaning it's saved)
+        const firebaseIndicator = signal.id ? ' 🔥' : '';
+        
         signalDiv.innerHTML = `
             <div class="signal-meta">
-                <span class="signal-asset">${signal.symbol} ${signal.action}</span>
+                <span class="signal-asset">${signal.symbol} ${signal.action}${firebaseIndicator}</span>
                 <span class="signal-time">${timeStr}</span>
             </div>
             <div class="signal-details">
                 Entry: ${formattedPrice} | Strength: ${signal.strength}/${signal.maxStrength} | 
                 ATR: ${signal.atr ? signal.atr.toFixed(2) : 'N/A'} | 
-                SL: ${formattedSL} | TP: ${formattedTP} 🔄 Active
+                SL: ${formattedSL} | TP: ${formattedTP} ${signal.id ? '| Saved to Firebase ✅' : '| Local only ⚠️'}
             </div>
         `;
         
@@ -342,6 +423,38 @@ class HueHueApp {
         });
         
         return signalDiv;
+    }
+
+    // Update performance statistics with Firebase sync
+    async updatePerformanceStats() {
+        const todayStats = this.eaLogic.getTodayStats();
+        const signalHistory = this.eaLogic.getSignalHistory(50);
+        
+        // Calculate stats
+        this.performanceStats.signalsToday = todayStats.signalsToday;
+        this.performanceStats.winRate = this.calculateWinRate(signalHistory);
+        this.performanceStats.totalPnL = this.calculateTotalPnL(signalHistory);
+        
+        // Update UI
+        this.updateStatCard('win-rate', `${this.performanceStats.winRate}%`);
+        this.updateStatCard('total-pnl', `${this.performanceStats.totalPnL > 0 ? '+' : ''}${this.performanceStats.totalPnL}`);
+        this.updateStatCard('avg-rr', `${this.performanceStats.avgRiskReward.toFixed(1)}:1`);
+        this.updateStatCard('signals-week', signalHistory.length.toString());
+        
+        // Save to Firebase every hour
+        if (this.firebaseStorage && Math.random() < 0.02) { // 2% chance each update = ~1/hour
+            try {
+                await this.firebaseStorage.savePerformance(this.performanceStats);
+                console.log('📈 Performance stats saved to Firebase');
+            } catch (error) {
+                console.warn('Could not save performance to Firebase:', error);
+            }
+        }
+    }
+
+    // Utility function for sleep
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     // Update dashboard elements

@@ -12,7 +12,7 @@
             <h1>HueHue Signal Dashboard <span class="connection-status status-connecting" id="connectionStatus">CONNECTING</span></h1>
             
             <div class="data-source-selector">
-                <button class="source-button active" data-source="twelve">📊 Twelve Data (LIVE)</button>
+                <button class="source-button active" data-source="twelve">🔥 Firebase + Live Data</button>
                 <button class="source-button" data-source="demo">🎭 Demo Mode</button>
                 <button class="source-button" data-source="enhanced">⚡ Enhanced</button>
             </div>
@@ -63,7 +63,7 @@
                     <div class="chart-line"></div>
                 </div>
                 
-                <div class="data-source-info" id="xauusd-source">Twelve Data</div>
+                <div class="data-source-info" id="xauusd-source">Firebase + Twelve Data</div>
             </div>
 
             <!-- USDJPY Card -->
@@ -103,14 +103,14 @@
                     <div class="chart-line"></div>
                 </div>
                 
-                <div class="data-source-info" id="usdjpy-source">Twelve Data</div>
+                <div class="data-source-info" id="usdjpy-source">Firebase + Twelve Data</div>
             </div>
         </div>
 
         <!-- Recent Signals Section -->
         <div class="signals-section">
             <div class="signals-header">
-                <h2>Recent Signals</h2>
+                <h2>Recent Signals <span style="font-size: 0.8em; color: #00ff88;">🔥 Saved to Firebase</span></h2>
                 <span id="signalCount">Initializing...</span>
             </div>
             
@@ -121,7 +121,7 @@
                         <span class="signal-time">Starting</span>
                     </div>
                     <div class="signal-details">
-                        Connecting to Twelve Data live feeds...
+                        🔥 Connecting to Firebase + Twelve Data live feeds...
                     </div>
                 </div>
             </div>
@@ -149,6 +149,10 @@
     </div>
 
     <!-- Load JavaScript modules in correct order -->
+    <!-- 🔥 Firebase MUST be first -->
+    <script src="firebase-config.js"></script>
+    
+    <!-- Then your other scripts -->
     <script src="js/config.js"></script>
     <script src="js/indicators.js"></script>
     <script src="js/eaLogic.js"></script>

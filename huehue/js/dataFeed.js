@@ -1,8 +1,8 @@
-// HueHue Live Data Feed - Improved with Fallbacks
+// HueHue Live Data Feed - Firebase + Twelve Data Integration
 class LiveDataFeed {
     constructor() {
-        // Your Twelve Data API key
-        this.apiKey = 'b1b1a8bf0e4b4848b1a68bd4bb7ceb9c'; // Your actual key
+        // API key will be loaded from Firebase
+        this.apiKey = null;
         this.baseUrl = 'https://api.twelvedata.com';
         
         // API usage tracking (55 calls/minute limit)
@@ -20,18 +20,31 @@ class LiveDataFeed {
             'USDJPY': 'USD/JPY'
         };
         
+        // Firebase storage reference
+        this.firebaseStorage = null;
+        
         // Fallback mode
         this.useFallback = false;
         this.isInitialized = false;
         this.updateInterval = null;
         
-        console.log('💰 Live Data Feed initialized (Twelve Data)');
+        console.log('💰 Live Data Feed initialized (Firebase + Twelve Data)');
     }
 
-    // Initialize the live data feed with fallback
+    // Initialize the live data feed with Firebase
     async initialize() {
         try {
-            console.log('🔌 Connecting to Twelve Data...');
+            console.log('🔌 Connecting to Firebase + Twelve Data...');
+            
+            // Wait for Firebase to be ready
+            await this.waitForFirebase();
+            
+            // Load API key from Firebase
+            await this.loadApiKeyFromFirebase();
+            
+            if (!this.apiKey) {
+                console.warn('⚠️ No API key found, will prompt user');
+            }
             
             // Test API connection with timeout
             const testResult = await this.testConnectionWithTimeout();
@@ -68,6 +81,54 @@ class LiveDataFeed {
             
             this.isInitialized = true;
             return true; // Don't fail completely
+        }
+    }
+
+    // Wait for Firebase to be ready
+    async waitForFirebase() {
+        let attempts = 0;
+        const maxAttempts = 30; // 3 seconds max wait
+        
+        while (!window.firebaseStorage && attempts < maxAttempts) {
+            await this.sleep(100);
+            attempts++;
+        }
+        
+        if (window.firebaseStorage) {
+            this.firebaseStorage = window.firebaseStorage;
+            console.log('🔥 Firebase storage connected');
+        } else {
+            throw new Error('Firebase not available after 3 seconds');
+        }
+    }
+
+    // Load API key from Firebase
+    async loadApiKeyFromFirebase() {
+        try {
+            if (!this.firebaseStorage) {
+                throw new Error('Firebase storage not available');
+            }
+            
+            // Try to get API key from Firebase
+            let apiKey = await this.firebaseStorage.getApiKey();
+            
+            // If not found, prompt user and save
+            if (!apiKey) {
+                apiKey = prompt('🔑 Enter your Twelve Data API key (will be saved securely to Firebase):');
+                if (apiKey && apiKey.trim()) {
+                    const saved = await this.firebaseStorage.saveApiKey(apiKey.trim());
+                    if (saved) {
+                        console.log('🔥 API key saved to Firebase');
+                    }
+                }
+            }
+            
+            this.apiKey = apiKey;
+            console.log('🔑 API key loaded:', this.apiKey ? 'Success ✅' : 'Missing ❌');
+            
+        } catch (error) {
+            console.warn('⚠️ Could not load API key from Firebase:', error.message);
+            this.apiKey = null;
         }
     }
 
