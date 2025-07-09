@@ -111,7 +111,7 @@ class OptimizedHueHueApp {
         
         // OPTIMIZATION: Shorter timeout and parallel checks
         let attempts = 0;
-        const maxAttempts = 20; // Reduced from 30
+        const maxAttempts = 50; // Reduced from 30
         
         while (!window.firebaseStorage && attempts < maxAttempts) {
             await this.sleep(50); // Reduced from 100ms
