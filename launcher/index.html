@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>My Apps</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 20px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .apps-container {
+            flex: 1;
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .app-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .app-card:active {
+            transform: scale(0.98);
+        }
+        
+        .app-card:active::before {
+            opacity: 1;
+        }
+        
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+        
+        .finance-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .prop-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .huehue-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .app-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .app-description {
+            color: #aaa;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .arrow {
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 24px;
+            transition: transform 0.3s;
+        }
+        
+        .app-card:hover .arrow {
+            transform: translateY(-50%) translateX(5px);
+        }
+        
+        @media (prefers-color-scheme: light) {
+            body {
+                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                color: #333;
+            }
+            
+            .header {
+                background: rgba(255, 255, 255, 0.8);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .app-card {
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+            }
+            
+            .app-description {
+                color: #666;
+            }
+            
+            .arrow {
+                color: #999;
+            }
+        }
+        
+        /* Standalone mode specific styles */
+        @media (display-mode: standalone) {
+            .header {
+                padding-top: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>My Apps</h1>
+        <p>Choose an app to open</p>
+    </div>
+    
+    <div class="apps-container">
+        <a href="/finance-tracker/index.html" class="app-card">
+            <div class="app-icon finance-icon">💰</div>
+            <div class="app-name">Finance Tracker</div>
+            <div class="app-description">Track your personal finances and manage your budget</div>
+            <div class="arrow">→</div>
+        </a>
+        
+        <a href="/PropOne/index.html" class="app-card">
+            <div class="app-icon prop-icon">📊</div>
+            <div class="app-name">Prop Accounts Tracker</div>
+            <div class="app-description">Monitor and manage your proprietary trading accounts</div>
+            <div class="arrow">→</div>
+        </a>
+        
+        <a href="/huehue/index.html" class="app-card">
+            <div class="app-icon huehue-icon">📈</div>
+            <div class="app-name">HueHue RSI</div>
+            <div class="app-description">RSI signal analysis and trading indicators</div>
+            <div class="arrow">→</div>
+        </a>
+    </div>
+    
+    <script>
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+        
+        // Add haptic feedback on iOS
+        document.querySelectorAll('.app-card').forEach(card => {
+            card.addEventListener('touchstart', () => {
+                if (window.navigator.vibrate) {
+                    window.navigator.vibrate(10);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
