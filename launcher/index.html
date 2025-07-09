@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="theme-color" content="#0a0a0a">
     <title>My Apps</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -18,206 +18,347 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: #0a0a0a;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             color: #ffffff;
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(79, 172, 254, 0.3) 0%, transparent 50%);
+            animation: float 20s infinite ease-in-out;
+            z-index: -1;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            33% { transform: rotate(120deg) scale(1.1); }
+            66% { transform: rotate(240deg) scale(0.9); }
         }
         
         .header {
             text-align: center;
-            padding: 30px 20px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px 20px 40px;
+            position: relative;
         }
         
         .header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 0;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #fff 0%, #888 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
         }
         
-        .header p {
-            color: #888;
-            font-size: 14px;
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
         }
         
         .apps-container {
             flex: 1;
-            padding: 30px 20px;
-            display: grid;
-            grid-template-columns: 1fr;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             gap: 20px;
-            max-width: 500px;
             width: 100%;
+            max-width: 500px;
             margin: 0 auto;
         }
         
         .app-card {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 30px;
+            width: 100%;
+            max-width: 350px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 25px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 0 30px;
+            gap: 20px;
             text-decoration: none;
             color: inherit;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
         .app-card::before {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            inset: 0;
+            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 255, 255, 0.15) 0%, transparent 60%);
             opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
         }
         
-        .app-card:active {
-            transform: scale(0.98);
-        }
-        
-        .app-card:active::before {
+        .app-card:hover::before {
             opacity: 1;
         }
         
+        .app-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 60px rgba(255, 255, 255, 0.05),
+                inset 0 0 30px rgba(255, 255, 255, 0.05);
+        }
+        
+        .app-card:active {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+        
+
         .app-icon {
             width: 60px;
             height: 60px;
-            margin-bottom: 15px;
-            border-radius: 15px;
+            margin: 0;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 30px;
+            position: relative;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
         }
         
+        .app-card:hover .app-icon {
+            transform: scale(1.1) rotate(-5deg);
+        }
+        
+        /* Glassmorphism icons with glow */
         .finance-icon {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 
+                0 8px 32px rgba(102, 126, 234, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
         }
         
         .prop-icon {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 
+                0 8px 32px rgba(240, 147, 251, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
         }
         
         .huehue-icon {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 
+                0 8px 32px rgba(79, 172, 254, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.2);
         }
         
         .app-name {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+            opacity: 0.9;
+            flex: 1;
         }
         
-        .app-description {
-            color: #aaa;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        .arrow {
+        /* Arrow indicator */
+        .app-card::after {
+            content: '→';
             position: absolute;
             right: 25px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            font-size: 24px;
-            transition: transform 0.3s;
+            font-size: 20px;
+            opacity: 0.3;
+            transition: all 0.3s ease;
         }
         
-        .app-card:hover .arrow {
-            transform: translateY(-50%) translateX(5px);
+        .app-card:hover::after {
+            transform: translateX(5px);
+            opacity: 0.6;
         }
         
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            opacity: 0.3;
+            animation: particle-float 20s infinite linear;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+            }
+        }
+        
+        /* Light mode support */
         @media (prefers-color-scheme: light) {
             body {
-                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                color: #333;
+                background: #fafafa;
+                color: #111;
             }
             
-            .header {
-                background: rgba(255, 255, 255, 0.8);
-                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            body::before {
+                background: 
+                    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 20%, rgba(79, 172, 254, 0.15) 0%, transparent 50%);
+            }
+            
+            .header h1 {
+                background: linear-gradient(135deg, #111 0%, #666 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
             }
             
             .app-card {
-                background: rgba(255, 255, 255, 0.9);
-                border: 1px solid rgba(0, 0, 0, 0.1);
+                background: rgba(255, 255, 255, 0.7);
+                border: 1px solid rgba(0, 0, 0, 0.06);
             }
             
-            .app-description {
-                color: #666;
+            .app-card:hover {
+                border-color: rgba(0, 0, 0, 0.1);
+                box-shadow: 
+                    0 20px 40px rgba(0, 0, 0, 0.1),
+                    0 0 60px rgba(0, 0, 0, 0.02);
             }
             
-            .arrow {
-                color: #999;
+            .particle {
+                opacity: 0.1;
             }
         }
         
-        /* Standalone mode specific styles */
-        @media (display-mode: standalone) {
-            .header {
-                padding-top: 40px;
+        /* Responsive adjustments */
+        @media (max-width: 380px) {
+            .apps-container {
+                grid-template-columns: 1fr;
+                max-width: 280px;
             }
+            
+            .app-card.full-width {
+                grid-column: span 1;
+                aspect-ratio: 1.5;
+            }
+        }
+        
+        /* Easter egg: Matrix rain on triple tap */
+        .matrix-mode {
+            animation: matrix-glow 2s infinite;
+        }
+        
+        @keyframes matrix-glow {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(180deg); }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>My Apps</h1>
-        <p>Choose an app to open</p>
+        <h1>.dev</h1>
     </div>
     
     <div class="apps-container">
         <a href="/finance-tracker/" class="app-card">
             <div class="app-icon finance-icon">💰</div>
             <div class="app-name">Finance Tracker</div>
-            <div class="app-description">Track your personal finances and manage your budget</div>
-            <div class="arrow">→</div>
         </a>
         
         <a href="/PropOne/" class="app-card">
             <div class="app-icon prop-icon">📊</div>
-            <div class="app-name">Prop Accounts Tracker</div>
-            <div class="app-description">Monitor and manage your proprietary trading accounts</div>
-            <div class="arrow">→</div>
+            <div class="app-name">Prop Accounts</div>
         </a>
         
         <a href="/huehue/" class="app-card">
             <div class="app-icon huehue-icon">📈</div>
             <div class="app-name">HueHue RSI</div>
-            <div class="app-description">RSI signal analysis and trading indicators</div>
-            <div class="arrow">→</div>
         </a>
     </div>
     
     <script>
-        // Register service worker for offline support
+        // Register service worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
         
-        // Add haptic feedback on iOS
+        // Interactive mouse tracking for gradient
         document.querySelectorAll('.app-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--x', `${x}%`);
+                card.style.setProperty('--y', `${y}%`);
+            });
+            
+            // Haptic feedback
             card.addEventListener('touchstart', () => {
                 if (window.navigator.vibrate) {
                     window.navigator.vibrate(10);
                 }
             });
+        });
+        
+        // Create floating particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particle.style.fontSize = Math.random() * 20 + 10 + 'px';
+            particle.textContent = ['✨', '⚡', '💫', '🌟'][Math.floor(Math.random() * 4)];
+            document.body.appendChild(particle);
+            
+            setTimeout(() => particle.remove(), 20000);
+        }
+        
+        // Add particles periodically
+        setInterval(createParticle, 3000);
+        
+        // Initial particles
+        for (let i = 0; i < 5; i++) {
+            setTimeout(createParticle, i * 1000);
+        }
+        
+        // Easter egg: Triple tap for matrix mode
+        let tapCount = 0;
+        let tapTimer;
+        
+        document.body.addEventListener('click', () => {
+            tapCount++;
+            clearTimeout(tapTimer);
+            
+            if (tapCount === 3) {
+                document.body.classList.toggle('matrix-mode');
+                tapCount = 0;
+            }
+            
+            tapTimer = setTimeout(() => {
+                tapCount = 0;
+            }, 500);
         });
     </script>
 </body>
