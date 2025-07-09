@@ -1,4 +1,4 @@
-// HueHue Main Application - Fixed Real-time Updates
+// HueHue Main Application - Performance Optimized Version
 class OptimizedHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
@@ -16,21 +16,12 @@ class OptimizedHueHueApp {
         this.isRunning = false;
         this.updateIntervals = {};
         this.lastSignals = {};
-        this.vpsMode = true; // Default to VPS mode
-        this.unsubscribers = []; // Store Firebase listeners
+        this.vpsMode = true;
+        this.unsubscribers = [];
         
-        // Performance stats
-        this.performanceStats = {
-            signalsToday: 0,
-            winRate: 73,
-            totalPnL: 0,
-            avgRiskReward: 2.8
-        };
-        
-        // Error tracking
-        this.errorCount = 0;
-        this.lastErrorTime = 0;
-        this.maxErrors = 10;
+        // Performance tracking
+        this.lastPriceUpdate = {};
+        this.priceUpdateCount = 0;
         
         CONFIG.log('info', '🎯 HueHue Application initialized');
     }
@@ -39,20 +30,17 @@ class OptimizedHueHueApp {
         try {
             CONFIG.log('info', '🚀 Starting HueHue initialization...');
             
-            // Initialize UI first
-            this.updateConnectionStatus('connecting');
-            this.hideErrorMessage();
+            // OPTIMIZATION 1: Show UI immediately with loading states
+            this.showInitialUI();
+            
+            // OPTIMIZATION 2: Start non-Firebase dependent tasks immediately
+            this.startImmediateTasks();
+            
+            // Initialize Firebase in parallel with other tasks
+            const firebasePromise = this.initializeFirebase();
             
             // Wait for Firebase
-            await this.waitForFirebase();
-            
-            // Check if VPS is active
-            this.vpsMode = await this.checkVPSActive();
-            
-            CONFIG.log('info', this.vpsMode ? '🚀 VPS Mode Active' : '💻 Standalone Mode');
-            
-            // Always use VPS mode since we have a VPS running
-            this.vpsMode = true;
+            await firebasePromise;
             
             // Setup real-time listeners
             await this.setupRealtimeListeners();
@@ -62,9 +50,6 @@ class OptimizedHueHueApp {
             
             // Start update loops
             this.startUpdateLoops();
-            
-            // Initialize UI
-            this.initializeUI();
             
             this.isRunning = true;
             this.updateConnectionStatus('connected');
@@ -79,47 +64,70 @@ class OptimizedHueHueApp {
         }
     }
 
-    async waitForFirebase() {
+    // OPTIMIZATION: Show UI immediately
+    showInitialUI() {
+        // Show session immediately (it doesn't need Firebase)
+        this.updateSession();
+        this.updateTime();
+        
+        // Show loading states for prices
+        Object.keys(CONFIG.ASSETS).forEach(symbol => {
+            const symbolLower = symbol.toLowerCase();
+            
+            // Show loading state
+            this.updateElementSafely(`${symbolLower}-price`, 'Loading...');
+            this.updateElementSafely(`${symbolLower}-bias`, 'LOADING');
+            this.updateElementSafely(`${symbolLower}-strength`, '0/6');
+            
+            // Set loading class
+            const biasElement = document.getElementById(`${symbolLower}-bias`);
+            if (biasElement) {
+                biasElement.className = 'bias-label neutral';
+            }
+        });
+        
+        // Update connection status
+        this.updateConnectionStatus('connecting');
+        this.hideErrorMessage();
+    }
+
+    // OPTIMIZATION: Start tasks that don't need Firebase
+    startImmediateTasks() {
+        // Start updating time and session immediately
+        this.updateIntervals.immediate = setInterval(() => {
+            this.updateTime();
+            this.updateSession();
+        }, 1000);
+        
+        // Show performance stats with defaults
+        this.updateElementSafely('dailySignals', '0');
+        this.updateElementSafely('weeklySignals', '0');
+        this.updateElementSafely('avgStrength', '0.0');
+        this.updateElementSafely('strongSignals', '0');
+    }
+
+    async initializeFirebase() {
+        const startTime = Date.now();
+        
+        // OPTIMIZATION: Shorter timeout and parallel checks
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 20; // Reduced from 30
         
         while (!window.firebaseStorage && attempts < maxAttempts) {
-            await this.sleep(100);
+            await this.sleep(50); // Reduced from 100ms
             attempts++;
         }
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            CONFIG.log('info', '🔥 Firebase connected');
-        } else {
-            throw new Error('Firebase not available');
-        }
-    }
-
-    async checkVPSActive() {
-        if (!this.firebaseStorage) return false;
-        
-        try {
-            // Check for VPS heartbeat
-            const systemDoc = await this.firebaseStorage.getDoc(
-                this.firebaseStorage.doc(this.firebaseStorage.db, 'system', 'generator')
-            );
+            CONFIG.log('info', `🔥 Firebase connected in ${Date.now() - startTime}ms`);
             
-            if (systemDoc.exists()) {
-                const data = systemDoc.data();
-                const lastHeartbeat = data.lastHeartbeat || 0;
-                
-                // VPS is active if heartbeat is within 2 minutes
-                if (Date.now() - lastHeartbeat < 120000) {
-                    CONFIG.log('info', `👑 VPS Generator active (${data.type || 'unknown'})`);
-                    return true;
-                }
-            }
-        } catch (error) {
-            CONFIG.log('warn', 'Could not check VPS status:', error);
+            // Always assume VPS is active for faster startup
+            this.vpsMode = true;
+            return true;
+        } else {
+            throw new Error('Firebase not available after 1 second');
         }
-        
-        return false;
     }
 
     async setupRealtimeListeners() {
@@ -127,7 +135,58 @@ class OptimizedHueHueApp {
         
         CONFIG.log('info', '📡 Setting up real-time listeners...');
         
-        // Listen for signal updates
+        // OPTIMIZATION: Setup price listeners with immediate callback
+        Object.keys(CONFIG.ASSETS).forEach(symbol => {
+            // Price updates - most important
+            const priceDoc = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
+            
+            const priceUnsubscribe = this.firebaseStorage.onSnapshot(priceDoc, (doc) => {
+                if (doc.exists()) {
+                    const priceData = doc.data();
+                    
+                    // Track update frequency
+                    const now = Date.now();
+                    if (this.lastPriceUpdate[symbol]) {
+                        const timeSinceLastUpdate = now - this.lastPriceUpdate[symbol];
+                        CONFIG.log('debug', `💰 Price update for ${symbol}: ${priceData.price} (${Math.round(timeSinceLastUpdate/1000)}s since last)`);
+                    }
+                    this.lastPriceUpdate[symbol] = now;
+                    this.priceUpdateCount++;
+                    
+                    // Update immediately
+                    this.updatePriceDisplay(symbol, priceData);
+                    
+                    // Also update data source indicator to show it's live
+                    const sourceElement = document.getElementById(`${symbol.toLowerCase()}-source`);
+                    if (sourceElement) {
+                        const age = Math.round((now - priceData.timestamp) / 1000);
+                        sourceElement.textContent = age < 120 ? '🚀 VPS Live' : '🚀 VPS Data';
+                        sourceElement.style.color = age < 120 ? '#00ff88' : '#ffa502';
+                    }
+                }
+            }, (error) => {
+                CONFIG.log('error', `Error in price listener for ${symbol}:`, error);
+            });
+            
+            this.unsubscribers.push(priceUnsubscribe);
+            
+            // Analysis updates
+            const analysisDoc = this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', symbol);
+            
+            const analysisUnsubscribe = this.firebaseStorage.onSnapshot(analysisDoc, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    CONFIG.log('info', `📊 Analysis update for ${symbol}: ${data.bias} (${data.strength}/6)`);
+                    this.handleAnalysisUpdate(symbol, data);
+                }
+            }, (error) => {
+                CONFIG.log('error', `Error in analysis listener for ${symbol}:`, error);
+            });
+            
+            this.unsubscribers.push(analysisUnsubscribe);
+        });
+        
+        // Signals listener - less critical for initial load
         const signalsQuery = this.firebaseStorage.query(
             this.firebaseStorage.collection(this.firebaseStorage.db, 'signals'),
             this.firebaseStorage.orderBy('timestamp', 'desc'),
@@ -140,83 +199,57 @@ class OptimizedHueHueApp {
                 signals.push({ id: doc.id, ...doc.data() });
             });
             this.handleRealtimeSignals(signals);
+        }, (error) => {
+            CONFIG.log('error', 'Error in signals listener:', error);
         });
         
         this.unsubscribers.push(signalsUnsubscribe);
-        
-        // Listen for analysis updates for each symbol
-        Object.keys(CONFIG.ASSETS).forEach(symbol => {
-            const analysisDoc = this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', symbol);
-            
-            const analysisUnsubscribe = this.firebaseStorage.onSnapshot(analysisDoc, (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
-                    CONFIG.log('info', `📊 Analysis update for ${symbol}: ${data.bias} (${data.strength}/6)`);
-                    this.handleAnalysisUpdate(symbol, data);
-                }
-            });
-            
-            this.unsubscribers.push(analysisUnsubscribe);
-            
-            // Listen for price updates
-            const priceDoc = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
-            
-            const priceUnsubscribe = this.firebaseStorage.onSnapshot(priceDoc, (doc) => {
-                if (doc.exists()) {
-                    const priceData = doc.data();
-                    CONFIG.log('debug', `💰 Price update for ${symbol}: ${priceData.price}`);
-                    this.updatePriceDisplay(symbol, priceData);
-                }
-            });
-            
-            this.unsubscribers.push(priceUnsubscribe);
-        });
         
         CONFIG.log('info', '✅ Real-time listeners ready');
     }
 
     async loadInitialData() {
-        const assets = Object.keys(CONFIG.ASSETS);
-        
-        for (const symbol of assets) {
+        // OPTIMIZATION: Load data in parallel
+        const promises = Object.keys(CONFIG.ASSETS).map(async symbol => {
             try {
-                // Show loading state
-                this.updateAssetBasicInfo(symbol, {
-                    bias: 'LOADING',
-                    strength: 0
-                });
+                if (!this.firebaseStorage) return;
                 
-                // Load from Firebase
-                if (this.firebaseStorage) {
-                    // Get latest price
-                    const priceDoc = await this.firebaseStorage.getDoc(
+                // Get both price and analysis in parallel
+                const [priceDoc, analysisDoc] = await Promise.all([
+                    this.firebaseStorage.getDoc(
                         this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol)
-                    );
-                    
-                    if (priceDoc.exists()) {
-                        const priceData = priceDoc.data();
-                        this.updatePriceDisplay(symbol, priceData);
-                    }
-                    
-                    // Get latest analysis
-                    const analysisDoc = await this.firebaseStorage.getDoc(
+                    ),
+                    this.firebaseStorage.getDoc(
                         this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', symbol)
-                    );
-                    
-                    if (analysisDoc.exists()) {
-                        const analysis = analysisDoc.data();
-                        this.handleAnalysisUpdate(symbol, analysis);
-                    }
+                    )
+                ]);
+                
+                if (priceDoc.exists()) {
+                    const priceData = priceDoc.data();
+                    this.updatePriceDisplay(symbol, priceData);
+                }
+                
+                if (analysisDoc.exists()) {
+                    const analysis = analysisDoc.data();
+                    this.handleAnalysisUpdate(symbol, analysis);
                 }
                 
             } catch (error) {
                 CONFIG.log('error', `Failed to load ${symbol}:`, error);
                 this.handleAssetError(symbol, error);
             }
-        }
+        });
         
-        // Load historical signals
-        await this.loadHistoricalSignals();
+        // Load signals separately (lower priority)
+        const signalsPromise = this.loadHistoricalSignals();
+        
+        // Wait for all asset data
+        await Promise.all(promises);
+        
+        // Don't wait for signals
+        signalsPromise.catch(error => {
+            CONFIG.log('warn', 'Could not load historical signals:', error);
+        });
     }
 
     async loadHistoricalSignals() {
@@ -233,17 +266,46 @@ class OptimizedHueHueApp {
     }
 
     startUpdateLoops() {
-        // Dashboard updates
+        // Clear the immediate interval
+        if (this.updateIntervals.immediate) {
+            clearInterval(this.updateIntervals.immediate);
+        }
+        
+        // Dashboard updates (already running, but ensure it continues)
         this.updateIntervals.dashboard = setInterval(() => {
             this.updateDashboard();
-        }, 1000); // Update time every second
+        }, 1000);
         
         // Performance updates
         this.updateIntervals.performance = setInterval(() => {
             this.updatePerformanceStats();
-        }, 5000); // Every 5 seconds
+        }, 5000);
+        
+        // Price update monitoring
+        this.updateIntervals.priceMonitor = setInterval(() => {
+            this.monitorPriceUpdates();
+        }, 10000);
         
         CONFIG.log('info', '🔄 Update loops started');
+    }
+
+    monitorPriceUpdates() {
+        // Log price update frequency
+        if (this.priceUpdateCount > 0) {
+            CONFIG.log('info', `📊 Price updates in last 10s: ${this.priceUpdateCount}`);
+            this.priceUpdateCount = 0;
+        }
+        
+        // Check for stale data
+        const now = Date.now();
+        Object.keys(CONFIG.ASSETS).forEach(symbol => {
+            if (this.lastPriceUpdate[symbol]) {
+                const age = now - this.lastPriceUpdate[symbol];
+                if (age > 120000) { // 2 minutes
+                    CONFIG.log('warn', `⚠️ No price update for ${symbol} in ${Math.round(age/1000)}s`);
+                }
+            }
+        });
     }
 
     handleRealtimeSignals(signals) {
@@ -315,13 +377,6 @@ class OptimizedHueHueApp {
                         strengthBar.style.background = 'linear-gradient(90deg, #ff4757, #ff3742)';
                     }
                 }
-            }
-            
-            // Update data source indicator
-            const sourceElement = document.getElementById(`${symbolLower}-source`);
-            if (sourceElement) {
-                sourceElement.textContent = '🚀 VPS Data';
-                sourceElement.style.color = '#00ff88';
             }
             
             // Update confluence grid
@@ -406,37 +461,6 @@ class OptimizedHueHueApp {
             
         } catch (error) {
             CONFIG.log('warn', `Error updating price display for ${symbol}:`, error);
-        }
-    }
-
-    updateAssetBasicInfo(symbol, info) {
-        try {
-            const symbolLower = symbol.toLowerCase();
-            
-            if (info.bias) {
-                const biasElement = document.getElementById(`${symbolLower}-bias`);
-                if (biasElement) {
-                    biasElement.textContent = info.bias;
-                    biasElement.className = `bias-label ${info.bias.toLowerCase()}`;
-                }
-            }
-            
-            if (info.strength !== undefined) {
-                const strengthElement = document.getElementById(`${symbolLower}-strength`);
-                const strengthBar = document.getElementById(`${symbolLower}-bar`);
-                
-                if (strengthElement) {
-                    strengthElement.textContent = `${info.strength}/6`;
-                }
-                
-                if (strengthBar) {
-                    const percentage = (info.strength / 6) * 100;
-                    strengthBar.style.width = `${percentage}%`;
-                }
-            }
-            
-        } catch (error) {
-            CONFIG.log('warn', `Error updating basic info for ${symbol}:`, error);
         }
     }
 
@@ -640,15 +664,8 @@ class OptimizedHueHueApp {
         }
     }
 
-    initializeUI() {
-        CONFIG.log('info', '🎨 UI initialized');
-    }
-
     handleApplicationError(error) {
-        this.errorCount++;
-        this.lastErrorTime = Date.now();
-        
-        CONFIG.log('error', `Application error ${this.errorCount}:`, error.message);
+        CONFIG.log('error', `Application error:`, error.message);
         
         // Show error to user
         const errorElement = document.getElementById('apiErrorMessage');
@@ -658,11 +675,6 @@ class OptimizedHueHueApp {
                 errorDescription.textContent = error.message;
             }
             errorElement.classList.add('show');
-        }
-        
-        if (this.errorCount >= this.maxErrors) {
-            CONFIG.log('error', '🚨 Too many errors, stopping');
-            this.stop();
         }
     }
 
@@ -734,7 +746,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     try {
         optimizedHueHueApp = new OptimizedHueHueApp();
-        window.optimizedHueHueApp = optimizedHueHueApp; // Make available globally for debugging
+        window.optimizedHueHueApp = optimizedHueHueApp;
         
         const initialized = await optimizedHueHueApp.initialize();
         
