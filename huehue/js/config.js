@@ -143,29 +143,29 @@ CONFIG.isValidTradingTime = function() {
 CONFIG.getCurrentSession = function() {
     const hour = new Date().getUTCHours();
     
-    // Check each session in order of priority
+    // Check each session in order of priority - FIXED VERSION
     // London + NY overlap (most important)
     if (hour >= 13 && hour < 16) {
-        return { name: 'London + NY', emoji: '🇬🇧🇺🇸', active: true };
+        return { name: 'London + New York Session', active: true };
     }
     // New York session
     else if (hour >= 13 && hour < 22) {
-        return { name: 'New York', emoji: '🇺🇸', active: true };
+        return { name: 'New York Session', active: true };
     }
     // London session
     else if (hour >= 7 && hour < 16) {
-        return { name: 'London', emoji: '🇬🇧', active: true };
+        return { name: 'London Session', active: true };
     }
     // Tokyo session
     else if ((hour >= 23) || (hour < 8)) {
-        return { name: 'Tokyo', emoji: '🇯🇵', active: true };
+        return { name: 'Tokyo Session', active: true };
     }
     // Sydney session
     else if ((hour >= 21) || (hour < 6)) {
-        return { name: 'Sydney', emoji: '🇦🇺', active: true };
+        return { name: 'Sydney Session', active: true };
     }
     
-    return { name: 'Closed', emoji: '🌙', active: false };
+    return { name: 'Market Closed', active: false };
 };
 
 CONFIG.shouldAvoidNews = function() {

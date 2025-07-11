@@ -3,52 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>HueHue - Trading Signals</title>
+    <title>HueHue - Professional Trading Signals</title>
     <link rel="stylesheet" href="css/main.css">
     <meta name="theme-color" content="#0f0f23">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
     <div class="container">
-        <!-- Mobile Header -->
+        <!-- Clean Professional Header -->
         <div class="header">
             <div class="header-top">
-                <h1>HueHue Signals</h1>
-                <span class="connection-status status-connecting" id="connectionStatus">CONNECTING</span>
+                <h1>HueHue</h1>
+                <span class="vps-status" id="vpsStatus">VPS Live</span>
             </div>
             
+            <!-- Session indicator - top right positioned -->
             <div class="session-indicator session-active" id="sessionIndicator">
-                🌍 Detecting Session...
-            </div>
-            
-            <!-- API Error Display -->
-            <div class="api-error-message" id="apiErrorMessage">
-                <div class="error-content">
-                    <span class="error-icon">⚠️</span>
-                    <div class="error-details">
-                        <div class="error-title">API Connection Failed</div>
-                        <div class="error-description" id="errorDescription">Unable to connect to Twelve Data API</div>
-                        <div class="error-actions">
-                            <button class="retry-btn" onclick="retryConnection()">🔄 Retry</button>
-                            <button class="details-btn" onclick="toggleErrorDetails()">📋 Details</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="error-technical-details" id="errorTechnicalDetails">
-                    <div class="tech-detail">
-                        <strong>Status:</strong> <span id="errorStatus">-</span>
-                    </div>
-                    <div class="tech-detail">
-                        <strong>Code:</strong> <span id="errorCode">-</span>
-                    </div>
-                    <div class="tech-detail">
-                        <strong>Message:</strong> <span id="errorMessage">-</span>
-                    </div>
-                    <div class="tech-detail">
-                        <strong>Time:</strong> <span id="errorTime">-</span>
-                    </div>
-                </div>
+                New York Session
             </div>
             
             <div class="last-update" id="lastUpdate">
@@ -56,10 +28,10 @@
             </div>
         </div>
 
-        <!-- Asset Cards - Mobile Stack -->
+        <!-- Professional Asset Cards -->
         <div class="main-grid">
             <!-- XAUUSD Card -->
-            <div class="asset-card" data-symbol="xauusd">
+            <div class="asset-card professional-card" data-symbol="xauusd">
                 <div class="asset-header">
                     <div class="asset-info">
                         <div class="asset-name">XAUUSD</div>
@@ -67,34 +39,55 @@
                         <div class="price-change" id="xauusd-change">--</div>
                     </div>
                     <div class="bias-indicator">
-                        <div class="bias-label neutral" id="xauusd-bias">LOADING</div>
+                        <div class="bias-label neutral" id="xauusd-bias">ANALYZING</div>
+                        <div class="confidence-score" id="xauusd-confidence">--</div>
                     </div>
                 </div>
                 
-                <div class="signal-strength">
-                    <div class="strength-header">
-                        <span>Signal Strength</span>
-                        <span id="xauusd-strength">0/6</span>
+                <div class="professional-analysis">
+                    <div class="analysis-header">
+                        <span>Analysis</span>
+                        <span class="analysis-action WAIT" id="xauusd-action">WAIT</span>
                     </div>
-                    <div class="strength-bar">
-                        <div class="strength-fill" style="width: 0%;" id="xauusd-bar"></div>
+                    
+                    <div class="analysis-scores">
+                        <div class="score-item">
+                            <span class="score-label">Technical</span>
+                            <span class="score-value" id="xauusd-technical-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Structure</span>
+                            <span class="score-value" id="xauusd-structure-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Patterns</span>
+                            <span class="score-value" id="xauusd-pattern-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Volume</span>
+                            <span class="score-value" id="xauusd-volume-score">--</span>
+                        </div>
+                    </div>
+                    
+                    <div class="trade-levels" id="xauusd-levels" style="display: none;">
+                        <div class="level-item entry">
+                            <span>Entry:</span>
+                            <span id="xauusd-entry">--</span>
+                        </div>
+                        <div class="level-item stop">
+                            <span>Stop Loss:</span>
+                            <span id="xauusd-stop">--</span>
+                        </div>
+                        <div class="level-item target">
+                            <span>Take Profit:</span>
+                            <span id="xauusd-target">--</span>
+                        </div>
                     </div>
                 </div>
-
-                <div class="confluence-grid" id="xauusd-confluence">
-                    <div class="confluence-item">Trend</div>
-                    <div class="confluence-item">RSI</div>
-                    <div class="confluence-item">Position</div>
-                    <div class="confluence-item">Strength</div>
-                    <div class="confluence-item">Action</div>
-                    <div class="confluence-item">Volume</div>
-                </div>
-                
-                <div class="data-source-info" id="xauusd-source">Twelve Data</div>
             </div>
 
             <!-- USDJPY Card -->
-            <div class="asset-card" data-symbol="usdjpy">
+            <div class="asset-card professional-card" data-symbol="usdjpy">
                 <div class="asset-header">
                     <div class="asset-info">
                         <div class="asset-name">USDJPY</div>
@@ -102,34 +95,55 @@
                         <div class="price-change" id="usdjpy-change">--</div>
                     </div>
                     <div class="bias-indicator">
-                        <div class="bias-label neutral" id="usdjpy-bias">LOADING</div>
+                        <div class="bias-label neutral" id="usdjpy-bias">ANALYZING</div>
+                        <div class="confidence-score" id="usdjpy-confidence">--</div>
                     </div>
                 </div>
                 
-                <div class="signal-strength">
-                    <div class="strength-header">
-                        <span>Signal Strength</span>
-                        <span id="usdjpy-strength">0/6</span>
+                <div class="professional-analysis">
+                    <div class="analysis-header">
+                        <span>Analysis</span>
+                        <span class="analysis-action WAIT" id="usdjpy-action">WAIT</span>
                     </div>
-                    <div class="strength-bar">
-                        <div class="strength-fill" style="width: 0%;" id="usdjpy-bar"></div>
+                    
+                    <div class="analysis-scores">
+                        <div class="score-item">
+                            <span class="score-label">Technical</span>
+                            <span class="score-value" id="usdjpy-technical-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Structure</span>
+                            <span class="score-value" id="usdjpy-structure-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Patterns</span>
+                            <span class="score-value" id="usdjpy-pattern-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Volume</span>
+                            <span class="score-value" id="usdjpy-volume-score">--</span>
+                        </div>
+                    </div>
+                    
+                    <div class="trade-levels" id="usdjpy-levels" style="display: none;">
+                        <div class="level-item entry">
+                            <span>Entry:</span>
+                            <span id="usdjpy-entry">--</span>
+                        </div>
+                        <div class="level-item stop">
+                            <span>Stop Loss:</span>
+                            <span id="usdjpy-stop">--</span>
+                        </div>
+                        <div class="level-item target">
+                            <span>Take Profit:</span>
+                            <span id="usdjpy-target">--</span>
+                        </div>
                     </div>
                 </div>
-
-                <div class="confluence-grid" id="usdjpy-confluence">
-                    <div class="confluence-item">Trend</div>
-                    <div class="confluence-item">RSI</div>
-                    <div class="confluence-item">Position</div>
-                    <div class="confluence-item">Strength</div>
-                    <div class="confluence-item">Action</div>
-                    <div class="confluence-item">Volume</div>
-                </div>
-                
-                <div class="data-source-info" id="usdjpy-source">Twelve Data</div>
             </div>
         </div>
 
-        <!-- Recent Signals Section - Mobile Optimized -->
+        <!-- Signals Section -->
         <div class="signals-section">
             <div class="signals-header">
                 <h2>Recent Signals</h2>
@@ -140,56 +154,53 @@
             </div>
             
             <div class="signals-list" id="signalsList">
-                <div class="signal-item signal-buy">
+                <div class="signal-item">
                     <div class="signal-meta">
                         <span class="signal-asset">SYSTEM</span>
                         <span class="signal-time">Starting</span>
                     </div>
                     <div class="signal-details">
-                        🔥 Connecting to Firebase + Twelve Data...
+                        Smart analyzer initializing... Looking for high-quality opportunities.
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Trading Performance Summary -->
+        <!-- Performance Summary -->
         <div class="performance-summary">
-            <h3>📊 Trading Performance</h3>
+            <h3>Performance</h3>
             <div class="performance-grid">
                 <div class="perf-card">
                     <div class="perf-number" style="color: #00ff88;" id="dailySignals">0</div>
-                    <div class="perf-label">Signals Today</div>
+                    <div class="perf-label">Today</div>
                 </div>
                 <div class="perf-card">
                     <div class="perf-number" style="color: #00d4ff;" id="weeklySignals">0</div>
-                    <div class="perf-label">This Week</div>
+                    <div class="perf-label">Week</div>
                 </div>
                 <div class="perf-card">
-                    <div class="perf-number" style="color: #ffa502;" id="avgStrength">0.0</div>
-                    <div class="perf-label">Avg Strength</div>
+                    <div class="perf-number" style="color: #ffa502;" id="avgConfidence">0</div>
+                    <div class="perf-label">Avg %</div>
                 </div>
                 <div class="perf-card">
-                    <div class="perf-number" style="color: #ff6b35;" id="strongSignals">0</div>
-                    <div class="perf-label">Strong (5-6)</div>
+                    <div class="perf-number" style="color: #ff6b35;" id="qualitySignals">0</div>
+                    <div class="perf-label">Quality</div>
                 </div>
             </div>
         </div>
 
-        <!-- Mobile Footer -->
+        <!-- Footer -->
         <div class="mobile-footer">
             <div class="footer-info">
                 <span>HueHue Trading Dashboard</span>
-                <span>Real-time signals from Firebase</span>
+                <span>Professional analysis • Quality signals only</span>
             </div>
         </div>
     </div>
 
-    <!-- Load JavaScript modules in correct order -->
+    <!-- Load ONLY active JavaScript files -->
     <script src="firebase-config.js"></script>
     <script src="js/config.js"></script>
-    <script src="js/indicators.js"></script>
-    <script src="js/eaLogic.js"></script>
-    <script src="js/dataFeed.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

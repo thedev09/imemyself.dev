@@ -1,5 +1,5 @@
-// HueHue Main Application - Performance Optimized Version
-class OptimizedHueHueApp {
+// app.js - Professional Smart Analyzer Integration
+class ProfessionalHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
             console.error('❌ CONFIG not available - check script loading order');
@@ -7,43 +7,41 @@ class OptimizedHueHueApp {
         }
         
         // Core components
-        this.dataFeed = null;
-        this.indicators = null;
-        this.eaLogic = null;
         this.firebaseStorage = null;
+        this.vpsStatusInterval = null;
         
         // Application state
         this.isRunning = false;
         this.updateIntervals = {};
-        this.lastSignals = {};
-        this.vpsMode = true;
-        this.unsubscribers = [];
+        this.unsubscribers = []; // Store Firebase listeners
         
-        // Performance tracking
-        this.lastPriceUpdate = {};
-        this.priceUpdateCount = 0;
+        // Performance stats
+        this.performanceStats = {
+            signalsToday: 0,
+            totalSignals: 0,
+            avgConfidence: 0,
+            qualitySignals: 0
+        };
         
-        CONFIG.log('info', '🎯 HueHue Application initialized');
+        CONFIG.log('info', '🧠 Professional HueHue Application initialized');
     }
 
     async initialize() {
         try {
-            CONFIG.log('info', '🚀 Starting HueHue initialization...');
+            CONFIG.log('info', '🚀 Starting Professional HueHue initialization...');
             
-            // OPTIMIZATION 1: Show UI immediately with loading states
-            this.showInitialUI();
-            
-            // OPTIMIZATION 2: Start non-Firebase dependent tasks immediately
-            this.startImmediateTasks();
-            
-            // Initialize Firebase in parallel with other tasks
-            const firebasePromise = this.initializeFirebase();
+            // Initialize UI first
+            this.updateConnectionStatus('connecting');
+            this.hideErrorMessage();
             
             // Wait for Firebase
-            await firebasePromise;
+            await this.waitForFirebase();
             
-            // Setup real-time listeners
-            await this.setupRealtimeListeners();
+            // Setup real-time listeners for Smart Analyzer data
+            await this.setupSmartAnalyzerListeners();
+            
+            // Setup VPS status monitoring
+            await this.setupVpsStatusMonitoring();
             
             // Load initial data
             await this.loadInitialData();
@@ -51,9 +49,12 @@ class OptimizedHueHueApp {
             // Start update loops
             this.startUpdateLoops();
             
+            // Initialize UI
+            this.initializeUI();
+            
             this.isRunning = true;
             this.updateConnectionStatus('connected');
-            CONFIG.log('info', '✅ HueHue application ready!');
+            CONFIG.log('info', '✅ Professional HueHue application ready!');
             
             return true;
             
@@ -64,379 +65,216 @@ class OptimizedHueHueApp {
         }
     }
 
-    // OPTIMIZATION: Show UI immediately
-    showInitialUI() {
-        // Show session immediately (it doesn't need Firebase)
-        this.updateSession();
-        this.updateTime();
-        
-        // Show loading states for prices
-        Object.keys(CONFIG.ASSETS).forEach(symbol => {
-            const symbolLower = symbol.toLowerCase();
-            
-            // Show loading state
-            this.updateElementSafely(`${symbolLower}-price`, 'Loading...');
-            this.updateElementSafely(`${symbolLower}-bias`, 'LOADING');
-            this.updateElementSafely(`${symbolLower}-strength`, '0/6');
-            
-            // Set loading class
-            const biasElement = document.getElementById(`${symbolLower}-bias`);
-            if (biasElement) {
-                biasElement.className = 'bias-label neutral';
-            }
-        });
-        
-        // Update connection status
-        this.updateConnectionStatus('connecting');
-        this.hideErrorMessage();
-    }
-
-    // OPTIMIZATION: Start tasks that don't need Firebase
-    startImmediateTasks() {
-        // Start updating time and session immediately
-        this.updateIntervals.immediate = setInterval(() => {
-            this.updateTime();
-            this.updateSession();
-        }, 1000);
-        
-        // Show performance stats with defaults
-        this.updateElementSafely('dailySignals', '0');
-        this.updateElementSafely('weeklySignals', '0');
-        this.updateElementSafely('avgStrength', '0.0');
-        this.updateElementSafely('strongSignals', '0');
-    }
-
-    async initializeFirebase() {
-        const startTime = Date.now();
-        
-        // OPTIMIZATION: Shorter timeout and parallel checks
+    async waitForFirebase() {
         let attempts = 0;
-        const maxAttempts = 50; // Reduced from 30
+        const maxAttempts = 30;
         
         while (!window.firebaseStorage && attempts < maxAttempts) {
-            await this.sleep(50); // Reduced from 100ms
+            await this.sleep(100);
             attempts++;
         }
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            CONFIG.log('info', `🔥 Firebase connected in ${Date.now() - startTime}ms`);
-            
-            // Always assume VPS is active for faster startup
-            this.vpsMode = true;
-            return true;
+            CONFIG.log('info', '🔥 Firebase connected to Professional App');
         } else {
-            throw new Error('Firebase not available after 1 second');
+            throw new Error('Firebase not available');
         }
     }
 
-    async setupRealtimeListeners() {
+    async setupSmartAnalyzerListeners() {
         if (!this.firebaseStorage) return;
         
-        CONFIG.log('info', '📡 Setting up real-time listeners...');
+        CONFIG.log('info', '📡 Setting up Smart Analyzer real-time listeners...');
         
-        // OPTIMIZATION: Setup price listeners with immediate callback
-        Object.keys(CONFIG.ASSETS).forEach(symbol => {
-            // Price updates - most important
-            const priceDoc = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
-            
-            const priceUnsubscribe = this.firebaseStorage.onSnapshot(priceDoc, (doc) => {
-                if (doc.exists()) {
-                    const priceData = doc.data();
-                    
-                    // Track update frequency
-                    const now = Date.now();
-                    if (this.lastPriceUpdate[symbol]) {
-                        const timeSinceLastUpdate = now - this.lastPriceUpdate[symbol];
-                        CONFIG.log('debug', `💰 Price update for ${symbol}: ${priceData.price} (${Math.round(timeSinceLastUpdate/1000)}s since last)`);
-                    }
-                    this.lastPriceUpdate[symbol] = now;
-                    this.priceUpdateCount++;
-                    
-                    // Update immediately
-                    this.updatePriceDisplay(symbol, priceData);
-                    
-                    // Also update data source indicator to show it's live
-                    const sourceElement = document.getElementById(`${symbol.toLowerCase()}-source`);
-                    if (sourceElement) {
-                        const age = Math.round((now - priceData.timestamp) / 1000);
-                        sourceElement.textContent = age < 120 ? '🚀 VPS Live' : '🚀 VPS Data';
-                        sourceElement.style.color = age < 120 ? '#00ff88' : '#ffa502';
-                    }
-                }
-            }, (error) => {
-                CONFIG.log('error', `Error in price listener for ${symbol}:`, error);
-            });
-            
-            this.unsubscribers.push(priceUnsubscribe);
-            
-            // Analysis updates
-            const analysisDoc = this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', symbol);
-            
-            const analysisUnsubscribe = this.firebaseStorage.onSnapshot(analysisDoc, (doc) => {
+        // Listen for XAUUSD analysis updates
+        const xauAnalysisRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', 'XAUUSD');
+        const xauAnalysisUnsub = this.firebaseStorage.onSnapshot(xauAnalysisRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                CONFIG.log('info', `📊 XAUUSD analysis update: ${data.bias} (${data.confidence}%)`);
+                this.handleSmartAnalysisUpdate('XAUUSD', data);
+            }
+        });
+        this.unsubscribers.push(xauAnalysisUnsub);
+        
+        // Listen for USDJPY analysis updates
+        const usdAnalysisRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', 'USDJPY');
+        const usdAnalysisUnsub = this.firebaseStorage.onSnapshot(usdAnalysisRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                CONFIG.log('info', `📊 USDJPY analysis update: ${data.bias} (${data.confidence}%)`);
+                this.handleSmartAnalysisUpdate('USDJPY', data);
+            }
+        });
+        this.unsubscribers.push(usdAnalysisUnsub);
+        
+        // Listen for price updates
+        ['XAUUSD', 'USDJPY'].forEach(symbol => {
+            const priceRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
+            const priceUnsub = this.firebaseStorage.onSnapshot(priceRef, (doc) => {
                 if (doc.exists()) {
                     const data = doc.data();
-                    CONFIG.log('info', `📊 Analysis update for ${symbol}: ${data.bias} (${data.strength}/6)`);
-                    this.handleAnalysisUpdate(symbol, data);
+                    CONFIG.log('debug', `💰 ${symbol} price update: ${data.price}`);
+                    this.handlePriceUpdate(symbol, data);
                 }
-            }, (error) => {
-                CONFIG.log('error', `Error in analysis listener for ${symbol}:`, error);
             });
-            
-            this.unsubscribers.push(analysisUnsubscribe);
+            this.unsubscribers.push(priceUnsub);
         });
         
-        // Signals listener - less critical for initial load
+        // Listen for high-quality signals
         const signalsQuery = this.firebaseStorage.query(
             this.firebaseStorage.collection(this.firebaseStorage.db, 'signals'),
             this.firebaseStorage.orderBy('timestamp', 'desc'),
             this.firebaseStorage.limit(20)
         );
         
-        const signalsUnsubscribe = this.firebaseStorage.onSnapshot(signalsQuery, (snapshot) => {
+        const signalsUnsub = this.firebaseStorage.onSnapshot(signalsQuery, (snapshot) => {
             const signals = [];
             snapshot.forEach((doc) => {
                 signals.push({ id: doc.id, ...doc.data() });
             });
-            this.handleRealtimeSignals(signals);
-        }, (error) => {
-            CONFIG.log('error', 'Error in signals listener:', error);
+            this.handleSignalsUpdate(signals);
         });
+        this.unsubscribers.push(signalsUnsub);
         
-        this.unsubscribers.push(signalsUnsubscribe);
-        
-        CONFIG.log('info', '✅ Real-time listeners ready');
+        CONFIG.log('info', '✅ Smart Analyzer listeners ready');
     }
 
-    async loadInitialData() {
-        // OPTIMIZATION: Load data in parallel
-        const promises = Object.keys(CONFIG.ASSETS).map(async symbol => {
-            try {
-                if (!this.firebaseStorage) return;
-                
-                // Get both price and analysis in parallel
-                const [priceDoc, analysisDoc] = await Promise.all([
-                    this.firebaseStorage.getDoc(
-                        this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol)
-                    ),
-                    this.firebaseStorage.getDoc(
-                        this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', symbol)
-                    )
-                ]);
-                
-                if (priceDoc.exists()) {
-                    const priceData = priceDoc.data();
-                    this.updatePriceDisplay(symbol, priceData);
+    // VPS STATUS MONITORING METHODS
+    async setupVpsStatusMonitoring() {
+        if (!this.firebaseStorage) return;
+        
+        CONFIG.log('info', '📡 Setting up VPS status monitoring...');
+        
+        try {
+            // Listen for VPS heartbeat updates
+            const vpsRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'system', 'generator');
+            const vpsUnsub = this.firebaseStorage.onSnapshot(vpsRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    this.updateVpsStatus(data);
+                } else {
+                    // No VPS document = VPS offline
+                    this.updateVpsStatus(null);
                 }
-                
-                if (analysisDoc.exists()) {
-                    const analysis = analysisDoc.data();
-                    this.handleAnalysisUpdate(symbol, analysis);
-                }
-                
-            } catch (error) {
-                CONFIG.log('error', `Failed to load ${symbol}:`, error);
-                this.handleAssetError(symbol, error);
-            }
-        });
-        
-        // Load signals separately (lower priority)
-        const signalsPromise = this.loadHistoricalSignals();
-        
-        // Wait for all asset data
-        await Promise.all(promises);
-        
-        // Don't wait for signals
-        signalsPromise.catch(error => {
-            CONFIG.log('warn', 'Could not load historical signals:', error);
-        });
+            });
+            this.unsubscribers.push(vpsUnsub);
+            
+            // Also check VPS status every 30 seconds
+            this.vpsStatusInterval = setInterval(() => {
+                this.checkVpsStatus();
+            }, 30000);
+            
+            // Initial check
+            await this.checkVpsStatus();
+            
+            CONFIG.log('info', '✅ VPS status monitoring active');
+            
+        } catch (error) {
+            CONFIG.log('error', 'Error setting up VPS monitoring:', error);
+            this.updateVpsStatusElement('VPS Error', 'offline');
+        }
     }
 
-    async loadHistoricalSignals() {
+    // Check VPS status from Firebase
+    async checkVpsStatus() {
         if (!this.firebaseStorage) return;
         
         try {
-            const signals = await this.firebaseStorage.getSignals(20);
-            if (signals && signals.length > 0) {
-                this.handleRealtimeSignals(signals);
+            const vpsRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'system', 'generator');
+            const docSnap = await this.firebaseStorage.getDoc(vpsRef);
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                this.updateVpsStatus(data);
+            } else {
+                this.updateVpsStatus(null);
             }
         } catch (error) {
-            CONFIG.log('warn', 'Could not load historical signals:', error);
+            CONFIG.log('error', 'Error checking VPS status:', error);
+            this.updateVpsStatusElement('VPS Error', 'offline');
         }
     }
 
-    startUpdateLoops() {
-        // Clear the immediate interval
-        if (this.updateIntervals.immediate) {
-            clearInterval(this.updateIntervals.immediate);
-        }
-        
-        // Dashboard updates (already running, but ensure it continues)
-        this.updateIntervals.dashboard = setInterval(() => {
-            this.updateDashboard();
-        }, 1000);
-        
-        // Performance updates
-        this.updateIntervals.performance = setInterval(() => {
-            this.updatePerformanceStats();
-        }, 5000);
-        
-        // Price update monitoring
-        this.updateIntervals.priceMonitor = setInterval(() => {
-            this.monitorPriceUpdates();
-        }, 10000);
-        
-        CONFIG.log('info', '🔄 Update loops started');
-    }
-
-    monitorPriceUpdates() {
-        // Log price update frequency
-        if (this.priceUpdateCount > 0) {
-            CONFIG.log('info', `📊 Price updates in last 10s: ${this.priceUpdateCount}`);
-            this.priceUpdateCount = 0;
-        }
-        
-        // Check for stale data
+    // Update VPS status based on heartbeat data
+    updateVpsStatus(vpsData) {
         const now = Date.now();
-        Object.keys(CONFIG.ASSETS).forEach(symbol => {
-            if (this.lastPriceUpdate[symbol]) {
-                const age = now - this.lastPriceUpdate[symbol];
-                if (age > 120000) { // 2 minutes
-                    CONFIG.log('warn', `⚠️ No price update for ${symbol} in ${Math.round(age/1000)}s`);
-                }
+        
+        if (!vpsData) {
+            // No VPS data = offline
+            this.updateVpsStatusElement('VPS Offline', 'offline');
+            return;
+        }
+        
+        const lastHeartbeat = vpsData.lastHeartbeat;
+        const timeSinceHeartbeat = now - lastHeartbeat;
+        
+        // Consider VPS offline if no heartbeat for more than 3 minutes
+        const offlineThreshold = 3 * 60 * 1000; // 3 minutes
+        
+        if (timeSinceHeartbeat > offlineThreshold) {
+            const minutesAgo = Math.round(timeSinceHeartbeat / 60000);
+            this.updateVpsStatusElement(`VPS Offline (${minutesAgo}m ago)`, 'offline');
+        } else {
+            // VPS is active
+            const status = vpsData.status || 'active';
+            if (status === 'active') {
+                this.updateVpsStatusElement('VPS Live', 'online');
+            } else {
+                this.updateVpsStatusElement(`VPS ${status}`, 'offline');
             }
-        });
-    }
-
-    handleRealtimeSignals(signals) {
-        CONFIG.log('info', `📡 Received ${signals.length} signals`);
-        
-        const signalsList = document.getElementById('signalsList');
-        if (!signalsList) return;
-        
-        signalsList.innerHTML = '';
-        
-        const recentSignals = signals.slice(0, 10);
-        
-        recentSignals.forEach(signal => {
-            try {
-                const element = this.createSignalElement(signal);
-                if (element) signalsList.appendChild(element);
-            } catch (error) {
-                CONFIG.log('warn', 'Error creating signal element:', error);
-            }
-        });
-        
-        this.updateElementSafely('signalCount', `${recentSignals.length} recent signals`);
-        this.updateQuickStatsFromSignals(signals);
-    }
-
-    handleAnalysisUpdate(symbol, analysis) {
-        CONFIG.log('info', `📊 Analysis update for ${symbol}: ${analysis.bias} (${analysis.strength}/6)`);
-        
-        this.lastSignals[symbol] = analysis;
-        
-        // Update the asset card with analysis data
-        this.updateAssetCard(symbol, analysis, {
-            price: analysis.price,
-            change: analysis.change,
-            changePercent: analysis.changePercent
-        });
-    }
-
-    updateAssetCard(symbol, signal, priceData) {
-        try {
-            const symbolLower = symbol.toLowerCase();
-            
-            // Update bias
-            if (signal?.bias) {
-                const biasElement = document.getElementById(`${symbolLower}-bias`);
-                if (biasElement) {
-                    biasElement.textContent = signal.bias;
-                    biasElement.className = `bias-label ${signal.bias.toLowerCase()}`;
-                }
-            }
-            
-            // Update strength
-            if (signal?.strength !== undefined) {
-                const strengthElement = document.getElementById(`${symbolLower}-strength`);
-                const strengthBar = document.getElementById(`${symbolLower}-bar`);
-                
-                if (strengthElement && strengthBar) {
-                    const maxStrength = signal.maxStrength || 6;
-                    strengthElement.textContent = `${signal.strength}/${maxStrength}`;
-                    
-                    const percentage = (signal.strength / maxStrength) * 100;
-                    strengthBar.style.width = `${percentage}%`;
-                    
-                    if (signal.strength >= 5) {
-                        strengthBar.style.background = 'linear-gradient(90deg, #00ff88, #00d4ff)';
-                    } else if (signal.strength >= 4) {
-                        strengthBar.style.background = 'linear-gradient(90deg, #ffa502, #ff6b35)';
-                    } else {
-                        strengthBar.style.background = 'linear-gradient(90deg, #ff4757, #ff3742)';
-                    }
-                }
-            }
-            
-            // Update confluence grid
-            if (signal?.conditions) {
-                this.updateConfluenceGrid(symbol, signal);
-            }
-            
-        } catch (error) {
-            CONFIG.log('warn', `Error updating asset card for ${symbol}:`, error);
         }
     }
 
-    updateConfluenceGrid(symbol, signal) {
-        try {
-            const symbolLower = symbol.toLowerCase();
-            const confluenceItems = document.querySelectorAll(`#${symbolLower}-confluence .confluence-item`);
-            
-            if (!confluenceItems?.length || !signal?.conditions) return;
-            
-            const conditionNames = ['trend', 'strength', 'rsi', 'position', 'priceAction', 'volume'];
-            const conditionLabels = ['Trend', 'Strength', 'RSI', 'Position', 'Action', 'Volume'];
-            
-            conditionNames.forEach((conditionName, index) => {
-                try {
-                    const condition = signal.conditions[conditionName];
-                    const item = confluenceItems[index];
-                    
-                    if (!condition || !item) return;
-                    
-                    const bias = signal.bias;
-                    let isActive = false;
-                    
-                    if (bias === 'BULLISH' && condition.longCondition) {
-                        isActive = true;
-                    } else if (bias === 'BEARISH' && condition.shortCondition) {
-                        isActive = true;
-                    }
-                    
-                    item.className = `confluence-item ${isActive ? 'confluence-active' : 'confluence-inactive'}`;
-                    item.textContent = `${conditionLabels[index]} ${isActive ? '✓' : '✗'}`;
-                    
-                } catch (error) {
-                    CONFIG.log('warn', `Error updating confluence item ${index}:`, error);
-                }
-            });
-            
-        } catch (error) {
-            CONFIG.log('warn', `Error updating confluence grid for ${symbol}:`, error);
+    // Update the VPS status element in the UI
+    updateVpsStatusElement(text, status) {
+        const vpsElement = document.getElementById('vpsStatus');
+        if (vpsElement) {
+            vpsElement.textContent = text;
+            vpsElement.className = `vps-status ${status}`;
         }
     }
 
-    updatePriceDisplay(symbol, priceData) {
+    // Handle Smart Analyzer analysis updates
+    handleSmartAnalysisUpdate(symbol, analysis) {
         try {
-            if (!symbol || !priceData || priceData.price === undefined) return;
+            CONFIG.log('info', `🧠 Processing ${symbol} analysis: ${analysis.bias} (${analysis.confidence}%)`);
             
             const symbolLower = symbol.toLowerCase();
+            
+            // Update confidence score with color coding
+            this.updateConfidenceDisplay(symbolLower, analysis.confidence);
+            
+            // Update bias display
+            this.updateBiasDisplay(symbolLower, analysis.bias);
+            
+            // Update action button
+            this.updateActionDisplay(symbolLower, analysis.action);
+            
+            // Update analysis scores
+            if (analysis.analysis) {
+                this.updateAnalysisScores(symbolLower, analysis.analysis);
+            }
+            
+            // Update trade levels if it's a trading signal
+            this.updateTradeLevels(symbolLower, analysis);
+            
+            CONFIG.log('info', `✅ ${symbol} display updated successfully`);
+            
+        } catch (error) {
+            CONFIG.log('error', `Error updating ${symbol} display:`, error);
+        }
+    }
+
+    // Handle price updates
+    handlePriceUpdate(symbol, priceData) {
+        try {
+            const symbolLower = symbol.toLowerCase();
+            
+            // Update price display
             const priceElement = document.getElementById(`${symbolLower}-price`);
-            const changeElement = document.getElementById(`${symbolLower}-change`);
-            
-            if (priceElement) {
+            if (priceElement && priceData.price !== undefined) {
                 const formattedPrice = CONFIG.formatPrice(symbol, priceData.price);
                 priceElement.textContent = formattedPrice;
                 priceElement.classList.remove('error');
@@ -450,6 +288,8 @@ class OptimizedHueHueApp {
                 }, 200);
             }
             
+            // Update change display
+            const changeElement = document.getElementById(`${symbolLower}-change`);
             if (changeElement && priceData.change !== undefined) {
                 const changeText = `${priceData.change > 0 ? '+' : ''}${priceData.change.toFixed(2)}`;
                 const changePercent = priceData.changePercent ? 
@@ -460,7 +300,377 @@ class OptimizedHueHueApp {
             }
             
         } catch (error) {
-            CONFIG.log('warn', `Error updating price display for ${symbol}:`, error);
+            CONFIG.log('error', `Error updating ${symbol} price:`, error);
+        }
+    }
+
+    // Handle signals updates
+    handleSignalsUpdate(signals) {
+        try {
+            CONFIG.log('info', `📡 Received ${signals.length} signals`);
+            
+            const signalsList = document.getElementById('signalsList');
+            if (!signalsList) return;
+            
+            signalsList.innerHTML = '';
+            
+            const recentSignals = signals.slice(0, 10);
+            
+            if (recentSignals.length === 0) {
+                // Show monitoring state
+                signalsList.innerHTML = `
+                    <div class="signal-item">
+                        <div class="signal-meta">
+                            <span class="signal-asset">SYSTEM</span>
+                            <span class="signal-time">Monitoring</span>
+                        </div>
+                        <div class="signal-details">
+                            Smart analyzer monitoring market conditions... No quality signals found yet.
+                        </div>
+                    </div>
+                `;
+            } else {
+                recentSignals.forEach(signal => {
+                    try {
+                        const element = this.createSignalElement(signal);
+                        if (element) signalsList.appendChild(element);
+                    } catch (error) {
+                        CONFIG.log('error', 'Error creating signal element:', error);
+                    }
+                });
+            }
+            
+            this.updateElementSafely('signalCount', `${recentSignals.length} signals`);
+            this.updatePerformanceStats(signals);
+            
+        } catch (error) {
+            CONFIG.log('error', 'Error handling signals update:', error);
+        }
+    }
+
+    // UI Update Methods
+    updateConfidenceDisplay(symbolLower, confidence) {
+        const confidenceElement = document.getElementById(`${symbolLower}-confidence`);
+        if (confidenceElement && confidence !== undefined) {
+            confidenceElement.textContent = `${confidence}%`;
+            
+            // Color coding based on confidence level
+            confidenceElement.className = 'confidence-score';
+            if (confidence >= 75) {
+                confidenceElement.classList.add('confidence-high');
+            } else if (confidence >= 50) {
+                confidenceElement.classList.add('confidence-medium');
+            } else {
+                confidenceElement.classList.add('confidence-low');
+            }
+        }
+    }
+
+    updateBiasDisplay(symbolLower, bias) {
+        const biasElement = document.getElementById(`${symbolLower}-bias`);
+        if (biasElement && bias) {
+            biasElement.textContent = bias;
+            biasElement.className = `bias-label ${bias.toLowerCase()}`;
+        }
+    }
+
+    updateActionDisplay(symbolLower, action) {
+        const actionElement = document.getElementById(`${symbolLower}-action`);
+        if (actionElement && action) {
+            actionElement.textContent = action;
+            actionElement.className = `analysis-action ${action}`;
+        }
+    }
+
+    updateAnalysisScores(symbolLower, analysis) {
+        const scores = [
+            { id: `${symbolLower}-technical-score`, value: analysis.technical },
+            { id: `${symbolLower}-structure-score`, value: analysis.structure },
+            { id: `${symbolLower}-pattern-score`, value: analysis.patterns },
+            { id: `${symbolLower}-volume-score`, value: analysis.volume }
+        ];
+        
+        scores.forEach(score => {
+            this.updateScoreDisplay(score.id, score.value);
+        });
+    }
+
+    updateScoreDisplay(elementId, score) {
+        const element = document.getElementById(elementId);
+        if (element && score !== undefined) {
+            element.textContent = `${score}%`;
+            
+            // Color coding based on score
+            element.className = 'score-value';
+            if (score >= 70) {
+                element.classList.add('score-high');
+            } else if (score >= 50) {
+                element.classList.add('score-medium');
+            } else {
+                element.classList.add('score-low');
+            }
+        }
+    }
+
+    updateTradeLevels(symbolLower, analysis) {
+        const levelsElement = document.getElementById(`${symbolLower}-levels`);
+        if (!levelsElement) return;
+        
+        if (analysis.action === 'BUY' || analysis.action === 'SELL') {
+            levelsElement.style.display = 'block';
+            
+            this.updateElementSafely(`${symbolLower}-entry`, CONFIG.formatPrice(analysis.symbol, analysis.entry));
+            this.updateElementSafely(`${symbolLower}-stop`, CONFIG.formatPrice(analysis.symbol, analysis.stopLoss));
+            this.updateElementSafely(`${symbolLower}-target`, CONFIG.formatPrice(analysis.symbol, analysis.takeProfit));
+        } else {
+            levelsElement.style.display = 'none';
+        }
+    }
+
+    createSignalElement(signal) {
+        try {
+            if (!signal?.symbol) return null;
+            
+            const signalDiv = document.createElement('div');
+            
+            const timestamp = signal.timestamp || Date.now();
+            const timeStr = new Date(timestamp).toLocaleTimeString();
+            const dateStr = new Date(timestamp).toLocaleDateString();
+            
+            if (signal.confidence >= 75 && signal.type === 'HIGH_QUALITY_SIGNAL') {
+                // High quality professional signal
+                signalDiv.className = `signal-item signal-${signal.action.toLowerCase()} professional`;
+                signalDiv.innerHTML = `
+                    <div class="signal-meta">
+                        <span class="signal-asset">
+                            ${signal.symbol} ${signal.action} 
+                            <span class="signal-confidence">${signal.confidence}%</span>
+                            🧠
+                        </span>
+                        <span class="signal-time">${dateStr} ${timeStr}</span>
+                    </div>
+                    <div class="signal-details">
+                        Entry: ${CONFIG.formatPrice(signal.symbol, signal.entry)} | SL: ${CONFIG.formatPrice(signal.symbol, signal.stopLoss)} | TP: ${CONFIG.formatPrice(signal.symbol, signal.takeProfit)} | Professional Analysis
+                    </div>
+                `;
+            } else {
+                // Monitoring update
+                signalDiv.className = `signal-item signal-${(signal.action || 'neutral').toLowerCase()}`;
+                signalDiv.innerHTML = `
+                    <div class="signal-meta">
+                        <span class="signal-asset">${signal.symbol || 'SYSTEM'}</span>
+                        <span class="signal-time">${timeStr}</span>
+                    </div>
+                    <div class="signal-details">
+                        ${signal.note || `Monitoring - ${signal.confidence || 0}% confidence`}
+                    </div>
+                `;
+            }
+            
+            return signalDiv;
+            
+        } catch (error) {
+            CONFIG.log('error', 'Error creating signal element:', error);
+            return null;
+        }
+    }
+
+    async loadInitialData() {
+        const assets = ['XAUUSD', 'USDJPY'];
+        
+        for (const symbol of assets) {
+            try {
+                // Show loading state
+                this.updateBiasDisplay(symbol.toLowerCase(), 'ANALYZING');
+                this.updateConfidenceDisplay(symbol.toLowerCase(), 0);
+                
+                // Load from Firebase if available
+                if (this.firebaseStorage) {
+                    // Get latest analysis
+                    const analysisDoc = await this.firebaseStorage.getDoc(
+                        this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', symbol)
+                    );
+                    
+                    if (analysisDoc.exists()) {
+                        const analysis = analysisDoc.data();
+                        this.handleSmartAnalysisUpdate(symbol, analysis);
+                    }
+                    
+                    // Get latest price
+                    const priceDoc = await this.firebaseStorage.getDoc(
+                        this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol)
+                    );
+                    
+                    if (priceDoc.exists()) {
+                        const priceData = priceDoc.data();
+                        this.handlePriceUpdate(symbol, priceData);
+                    }
+                }
+                
+            } catch (error) {
+                CONFIG.log('error', `Failed to load ${symbol}:`, error);
+                this.handleAssetError(symbol, error);
+            }
+        }
+        
+        // Load historical signals
+        await this.loadHistoricalSignals();
+    }
+
+    async loadHistoricalSignals() {
+        if (!this.firebaseStorage) return;
+        
+        try {
+            const signalsQuery = this.firebaseStorage.query(
+                this.firebaseStorage.collection(this.firebaseStorage.db, 'signals'),
+                this.firebaseStorage.orderBy('timestamp', 'desc'),
+                this.firebaseStorage.limit(20)
+            );
+            const querySnapshot = await this.firebaseStorage.getDocs(signalsQuery);
+            
+            const signals = [];
+            querySnapshot.forEach((doc) => {
+                signals.push({ id: doc.id, ...doc.data() });
+            });
+            
+            if (signals.length > 0) {
+                this.handleSignalsUpdate(signals);
+            }
+        } catch (error) {
+            CONFIG.log('warn', 'Could not load historical signals:', error);
+        }
+    }
+
+    startUpdateLoops() {
+        // Dashboard updates
+        this.updateIntervals.dashboard = setInterval(() => {
+            this.updateDashboard();
+        }, 1000); // Update time every second
+        
+        CONFIG.log('info', '🔄 Update loops started');
+    }
+
+    updateDashboard() {
+        try {
+            this.updateTime();
+            this.updateSession();
+        } catch (error) {
+            CONFIG.log('error', 'Error updating dashboard:', error);
+        }
+    }
+
+    updateTime() {
+        this.updateElementSafely('updateTime', new Date().toLocaleTimeString());
+    }
+
+    updateSession() {
+    try {
+        const sessionIndicator = document.getElementById('sessionIndicator');
+        if (!sessionIndicator) return;
+        
+        const session = CONFIG.getCurrentSession();
+        
+        // FIXED: Simple session text without broken flags
+        const sessionText = session.active ? session.name : 'Market Closed';
+        
+        // Set the text directly - no more flag emojis that don't work
+        sessionIndicator.textContent = sessionText;
+        
+        // Update the CSS class for styling
+        sessionIndicator.className = session.active ? 'session-indicator session-active' : 'session-indicator';
+            
+    } catch (error) {
+        CONFIG.log('error', 'Error updating session:', error);
+    }
+}
+
+    updatePerformanceStats(signals) {
+        if (!signals?.length) {
+            this.updateElementSafely('dailySignals', '0');
+            this.updateElementSafely('weeklySignals', '0');
+            this.updateElementSafely('avgConfidence', '0%');
+            this.updateElementSafely('qualitySignals', '0');
+            return;
+        }
+        
+        try {
+            const today = new Date().toDateString();
+            const thisWeek = this.getWeekStart();
+            
+            const qualitySignals = signals.filter(s => s.confidence >= 75);
+            
+            const todaySignals = qualitySignals.filter(s => 
+                s.timestamp && new Date(s.timestamp).toDateString() === today
+            );
+            
+            const weekSignals = qualitySignals.filter(s => 
+                s.timestamp && new Date(s.timestamp) >= thisWeek
+            );
+            
+            this.updateElementSafely('dailySignals', todaySignals.length);
+            this.updateElementSafely('weeklySignals', weekSignals.length);
+            this.updateElementSafely('qualitySignals', qualitySignals.length);
+            
+            if (qualitySignals.length > 0) {
+                const avgConfidence = qualitySignals.reduce((sum, s) => sum + (s.confidence || 0), 0) / qualitySignals.length;
+                this.updateElementSafely('avgConfidence', `${avgConfidence.toFixed(0)}%`);
+            } else {
+                this.updateElementSafely('avgConfidence', '0%');
+            }
+            
+        } catch (error) {
+            CONFIG.log('error', 'Error updating performance stats:', error);
+        }
+    }
+
+    getWeekStart() {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        return new Date(now.setDate(diff));
+    }
+
+    updateConnectionStatus(status) {
+        const statusElement = document.getElementById('connectionStatus');
+        if (!statusElement) return;
+        
+        statusElement.className = `connection-status status-${status}`;
+        
+        switch (status) {
+            case 'connected':
+                statusElement.textContent = 'LIVE DATA';
+                break;
+            case 'connecting':
+                statusElement.textContent = 'CONNECTING';
+                break;
+            case 'error':
+                statusElement.textContent = 'API ERROR';
+                break;
+        }
+    }
+
+    hideErrorMessage() {
+        const errorElement = document.getElementById('apiErrorMessage');
+        if (errorElement) {
+            errorElement.classList.remove('show');
+        }
+    }
+
+    initializeUI() {
+        CONFIG.log('info', '🎨 Professional UI initialized');
+    }
+
+    handleApplicationError(error) {
+        CONFIG.log('error', 'Application error:', error.message);
+        
+        // Show error to user
+        const errorElement = document.getElementById('apiErrorMessage');
+        if (errorElement) {
+            const errorDescription = document.getElementById('errorDescription');
+            if (errorDescription) {
+                errorDescription.textContent = error.message;
+            }
+            errorElement.classList.add('show');
         }
     }
 
@@ -490,207 +700,6 @@ class OptimizedHueHueApp {
         }
     }
 
-    createSignalElement(signal) {
-        try {
-            if (!signal?.symbol || !signal?.action) return null;
-            
-            const signalDiv = document.createElement('div');
-            signalDiv.className = `signal-item signal-${signal.action.toLowerCase()}`;
-            
-            const timestamp = signal.timestamp || Date.now();
-            const timeStr = new Date(timestamp).toLocaleTimeString();
-            const dateStr = new Date(timestamp).toLocaleDateString();
-            
-            const price = signal.entry || signal.price || 0;
-            const formattedPrice = CONFIG.formatPrice(signal.symbol, price);
-            
-            const strength = signal.strength || 0;
-            const maxStrength = signal.maxStrength || 6;
-            
-            // Show source icon
-            let sourceIcon = '';
-            let sourceText = '';
-            if (signal.source === 'vps_smart_hybrid') {
-                sourceIcon = ' 🚀';
-                sourceText = 'VPS';
-            } else if (signal.id) {
-                sourceIcon = ' 🔥';
-                sourceText = 'Cloud';
-            } else {
-                sourceIcon = ' 💻';
-                sourceText = 'Local';
-            }
-            
-            signalDiv.innerHTML = `
-                <div class="signal-meta">
-                    <span class="signal-asset">${signal.symbol} ${signal.action}${sourceIcon}</span>
-                    <span class="signal-time">${dateStr} ${timeStr}</span>
-                </div>
-                <div class="signal-details">
-                    Entry: ${formattedPrice} | Strength: ${strength}/${maxStrength} | Source: ${sourceText}
-                </div>
-            `;
-            
-            signalDiv.addEventListener('click', () => {
-                this.showSignalDetails(signal);
-            });
-            
-            return signalDiv;
-            
-        } catch (error) {
-            CONFIG.log('warn', 'Error creating signal element:', error);
-            return null;
-        }
-    }
-
-    updateQuickStatsFromSignals(signals) {
-        if (!signals?.length) {
-            this.updateElementSafely('dailySignals', '0');
-            this.updateElementSafely('weeklySignals', '0');
-            this.updateElementSafely('avgStrength', '0.0');
-            this.updateElementSafely('strongSignals', '0');
-            return;
-        }
-        
-        try {
-            const today = new Date().toDateString();
-            const thisWeek = this.getWeekStart();
-            
-            const realSignals = signals.filter(s => s.type === 'TRADING_SIGNAL' || s.action);
-            
-            const todaySignals = realSignals.filter(s => 
-                s.timestamp && new Date(s.timestamp).toDateString() === today
-            );
-            
-            const weekSignals = realSignals.filter(s => 
-                s.timestamp && new Date(s.timestamp) >= thisWeek
-            );
-            
-            const strongSignals = realSignals.filter(s => s.strength >= 5);
-            
-            this.updateElementSafely('dailySignals', todaySignals.length);
-            this.updateElementSafely('weeklySignals', weekSignals.length);
-            this.updateElementSafely('strongSignals', strongSignals.length);
-            
-            if (realSignals.length > 0) {
-                const validSignals = realSignals.filter(s => s.strength && !isNaN(s.strength));
-                if (validSignals.length > 0) {
-                    const avgStrength = validSignals.reduce((sum, s) => sum + s.strength, 0) / validSignals.length;
-                    this.updateElementSafely('avgStrength', avgStrength.toFixed(1));
-                } else {
-                    this.updateElementSafely('avgStrength', '0.0');
-                }
-            } else {
-                this.updateElementSafely('avgStrength', '0.0');
-            }
-            
-        } catch (error) {
-            CONFIG.log('warn', 'Error updating stats:', error);
-        }
-    }
-
-    getWeekStart() {
-        const now = new Date();
-        const dayOfWeek = now.getDay();
-        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        return new Date(now.setDate(diff));
-    }
-
-    updateDashboard() {
-        try {
-            this.updateTime();
-            this.updateSession();
-        } catch (error) {
-            CONFIG.log('warn', 'Error updating dashboard:', error);
-        }
-    }
-
-    updateTime() {
-        this.updateElementSafely('updateTime', new Date().toLocaleTimeString());
-    }
-
-    updateSession() {
-        try {
-            const sessionIndicator = document.getElementById('sessionIndicator');
-            if (!sessionIndicator) return;
-            
-            const session = CONFIG.getCurrentSession();
-            
-            // Add VPS indicator to session
-            const dataSourceText = '🚀 VPS Active';
-            
-            const sessionText = session.active ? 
-                `${session.emoji} ${session.name} Session | ${dataSourceText}` : 
-                `🌙 Market Quiet | ${dataSourceText}`;
-            
-            sessionIndicator.textContent = sessionText;
-            sessionIndicator.className = session.active ? 
-                'session-indicator session-active' : 
-                'session-indicator';
-                
-        } catch (error) {
-            CONFIG.log('warn', 'Error updating session:', error);
-        }
-    }
-
-    updatePerformanceStats() {
-        // This can be extended to calculate real performance metrics
-        // For now, we'll keep it simple
-    }
-
-    updateConnectionStatus(status) {
-        const statusElement = document.getElementById('connectionStatus');
-        if (!statusElement) return;
-        
-        statusElement.className = `connection-status status-${status}`;
-        
-        switch (status) {
-            case 'connected':
-                statusElement.textContent = 'LIVE DATA';
-                break;
-            case 'connecting':
-                statusElement.textContent = 'CONNECTING';
-                break;
-            case 'error':
-                statusElement.textContent = 'API ERROR';
-                break;
-        }
-    }
-
-    hideErrorMessage() {
-        const errorElement = document.getElementById('apiErrorMessage');
-        if (errorElement) {
-            errorElement.classList.remove('show');
-        }
-    }
-
-    handleApplicationError(error) {
-        CONFIG.log('error', `Application error:`, error.message);
-        
-        // Show error to user
-        const errorElement = document.getElementById('apiErrorMessage');
-        if (errorElement) {
-            const errorDescription = document.getElementById('errorDescription');
-            if (errorDescription) {
-                errorDescription.textContent = error.message;
-            }
-            errorElement.classList.add('show');
-        }
-    }
-
-    showSignalDetails(signal) {
-        const details = `Signal Details:\n\n` +
-            `Symbol: ${signal.symbol}\n` +
-            `Action: ${signal.action}\n` +
-            `Strength: ${signal.strength}/${signal.maxStrength || 6}\n` +
-            `Bias: ${signal.bias}\n` +
-            `Entry: ${CONFIG.formatPrice(signal.symbol, signal.entry || signal.price)}\n` +
-            `Time: ${new Date(signal.timestamp).toLocaleString()}\n` +
-            `Source: ${signal.source || 'Unknown'}`;
-        
-        alert(details);
-    }
-
     updateElementSafely(elementId, value) {
         try {
             const element = document.getElementById(elementId);
@@ -700,7 +709,7 @@ class OptimizedHueHueApp {
             }
             return false;
         } catch (error) {
-            CONFIG.log('warn', `Failed to update element ${elementId}:`, error);
+            CONFIG.log('error', `Failed to update element ${elementId}:`, error);
             return false;
         }
     }
@@ -717,6 +726,12 @@ class OptimizedHueHueApp {
             Object.values(this.updateIntervals).forEach(interval => {
                 clearInterval(interval);
             });
+
+            // Clear VPS status interval
+            if (this.vpsStatusInterval) {
+                clearInterval(this.vpsStatusInterval);
+                this.vpsStatusInterval = null;
+            }
             
             // Unsubscribe from Firebase listeners
             this.unsubscribers.forEach(unsubscribe => {
@@ -725,7 +740,7 @@ class OptimizedHueHueApp {
                 }
             });
             
-            CONFIG.log('info', '🛑 Application stopped');
+            CONFIG.log('info', '🛑 Professional application stopped');
         } catch (error) {
             CONFIG.log('error', 'Error stopping application:', error);
         }
@@ -733,7 +748,7 @@ class OptimizedHueHueApp {
 }
 
 // Global application instance
-let optimizedHueHueApp;
+let professionalHueHueApp;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
@@ -742,22 +757,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    CONFIG.log('info', '🚀 Starting HueHue Application...');
+    CONFIG.log('info', '🚀 Starting Professional HueHue Application...');
     
     try {
-        optimizedHueHueApp = new OptimizedHueHueApp();
-        window.optimizedHueHueApp = optimizedHueHueApp;
+        professionalHueHueApp = new ProfessionalHueHueApp();
+        window.professionalHueHueApp = professionalHueHueApp; // Make available globally for debugging
         
-        const initialized = await optimizedHueHueApp.initialize();
+        const initialized = await professionalHueHueApp.initialize();
         
         if (initialized) {
-            CONFIG.log('info', '✅ HueHue is running!');
-            
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
+            CONFIG.log('info', '✅ Professional HueHue is running!');
         } else {
-            CONFIG.log('error', '❌ Failed to start HueHue');
+            CONFIG.log('error', '❌ Failed to start Professional HueHue');
         }
     } catch (error) {
         CONFIG.log('error', '❌ Critical error:', error);
@@ -767,8 +778,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Handle page unload
 window.addEventListener('beforeunload', () => {
     try {
-        if (optimizedHueHueApp) {
-            optimizedHueHueApp.stop();
+        if (professionalHueHueApp) {
+            professionalHueHueApp.stop();
         }
     } catch (error) {
         CONFIG.log('error', 'Error during unload:', error);
