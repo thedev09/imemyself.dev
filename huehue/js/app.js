@@ -568,19 +568,31 @@ class ProfessionalHueHueApp {
         const sessionIndicator = document.getElementById('sessionIndicator');
         if (!sessionIndicator) return;
         
+        // Add safety check for CONFIG
+        if (typeof CONFIG === 'undefined' || !CONFIG.getCurrentSession) {
+            console.warn('CONFIG not ready for session update');
+            return;
+        }
+        
         const session = CONFIG.getCurrentSession();
         
-        // FIXED: Simple session text without broken flags
+        // Simple session text without broken flags
         const sessionText = session.active ? session.name : 'Market Closed';
         
-        // Set the text directly - no more flag emojis that don't work
+        // Set the text directly
         sessionIndicator.textContent = sessionText;
         
         // Update the CSS class for styling
         sessionIndicator.className = session.active ? 'session-indicator session-active' : 'session-indicator';
             
     } catch (error) {
-        CONFIG.log('error', 'Error updating session:', error);
+        console.error('Error updating session:', error);
+        // Fallback: show a safe default
+        const sessionIndicator = document.getElementById('sessionIndicator');
+        if (sessionIndicator) {
+            sessionIndicator.textContent = 'Loading...';
+            sessionIndicator.className = 'session-indicator';
+        }
     }
 }
 
@@ -772,6 +784,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         CONFIG.log('error', '❌ Critical error:', error);
+    }
+
+    if (typeof CONFIG !== 'undefined' && CONFIG.getCurrentSession) {
+        const sessionIndicator = document.getElementById('sessionIndicator');
+        if (sessionIndicator) {
+            const session = CONFIG.getCurrentSession();
+            sessionIndicator.textContent = session.active ? session.name : 'Market Closed';
+            sessionIndicator.className = session.active ? 'session-indicator session-active' : 'session-indicator';
+        }
     }
 });
 

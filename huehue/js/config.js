@@ -139,32 +139,50 @@ CONFIG.isValidTradingTime = function() {
 };
 
 // Replace the getCurrentSession function in config.js with this:
-
 CONFIG.getCurrentSession = function() {
-    const hour = new Date().getUTCHours();
+    const now = new Date();
+    const hour = now.getUTCHours();
+    const dayOfWeek = now.getUTCDay(); // 0 = Sunday, 6 = Saturday
     
-    // Check each session in order of priority - FIXED VERSION
-    // London + NY overlap (most important)
+    // FIRST CHECK: Weekend market closure
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return { name: 'Market Closed - Weekend', active: false };
+    }
+    
+    // SECOND CHECK: Friday early close (after 20:00 UTC on Friday)
+    if (dayOfWeek === 5 && hour >= 20) {
+        return { name: 'Market Closed - Weekend', active: false };
+    }
+    
+    // THIRD CHECK: Sunday night market opening (after 21:00 UTC on Sunday)
+    if (dayOfWeek === 0 && hour < 21) {
+        return { name: 'Market Closed - Weekend', active: false };
+    }
+    
+    // NOW CHECK ACTIVE SESSIONS (Monday 00:00 UTC to Friday 20:00 UTC)
+    
+    // London + NY overlap (most important) - 13:00-16:00 UTC
     if (hour >= 13 && hour < 16) {
         return { name: 'London + New York Session', active: true };
     }
-    // New York session
+    // New York session - 13:00-22:00 UTC
     else if (hour >= 13 && hour < 22) {
         return { name: 'New York Session', active: true };
     }
-    // London session
+    // London session - 07:00-16:00 UTC
     else if (hour >= 7 && hour < 16) {
         return { name: 'London Session', active: true };
     }
-    // Tokyo session
-    else if ((hour >= 23) || (hour < 8)) {
+    // Tokyo session - 23:00-08:00 UTC (spans midnight)
+    else if (hour >= 23 || hour < 8) {
         return { name: 'Tokyo Session', active: true };
     }
-    // Sydney session
-    else if ((hour >= 21) || (hour < 6)) {
+    // Sydney session - 21:00-06:00 UTC (spans midnight)
+    else if (hour >= 21 || hour < 6) {
         return { name: 'Sydney Session', active: true };
     }
     
+    // If no session matches, market is closed
     return { name: 'Market Closed', active: false };
 };
 
