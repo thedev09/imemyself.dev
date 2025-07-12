@@ -14,11 +14,24 @@
 </head>
 <body>
     <div class="container">
-        <!-- Clean Professional Header -->
+        <!-- Enhanced Professional Header with v1/v2 Toggle -->
         <div class="header">
             <div class="header-top">
                 <h1>HueHue</h1>
                 <span class="vps-status" id="vpsStatus">VPS Live</span>
+            </div>
+            
+            <!-- Simple Engine Toggle -->
+            <div class="simple-toggle-container">
+                <div class="simple-toggle" id="engineToggle">
+                    <input type="radio" name="engine" id="engineV1" value="v1" checked>
+                    <label for="engineV1" class="toggle-option">v1</label>
+                    
+                    <input type="radio" name="engine" id="engineV2" value="v2">
+                    <label for="engineV2" class="toggle-option">v2</label>
+                    
+                    <div class="toggle-slider"></div>
+                </div>
             </div>
             
             <!-- Session indicator - top right positioned -->
@@ -145,69 +158,67 @@
                 </div>
             </div>
 
-            <!-- Add this as a third card in your main-grid section -->
-
             <!-- BTCUSD Card -->
-                <div class="asset-card professional-card" data-symbol="btcusd">
-                    <div class="asset-header">
+            <div class="asset-card professional-card" data-symbol="btcusd">
+                <div class="asset-header">
                     <div class="asset-info">
-                    <div class="asset-name">BTCUSD</div>
-                    <div class="asset-price" id="btcusd-price">Loading...</div>
-                    <div class="price-change" id="btcusd-change">--</div>
-                </div>
-                <div class="bias-indicator">
-                    <div class="bias-label neutral" id="btcusd-bias">ANALYZING</div>
-                    <div class="confidence-score" id="btcusd-confidence">--</div>
+                        <div class="asset-name">BTCUSD</div>
+                        <div class="asset-price" id="btcusd-price">Loading...</div>
+                        <div class="price-change" id="btcusd-change">--</div>
+                    </div>
+                    <div class="bias-indicator">
+                        <div class="bias-label neutral" id="btcusd-bias">ANALYZING</div>
+                        <div class="confidence-score" id="btcusd-confidence">--</div>
                     </div>
                 </div>
     
                 <div class="professional-analysis">
-                <div class="analysis-header">
-                <span>Analysis</span>
-                <span class="analysis-action WAIT" id="btcusd-action">WAIT</span>
+                    <div class="analysis-header">
+                        <span>Analysis</span>
+                        <span class="analysis-action WAIT" id="btcusd-action">WAIT</span>
+                    </div>
+        
+                    <div class="analysis-scores">
+                        <div class="score-item">
+                            <span class="score-label">Technical</span>
+                            <span class="score-value" id="btcusd-technical-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Structure</span>
+                            <span class="score-value" id="btcusd-structure-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Patterns</span>
+                            <span class="score-value" id="btcusd-pattern-score">--</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-label">Volume</span>
+                            <span class="score-value" id="btcusd-volume-score">--</span>
+                        </div>
+                    </div>
+                    
+                    <div class="trade-levels" id="btcusd-levels" style="display: none;">
+                        <div class="level-item entry">
+                            <span>Entry:</span>
+                            <span id="btcusd-entry">--</span>
+                        </div>
+                        <div class="level-item stop">
+                            <span>Stop Loss:</span>
+                            <span id="btcusd-stop">--</span>
+                        </div>
+                        <div class="level-item target">
+                            <span>Take Profit:</span>
+                            <span id="btcusd-target">--</span>
+                        </div>
+                    </div>
                 </div>
-        
-        <div class="analysis-scores">
-            <div class="score-item">
-                <span class="score-label">Technical</span>
-                <span class="score-value" id="btcusd-technical-score">--</span>
             </div>
-            <div class="score-item">
-                <span class="score-label">Structure</span>
-                <span class="score-value" id="btcusd-structure-score">--</span>
-            </div>
-            <div class="score-item">
-                <span class="score-label">Patterns</span>
-                <span class="score-value" id="btcusd-pattern-score">--</span>
-            </div>
-            <div class="score-item">
-                <span class="score-label">Volume</span>
-                <span class="score-value" id="btcusd-volume-score">--</span>
-            </div>
-        </div>
-        
-        <div class="trade-levels" id="btcusd-levels" style="display: none;">
-            <div class="level-item entry">
-                <span>Entry:</span>
-                <span id="btcusd-entry">--</span>
-            </div>
-            <div class="level-item stop">
-                <span>Stop Loss:</span>
-                <span id="btcusd-stop">--</span>
-            </div>
-            <div class="level-item target">
-                <span>Take Profit:</span>
-                <span id="btcusd-target">--</span>
-            </div>
-        </div>
-    </div>
-</div>
         </div>
 
-        <!-- Signals Section -->
+        <!-- Enhanced Signals Section with Version Indicator -->
         <div class="signals-section">
             <div class="signals-header">
-                <h2>Recent Signals</h2>
+                <h2>Recent Signals <span class="signals-version" id="signalsVersion">(v1)</span></h2>
                 <div class="signals-header-right">
                     <span id="signalCount">Loading...</span>
                     <a href="signals-history.html" class="view-all-btn">📊 View All</a>
@@ -221,15 +232,15 @@
                         <span class="signal-time">Starting</span>
                     </div>
                     <div class="signal-details">
-                        Smart analyzer initializing... Looking for high-quality opportunities.
+                        Dual-engine analyzer initializing... Looking for high-quality opportunities with both v1 and v2.
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Performance Summary -->
+        <!-- Enhanced Performance Summary with Engine Comparison -->
         <div class="performance-summary">
-            <h3>Performance</h3>
+            <h3>Performance <span class="performance-version" id="performanceVersion">(v1)</span></h3>
             <div class="performance-grid">
                 <div class="perf-card">
                     <div class="perf-number" style="color: #00ff88;" id="dailySignals">0</div>
@@ -248,18 +259,33 @@
                     <div class="perf-label">Quality</div>
                 </div>
             </div>
+            
+            <!-- Engine Comparison Widget -->
+            <div class="engine-comparison" id="engineComparison" style="display: none;">
+                <div class="comparison-header">Engine Comparison</div>
+                <div class="comparison-grid">
+                    <div class="comparison-item">
+                        <span class="comparison-label">v1 Confidence:</span>
+                        <span class="comparison-value" id="v1AvgConfidence">--</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span class="comparison-label">v2 Confidence:</span>
+                        <span class="comparison-value" id="v2AvgConfidence">--</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Footer -->
         <div class="mobile-footer">
             <div class="footer-info">
                 <span>HueHue Trading Dashboard</span>
-                <span>Professional analysis • Quality signals only</span>
+                <span>Dual-engine analysis • Smart v1 + AI v2 • Quality signals only</span>
             </div>
         </div>
     </div>
 
-    <!-- Load ONLY active JavaScript files -->
+    <!-- Load Scripts -->
     <script src="firebase-config.js"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
