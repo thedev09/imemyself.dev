@@ -1,4 +1,4 @@
-// app.js - Professional Smart Analyzer Integration
+// app.js - Professional Smart Analyzer Integration with BTCUSD Support
 class ProfessionalHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
@@ -23,7 +23,7 @@ class ProfessionalHueHueApp {
             qualitySignals: 0
         };
         
-        CONFIG.log('info', '🧠 Professional HueHue Application initialized');
+        CONFIG.log('info', '🧠 Professional HueHue Application initialized with BTCUSD support');
     }
 
     async initialize() {
@@ -54,7 +54,7 @@ class ProfessionalHueHueApp {
             
             this.isRunning = true;
             this.updateConnectionStatus('connected');
-            CONFIG.log('info', '✅ Professional HueHue application ready!');
+            CONFIG.log('info', '✅ Professional HueHue application ready with 3 assets!');
             
             return true;
             
@@ -85,7 +85,7 @@ class ProfessionalHueHueApp {
     async setupSmartAnalyzerListeners() {
         if (!this.firebaseStorage) return;
         
-        CONFIG.log('info', '📡 Setting up Smart Analyzer real-time listeners...');
+        CONFIG.log('info', '📡 Setting up Smart Analyzer real-time listeners for 3 assets...');
         
         // Listen for XAUUSD analysis updates
         const xauAnalysisRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', 'XAUUSD');
@@ -109,8 +109,19 @@ class ProfessionalHueHueApp {
         });
         this.unsubscribers.push(usdAnalysisUnsub);
         
-        // Listen for price updates
-        ['XAUUSD', 'USDJPY'].forEach(symbol => {
+        // Listen for BTCUSD analysis updates - NEW
+        const btcAnalysisRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'analysis', 'BTCUSD');
+        const btcAnalysisUnsub = this.firebaseStorage.onSnapshot(btcAnalysisRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                CONFIG.log('info', `📊 BTCUSD analysis update: ${data.bias} (${data.confidence}%)`);
+                this.handleSmartAnalysisUpdate('BTCUSD', data);
+            }
+        });
+        this.unsubscribers.push(btcAnalysisUnsub);
+        
+        // Listen for price updates - Updated with BTCUSD
+        ['XAUUSD', 'USDJPY', 'BTCUSD'].forEach(symbol => {
             const priceRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
             const priceUnsub = this.firebaseStorage.onSnapshot(priceRef, (doc) => {
                 if (doc.exists()) {
@@ -138,7 +149,7 @@ class ProfessionalHueHueApp {
         });
         this.unsubscribers.push(signalsUnsub);
         
-        CONFIG.log('info', '✅ Smart Analyzer listeners ready');
+        CONFIG.log('info', '✅ Smart Analyzer listeners ready for 3 assets');
     }
 
     // VPS STATUS MONITORING METHODS
@@ -236,9 +247,41 @@ class ProfessionalHueHueApp {
         }
     }
 
-    // Handle Smart Analyzer analysis updates
+    // UPDATED: Handle Smart Analyzer analysis updates with hybrid weekend system
     handleSmartAnalysisUpdate(symbol, analysis) {
         try {
+            // Check if THIS SPECIFIC asset is closed for weekend
+            const isAssetClosed = CONFIG.isAssetClosedForWeekend(symbol);
+            
+            if (isAssetClosed) {
+                // Weekend mode for forex/commodity assets only (BTC keeps running)
+                const symbolLower = symbol.toLowerCase();
+                
+                this.updateBiasDisplay(symbolLower, 'CLOSED');
+                this.updateConfidenceDisplay(symbolLower, 0);
+                this.updateActionDisplay(symbolLower, 'CLOSED');
+                
+                // Set all scores to dash
+                const scores = ['technical', 'structure', 'pattern', 'volume'];
+                scores.forEach(scoreType => {
+                    const element = document.getElementById(`${symbolLower}-${scoreType}-score`);
+                    if (element) {
+                        element.textContent = '--';
+                        element.className = 'score-value';
+                    }
+                });
+                
+                // Hide trade levels
+                const levelsElement = document.getElementById(`${symbolLower}-levels`);
+                if (levelsElement) {
+                    levelsElement.style.display = 'none';
+                }
+                
+                CONFIG.log('info', `🏖️ ${symbol} closed for weekend`);
+                return; // Don't process normal analysis
+            }
+
+            // Normal processing for active markets (including BTC on weekends)
             CONFIG.log('info', `🧠 Processing ${symbol} analysis: ${analysis.bias} (${analysis.confidence}%)`);
             
             const symbolLower = symbol.toLowerCase();
@@ -476,7 +519,8 @@ class ProfessionalHueHueApp {
     }
 
     async loadInitialData() {
-        const assets = ['XAUUSD', 'USDJPY'];
+        // UPDATED: Include BTCUSD
+        const assets = ['XAUUSD', 'USDJPY', 'BTCUSD'];
         
         for (const symbol of assets) {
             try {
@@ -564,37 +608,37 @@ class ProfessionalHueHueApp {
     }
 
     updateSession() {
-    try {
-        const sessionIndicator = document.getElementById('sessionIndicator');
-        if (!sessionIndicator) return;
-        
-        // Add safety check for CONFIG
-        if (typeof CONFIG === 'undefined' || !CONFIG.getCurrentSession) {
-            console.warn('CONFIG not ready for session update');
-            return;
-        }
-        
-        const session = CONFIG.getCurrentSession();
-        
-        // Simple session text without broken flags
-        const sessionText = session.active ? session.name : 'Market Closed';
-        
-        // Set the text directly
-        sessionIndicator.textContent = sessionText;
-        
-        // Update the CSS class for styling
-        sessionIndicator.className = session.active ? 'session-indicator session-active' : 'session-indicator';
+        try {
+            const sessionIndicator = document.getElementById('sessionIndicator');
+            if (!sessionIndicator) return;
             
-    } catch (error) {
-        console.error('Error updating session:', error);
-        // Fallback: show a safe default
-        const sessionIndicator = document.getElementById('sessionIndicator');
-        if (sessionIndicator) {
-            sessionIndicator.textContent = 'Loading...';
-            sessionIndicator.className = 'session-indicator';
+            // Add safety check for CONFIG
+            if (typeof CONFIG === 'undefined' || !CONFIG.getCurrentSession) {
+                console.warn('CONFIG not ready for session update');
+                return;
+            }
+            
+            const session = CONFIG.getCurrentSession();
+            
+            // Simple session text without broken flags
+            const sessionText = session.active ? session.name : 'Market Closed';
+            
+            // Set the text directly
+            sessionIndicator.textContent = sessionText;
+            
+            // Update the CSS class for styling
+            sessionIndicator.className = session.active ? 'session-indicator session-active' : 'session-indicator';
+                
+        } catch (error) {
+            console.error('Error updating session:', error);
+            // Fallback: show a safe default
+            const sessionIndicator = document.getElementById('sessionIndicator');
+            if (sessionIndicator) {
+                sessionIndicator.textContent = 'Loading...';
+                sessionIndicator.className = 'session-indicator';
+            }
         }
     }
-}
 
     updatePerformanceStats(signals) {
         if (!signals?.length) {
@@ -769,7 +813,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    CONFIG.log('info', '🚀 Starting Professional HueHue Application...');
+    CONFIG.log('info', '🚀 Starting Professional HueHue Application with 3 assets...');
     
     try {
         professionalHueHueApp = new ProfessionalHueHueApp();
@@ -778,7 +822,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const initialized = await professionalHueHueApp.initialize();
         
         if (initialized) {
-            CONFIG.log('info', '✅ Professional HueHue is running!');
+            CONFIG.log('info', '✅ Professional HueHue is running with XAUUSD, USDJPY, and BTCUSD!');
         } else {
             CONFIG.log('error', '❌ Failed to start Professional HueHue');
         }

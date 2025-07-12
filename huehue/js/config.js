@@ -1,21 +1,23 @@
-// HueHue Optimized Configuration - Single Mode Only
+// HueHue Optimized Configuration - Updated with BTCUSD Support
 const CONFIG = {
     // Twelve Data API Configuration
     TWELVE_DATA: {
         baseUrl: 'https://api.twelvedata.com',
-        apiKey: 'b1b1a8bf0e4b4848b1a68bd4bb7ceb9c', // This will be moved to Firebase for security
+        apiKey: 'Lol',
         maxCallsPerMinute: 55,
         rateLimitBuffer: 5,
         timeoutMs: 10000
     },
 
-    // Trading Assets
+    // Trading Assets - Updated with BTCUSD
     ASSETS: {
         XAUUSD: {
             symbol: 'XAUUSD',
             name: 'Gold',
             type: 'COMMODITY',
             twelveSymbol: 'XAU/USD',
+            marketType: 'FOREX',
+            tradingHours: '5_days',
             pipValue: 0.1,
             digits: 2,
             contractSize: 100,
@@ -26,10 +28,24 @@ const CONFIG = {
             name: 'Dollar Yen',
             type: 'FOREX',
             twelveSymbol: 'USD/JPY',
+            marketType: 'FOREX',
+            tradingHours: '5_days',
             pipValue: 0.01,
             digits: 3,
             contractSize: 100000,
             minMove: 0.001
+        },
+        BTCUSD: {
+            symbol: 'BTCUSD',
+            name: 'Bitcoin',
+            type: 'CRYPTO',
+            twelveSymbol: 'BTC/USD',
+            marketType: 'CRYPTO',
+            tradingHours: '24_7',
+            pipValue: 1,
+            digits: 0,
+            contractSize: 1,
+            minMove: 1
         }
     },
 
@@ -116,7 +132,7 @@ const CONFIG = {
     }
 };
 
-// Helper Functions - Optimized
+// Helper Functions - Updated with BTCUSD support
 CONFIG.getAssetConfig = function(symbol) {
     return CONFIG.ASSETS[symbol?.toUpperCase()] || null;
 };
@@ -126,7 +142,7 @@ CONFIG.isValidTradingTime = function() {
     const hour = now.getUTCHours();
     const dayOfWeek = now.getUTCDay();
     
-    // No weekend trading
+    // No weekend trading for forex
     if (dayOfWeek === 0 || dayOfWeek === 6) return false;
     
     // Trading hours check
@@ -138,13 +154,28 @@ CONFIG.isValidTradingTime = function() {
     return true;
 };
 
-// Replace the getCurrentSession function in config.js with this:
+// NEW: Check if specific asset is closed for weekend
+CONFIG.isAssetClosedForWeekend = function(symbol) {
+    const asset = CONFIG.getAssetConfig(symbol);
+    if (!asset) return false;
+    
+    // Crypto never closes (24/7/365)
+    if (asset.tradingHours === '24_7') return false;
+    
+    // Check if it's weekend for forex/commodity markets
+    const now = new Date();
+    const day = now.getUTCDay();
+    const hour = now.getUTCHours();
+    
+    return (day === 6) || (day === 0 && hour < 21);
+};
+
 CONFIG.getCurrentSession = function() {
     const now = new Date();
     const hour = now.getUTCHours();
     const dayOfWeek = now.getUTCDay(); // 0 = Sunday, 6 = Saturday
     
-    // FIRST CHECK: Weekend market closure
+    // FIRST CHECK: Weekend market closure (for forex only - crypto runs 24/7)
     if (dayOfWeek === 0 || dayOfWeek === 6) {
         return { name: 'Market Closed - Weekend', active: false };
     }
@@ -210,6 +241,11 @@ CONFIG.formatPrice = function(symbol, price) {
             })}`;
         } else if (symbol === 'USDJPY') {
             return `¥${price.toFixed(asset.digits)}`;
+        } else if (symbol === 'BTCUSD') {
+            return `$${price.toLocaleString('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            })}`;
         }
         
         return price.toFixed(asset.digits);
@@ -284,4 +320,4 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 // Log initialization
-CONFIG.log('info', '⚙️ HueHue Optimized Configuration Loaded'); 
+CONFIG.log('info', '⚙️ HueHue Optimized Configuration Loaded with BTCUSD support');
