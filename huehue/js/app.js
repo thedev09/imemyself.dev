@@ -1,5 +1,5 @@
-// app.js - Enhanced HueHue Application with Dual-Engine v1/v2 Toggle System
-class DualEngineHueHueApp {
+// app.js - Enhanced HueHue Application with TRIPLE-ENGINE v1/v2/v3 Toggle System
+class TripleEngineHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
             console.error('❌ CONFIG not available - check script loading order');
@@ -15,25 +15,34 @@ class DualEngineHueHueApp {
         this.updateIntervals = {};
         this.unsubscribers = []; // Store Firebase listeners
         
-        // DUAL ENGINE STATE
+        // TRIPLE ENGINE STATE
         this.currentEngine = 'v1'; // Default to v1 (Smart)
         this.engineListeners = {
             v1: { analysis: [], signals: [] },
-            v2: { analysis: [], signals: [] }
+            v2: { analysis: [], signals: [] },
+            v3: { analysis: [], signals: [] }
         };
         
-        // Performance stats for both engines
+        // Performance stats for all three engines
         this.performanceStats = {
             v1: { signalsToday: 0, totalSignals: 0, avgConfidence: 0, qualitySignals: 0 },
-            v2: { signalsToday: 0, totalSignals: 0, avgConfidence: 0, qualitySignals: 0 }
+            v2: { signalsToday: 0, totalSignals: 0, avgConfidence: 0, qualitySignals: 0 },
+            v3: { signalsToday: 0, totalSignals: 0, avgConfidence: 0, qualitySignals: 0 }
         };
         
-        CONFIG.log('info', '🤖 Dual-Engine HueHue Application initialized (v1 Smart + v2 AI)');
+        // Engine descriptions
+        this.engineDescriptions = {
+            v1: 'Smart Analysis - Proven technical indicators',
+            v2: 'AI Enhanced - Advanced intelligence + session awareness',
+            v3: 'Simple & Effective - Fast signals + lower thresholds'
+        };
+        
+        CONFIG.log('info', '🤖 Triple-Engine HueHue Application initialized (v1 Smart + v2 AI + v3 Simple)');
     }
 
     async initialize() {
         try {
-            CONFIG.log('info', '🚀 Starting Dual-Engine HueHue initialization...');
+            CONFIG.log('info', '🚀 Starting Triple-Engine HueHue initialization...');
             
             // Initialize UI first
             this.updateConnectionStatus('connecting');
@@ -42,11 +51,11 @@ class DualEngineHueHueApp {
             // Wait for Firebase
             await this.waitForFirebase();
             
-            // Setup dual-engine toggle
+            // Setup triple-engine toggle
             this.setupEngineToggle();
             
             // Setup real-time listeners for current engine
-            await this.setupDualEngineListeners();
+            await this.setupTripleEngineListeners();
             
             // Setup VPS status monitoring
             await this.setupVpsStatusMonitoring();
@@ -62,13 +71,13 @@ class DualEngineHueHueApp {
             
             this.isRunning = true;
             this.updateConnectionStatus('connected');
-            CONFIG.log('info', '✅ Dual-Engine HueHue application ready!');
-            CONFIG.log('info', `🎯 Current Engine: ${this.currentEngine} (${this.currentEngine === 'v1' ? 'Smart Analysis' : 'AI Enhanced'})`);
+            CONFIG.log('info', '✅ Triple-Engine HueHue application ready!');
+            CONFIG.log('info', `🎯 Current Engine: ${this.currentEngine} (${this.getEngineDisplayName(this.currentEngine)})`);
             
             return true;
             
         } catch (error) {
-            CONFIG.log('error', '❌ Failed to initialize dual-engine app:', error);
+            CONFIG.log('error', '❌ Failed to initialize triple-engine app:', error);
             this.handleApplicationError(error);
             return false;
         }
@@ -85,23 +94,24 @@ class DualEngineHueHueApp {
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            CONFIG.log('info', '🔥 Firebase connected to Dual-Engine App');
+            CONFIG.log('info', '🔥 Firebase connected to Triple-Engine App');
         } else {
             throw new Error('Firebase not available');
         }
     }
 
-    // SETUP ENGINE TOGGLE FUNCTIONALITY
+    // SETUP TRIPLE ENGINE TOGGLE FUNCTIONALITY
     setupEngineToggle() {
         const engineV1 = document.getElementById('engineV1');
         const engineV2 = document.getElementById('engineV2');
+        const engineV3 = document.getElementById('engineV3');
         
-        if (!engineV1 || !engineV2) {
+        if (!engineV1 || !engineV2 || !engineV3) {
             CONFIG.log('warn', 'Engine toggle elements not found');
             return;
         }
         
-        // Add event listeners for toggle
+        // Add event listeners for triple toggle
         engineV1.addEventListener('change', () => {
             if (engineV1.checked) {
                 this.switchEngine('v1');
@@ -114,10 +124,16 @@ class DualEngineHueHueApp {
             }
         });
         
-        CONFIG.log('info', '🔄 Engine toggle setup complete');
+        engineV3.addEventListener('change', () => {
+            if (engineV3.checked) {
+                this.switchEngine('v3');
+            }
+        });
+        
+        CONFIG.log('info', '🔄 Triple engine toggle setup complete');
     }
 
-    // SWITCH BETWEEN v1 AND v2 ENGINES
+    // SWITCH BETWEEN v1, v2, AND v3 ENGINES
     async switchEngine(newEngine) {
         if (this.currentEngine === newEngine) return;
         
@@ -145,7 +161,10 @@ class DualEngineHueHueApp {
             // Update performance stats
             this.updatePerformanceDisplay();
             
-            CONFIG.log('info', `✅ Successfully switched to ${newEngine} (${newEngine === 'v1' ? 'Smart Analysis' : 'AI Enhanced'})`);
+            // Update score labels for v3
+            this.updateScoreLabels(newEngine);
+            
+            CONFIG.log('info', `✅ Successfully switched to ${newEngine} (${this.getEngineDisplayName(newEngine)})`);
             
         } catch (error) {
             CONFIG.log('error', `❌ Error switching to ${newEngine}:`, error);
@@ -154,6 +173,16 @@ class DualEngineHueHueApp {
             this.currentEngine = oldEngine;
             this.updateEngineStatus(oldEngine);
         }
+    }
+
+    // Get engine display name
+    getEngineDisplayName(engine) {
+        const names = {
+            v1: 'Smart Analysis',
+            v2: 'AI Enhanced',
+            v3: 'Simple & Effective'
+        };
+        return names[engine] || engine;
     }
 
     // Clear analysis display when switching engines
@@ -179,19 +208,24 @@ class DualEngineHueHueApp {
         CONFIG.log('info', '🧹 Analysis display cleared for engine switch');
     }
 
-    // UPDATE ENGINE STATUS UI (simplified)
+    // UPDATE ENGINE STATUS UI
     updateEngineStatus(engine) {
         const signalsVersion = document.getElementById('signalsVersion');
         const performanceVersion = document.getElementById('performanceVersion');
+        const engineDescription = document.getElementById('engineDescText');
         
         if (signalsVersion) {
             signalsVersion.textContent = `(${engine})`;
-            signalsVersion.className = `signals-version ${engine === 'v1' ? 'v1-active' : 'v2-active'}`;
+            signalsVersion.className = `signals-version ${engine === 'v1' ? 'v1-active' : engine === 'v2' ? 'v2-active' : 'v3-active'}`;
         }
         
         if (performanceVersion) {
             performanceVersion.textContent = `(${engine})`;
-            performanceVersion.className = `performance-version ${engine === 'v1' ? 'v1-active' : 'v2-active'}`;
+            performanceVersion.className = `performance-version ${engine === 'v1' ? 'v1-active' : engine === 'v2' ? 'v2-active' : 'v3-active'}`;
+        }
+        
+        if (engineDescription) {
+            engineDescription.textContent = this.engineDescriptions[engine];
         }
         
         // Update asset cards visual indicators
@@ -203,24 +237,49 @@ class DualEngineHueHueApp {
         const assetCards = document.querySelectorAll('.asset-card');
         
         assetCards.forEach(card => {
+            // Remove all engine classes
+            card.classList.remove('ai-enhanced', 'simple-enhanced');
+            
+            // Add appropriate class
             if (engine === 'v2') {
                 card.classList.add('ai-enhanced');
-            } else {
-                card.classList.remove('ai-enhanced');
+            } else if (engine === 'v3') {
+                card.classList.add('simple-enhanced');
             }
         });
     }
 
-    // SETUP DUAL-ENGINE LISTENERS
-    async setupDualEngineListeners() {
+    // UPDATE SCORE LABELS FOR v3
+    updateScoreLabels(engine) {
+        const assets = ['xauusd', 'usdjpy', 'btcusd'];
+        
+        assets.forEach(symbol => {
+            if (engine === 'v3') {
+                // v3 uses different score labels
+                this.updateElementSafely(`${symbol}-score-label-1`, 'Technical');
+                this.updateElementSafely(`${symbol}-score-label-2`, 'Momentum');
+                this.updateElementSafely(`${symbol}-score-label-3`, 'Trend');
+                this.updateElementSafely(`${symbol}-score-label-4`, 'Volatility');
+            } else {
+                // v1/v2 use standard labels
+                this.updateElementSafely(`${symbol}-score-label-1`, 'Technical');
+                this.updateElementSafely(`${symbol}-score-label-2`, 'Structure');
+                this.updateElementSafely(`${symbol}-score-label-3`, 'Patterns');
+                this.updateElementSafely(`${symbol}-score-label-4`, 'Volume');
+            }
+        });
+    }
+
+    // SETUP TRIPLE-ENGINE LISTENERS
+    async setupTripleEngineListeners() {
         if (!this.firebaseStorage) return;
         
-        CONFIG.log('info', '📡 Setting up dual-engine real-time listeners...');
+        CONFIG.log('info', '📡 Setting up triple-engine real-time listeners...');
         
         // Setup listeners for current engine
         await this.setupCurrentEngineListeners();
         
-        CONFIG.log('info', '✅ Dual-engine listeners ready');
+        CONFIG.log('info', '✅ Triple-engine listeners ready');
     }
 
     // SETUP LISTENERS FOR CURRENT ENGINE
@@ -308,7 +367,7 @@ class DualEngineHueHueApp {
     async setupVpsStatusMonitoring() {
         if (!this.firebaseStorage) return;
         
-        CONFIG.log('info', '📡 Setting up VPS status monitoring for dual-engine...');
+        CONFIG.log('info', '📡 Setting up VPS status monitoring for triple-engine...');
         
         try {
             const vpsRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'system', 'generator');
@@ -327,7 +386,7 @@ class DualEngineHueHueApp {
             }, 30000);
             
             await this.checkVpsStatus();
-            CONFIG.log('info', '✅ VPS status monitoring active (dual-engine aware)');
+            CONFIG.log('info', '✅ VPS status monitoring active (triple-engine aware)');
             
         } catch (error) {
             CONFIG.log('error', 'Error setting up VPS monitoring:', error);
@@ -375,7 +434,7 @@ class DualEngineHueHueApp {
             
             if (status === 'active') {
                 // Enhanced status with engine info
-                const statusText = engineType.includes('dual') ? 'VPS Live (Dual)' : 'VPS Live';
+                const statusText = engineType.includes('triple') ? 'VPS Live (Triple)' : 'VPS Live';
                 this.updateVpsStatusElement(statusText, 'online');
             } else {
                 this.updateVpsStatusElement(`VPS ${status}`, 'offline');
@@ -391,7 +450,7 @@ class DualEngineHueHueApp {
         }
     }
 
-    // HANDLE ANALYSIS UPDATES (enhanced for dual-engine)
+    // HANDLE ANALYSIS UPDATES (enhanced for triple-engine)
     handleAnalysisUpdate(symbol, analysis, sourceEngine) {
         try {
             // Only process if this update is for the currently active engine
@@ -439,7 +498,7 @@ class DualEngineHueHueApp {
             
             CONFIG.log('debug', `Updated ${symbol} ${sourceEngine} confidence to ${analysis.confidence}%`);
             
-            // Update analysis scores (enhanced for v2)
+            // Update analysis scores (engine-specific handling)
             if (analysis.analysis) {
                 this.updateAnalysisScores(symbolLower, analysis.analysis, sourceEngine);
             }
@@ -447,10 +506,8 @@ class DualEngineHueHueApp {
             // Update trade levels
             this.updateTradeLevels(symbolLower, analysis);
             
-            // Show AI features if v2
-            if (sourceEngine === 'v2' && analysis.aiFeatures) {
-                this.updateAIFeatures(symbolLower, analysis.aiFeatures);
-            }
+            // Show engine-specific features
+            this.updateEngineFeatures(symbolLower, analysis, sourceEngine);
             
             CONFIG.log('info', `✅ ${symbol} ${sourceEngine} display updated successfully`);
             
@@ -493,7 +550,7 @@ class DualEngineHueHueApp {
         }
     }
 
-    // HANDLE SIGNALS UPDATE (enhanced for dual-engine)
+    // HANDLE SIGNALS UPDATE (enhanced for triple-engine)
     handleSignalsUpdate(signals, sourceEngine) {
         try {
             // Only process if this update is for the currently active engine
@@ -512,7 +569,7 @@ class DualEngineHueHueApp {
             const recentSignals = signals.slice(0, 10);
             
             if (recentSignals.length === 0) {
-                const engineName = sourceEngine === 'v1' ? 'Smart analyzer' : 'AI analyzer';
+                const engineName = this.getEngineDisplayName(sourceEngine);
                 signalsList.innerHTML = `
                     <div class="signal-item">
                         <div class="signal-meta">
@@ -588,16 +645,30 @@ class DualEngineHueHueApp {
     }
 
     updateAnalysisScores(symbolLower, analysis, sourceEngine) {
-        const scores = [
-            { id: `${symbolLower}-technical-score`, value: analysis.technical },
-            { id: `${symbolLower}-structure-score`, value: analysis.structure },
-            { id: `${symbolLower}-pattern-score`, value: analysis.patterns },
-            { id: `${symbolLower}-volume-score`, value: analysis.volume }
-        ];
-        
-        scores.forEach(score => {
-            this.updateScoreDisplay(score.id, score.value, sourceEngine);
-        });
+        // Handle different score structures for different engines
+        if (sourceEngine === 'v3') {
+            // v3 has: technical, momentum, trend, volatility
+            const scores = [
+                { id: `${symbolLower}-technical-score`, value: analysis.technical },
+                { id: `${symbolLower}-structure-score`, value: analysis.momentum }, // momentum maps to structure slot
+                { id: `${symbolLower}-pattern-score`, value: analysis.trend }, // trend maps to pattern slot
+                { id: `${symbolLower}-volume-score`, value: analysis.volatility } // volatility maps to volume slot
+            ];
+            scores.forEach(score => {
+                this.updateScoreDisplay(score.id, score.value, sourceEngine);
+            });
+        } else {
+            // v1/v2 have: technical, structure, patterns, volume
+            const scores = [
+                { id: `${symbolLower}-technical-score`, value: analysis.technical },
+                { id: `${symbolLower}-structure-score`, value: analysis.structure },
+                { id: `${symbolLower}-pattern-score`, value: analysis.patterns },
+                { id: `${symbolLower}-volume-score`, value: analysis.volume }
+            ];
+            scores.forEach(score => {
+                this.updateScoreDisplay(score.id, score.value, sourceEngine);
+            });
+        }
     }
 
     updateScoreDisplay(elementId, score, sourceEngine) {
@@ -614,9 +685,11 @@ class DualEngineHueHueApp {
                 element.classList.add('score-low');
             }
             
-            // Add subtle engine indicator
+            // Add engine-specific styling
             if (sourceEngine === 'v2') {
                 element.classList.add('ai-enhanced-score');
+            } else if (sourceEngine === 'v3') {
+                element.classList.add('v3-enhanced');
             }
         }
     }
@@ -636,14 +709,22 @@ class DualEngineHueHueApp {
         }
     }
 
-    // NEW: Update AI features display for v2
-    updateAIFeatures(symbolLower, aiFeatures) {
-        // Add AI-specific enhancements to UI
+    // UPDATE ENGINE-SPECIFIC FEATURES
+    updateEngineFeatures(symbolLower, analysis, sourceEngine) {
         const assetCard = document.querySelector(`[data-symbol="${symbolLower}"]`);
-        if (assetCard && aiFeatures) {
-            // Add tooltip or badge showing AI features
-            const aiInfo = `Session: ${aiFeatures.sessionWeight}x | Volatility: ${aiFeatures.volatilityRegime} | Confluence: ${aiFeatures.confluence}%`;
-            assetCard.setAttribute('title', aiInfo);
+        if (assetCard) {
+            if (sourceEngine === 'v2' && analysis.aiFeatures) {
+                // Add AI-specific tooltip
+                const aiInfo = `Session: ${analysis.aiFeatures.sessionWeight}x | Volatility: ${analysis.aiFeatures.volatilityRegime} | Confluence: ${analysis.aiFeatures.confluence}%`;
+                assetCard.setAttribute('title', aiInfo);
+            } else if (sourceEngine === 'v3') {
+                // Add v3-specific tooltip
+                const v3Info = `Simple & Effective Analysis | Lower Thresholds | Fast Signals`;
+                assetCard.setAttribute('title', v3Info);
+            } else {
+                // Remove tooltip for v1
+                assetCard.removeAttribute('title');
+            }
         }
     }
 
@@ -654,9 +735,11 @@ class DualEngineHueHueApp {
             const signalDiv = document.createElement('div');
             signalDiv.className = `signal-item signal-${(signal.action || 'neutral').toLowerCase()}`;
             
-            // Add AI signal indicator for v2
+            // Add engine-specific signal styling
             if (sourceEngine === 'v2') {
                 signalDiv.classList.add('ai-signal');
+            } else if (sourceEngine === 'v3') {
+                signalDiv.classList.add('v3-signal');
             }
             
             const timestamp = signal.timestamp || Date.now();
@@ -664,12 +747,16 @@ class DualEngineHueHueApp {
             const dateStr = new Date(timestamp).toLocaleDateString();
             
             const confidence = signal.confidence || 0;
-            const isHighQuality = confidence >= (sourceEngine === 'v2' ? 80 : 75);
+            const thresholds = { v1: 75, v2: 80, v3: 65 };
+            const isHighQuality = confidence >= thresholds[sourceEngine];
             
-            if (isHighQuality && (signal.type?.includes('HIGH_QUALITY') || signal.type?.includes('AI_HIGH_QUALITY'))) {
+            if (isHighQuality && (signal.type?.includes('SIGNAL'))) {
                 // High quality signal
-                const engineBadge = sourceEngine === 'v2' ? '🤖' : '🧠';
-                const engineName = sourceEngine === 'v2' ? 'AI Enhanced' : 'Professional';
+                const engineEmojis = { v1: '🧠', v2: '🤖', v3: '⚡' };
+                const engineNames = { v1: 'Smart', v2: 'AI Enhanced', v3: 'Simple & Effective' };
+                
+                const engineBadge = engineEmojis[sourceEngine];
+                const engineName = engineNames[sourceEngine];
                 
                 signalDiv.className += ' professional';
                 signalDiv.innerHTML = `
@@ -778,7 +865,7 @@ class DualEngineHueHueApp {
         }
     }
 
-    // PERFORMANCE STATS (enhanced for dual-engine)
+    // PERFORMANCE STATS (enhanced for triple-engine)
     updatePerformanceStats(signals, sourceEngine) {
         if (!signals?.length) {
             this.resetPerformanceDisplay(sourceEngine);
@@ -789,8 +876,11 @@ class DualEngineHueHueApp {
             const today = new Date().toDateString();
             const thisWeek = this.getWeekStart();
             
+            // Different confidence thresholds for each engine
+            const confidenceThresholds = { v1: 75, v2: 80, v3: 65 };
+            const minConfidence = confidenceThresholds[sourceEngine];
+            
             const qualitySignals = signals.filter(s => {
-                const minConfidence = sourceEngine === 'v2' ? 80 : 75;
                 return s.confidence >= minConfidence;
             });
             
@@ -838,18 +928,23 @@ class DualEngineHueHueApp {
         this.updateElementSafely('avgConfidence', `${stats.avgConfidence.toFixed(0)}%`);
         this.updateElementSafely('qualitySignals', stats.qualitySignals);
         
-        // Show comparison if both engines have data
+        // Show comparison if multiple engines have data
         this.updateEngineComparison();
     }
 
     updateEngineComparison() {
         const v1Stats = this.performanceStats.v1;
         const v2Stats = this.performanceStats.v2;
+        const v3Stats = this.performanceStats.v3;
         const comparisonElement = document.getElementById('engineComparison');
         
-        if (comparisonElement && v1Stats.totalSignals > 0 && v2Stats.totalSignals > 0) {
+        // Show comparison if at least 2 engines have data
+        const enginesWithData = [v1Stats, v2Stats, v3Stats].filter(stats => stats.totalSignals > 0);
+        
+        if (comparisonElement && enginesWithData.length >= 2) {
             this.updateElementSafely('v1AvgConfidence', `${v1Stats.avgConfidence.toFixed(1)}%`);
             this.updateElementSafely('v2AvgConfidence', `${v2Stats.avgConfidence.toFixed(1)}%`);
+            this.updateElementSafely('v3AvgConfidence', `${v3Stats.avgConfidence.toFixed(1)}%`);
             comparisonElement.style.display = 'block';
         }
     }
@@ -936,10 +1031,13 @@ class DualEngineHueHueApp {
     }
 
     initializeUI() {
-        CONFIG.log('info', '🎨 Dual-Engine Professional UI initialized');
+        CONFIG.log('info', '🎨 Triple-Engine Professional UI initialized');
         
         // Set initial engine status
         this.updateEngineStatus(this.currentEngine);
+        
+        // Update score labels for current engine
+        this.updateScoreLabels(this.currentEngine);
     }
 
     handleApplicationError(error) {
@@ -1025,15 +1123,15 @@ class DualEngineHueHueApp {
                 }
             });
             
-            CONFIG.log('info', '🛑 Dual-Engine application stopped');
+            CONFIG.log('info', '🛑 Triple-Engine application stopped');
         } catch (error) {
-            CONFIG.log('error', 'Error stopping dual-engine application:', error);
+            CONFIG.log('error', 'Error stopping triple-engine application:', error);
         }
     }
 }
 
 // Global application instance
-let dualEngineHueHueApp;
+let tripleEngineHueHueApp;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1042,18 +1140,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    CONFIG.log('info', '🚀 Starting Dual-Engine HueHue Application...');
+    CONFIG.log('info', '🚀 Starting Triple-Engine HueHue Application...');
     
     try {
-        dualEngineHueHueApp = new DualEngineHueHueApp();
-        window.dualEngineHueHueApp = dualEngineHueHueApp;
+        tripleEngineHueHueApp = new TripleEngineHueHueApp();
+        window.tripleEngineHueHueApp = tripleEngineHueHueApp;
         
-        const initialized = await dualEngineHueHueApp.initialize();
+        const initialized = await tripleEngineHueHueApp.initialize();
         
         if (initialized) {
-            CONFIG.log('info', '✅ Dual-Engine HueHue is running with v1 Smart + v2 AI!');
+            CONFIG.log('info', '✅ Triple-Engine HueHue is running with v1 Smart + v2 AI + v3 Simple!');
         } else {
-            CONFIG.log('error', '❌ Failed to start Dual-Engine HueHue');
+            CONFIG.log('error', '❌ Failed to start Triple-Engine HueHue');
         }
     } catch (error) {
         CONFIG.log('error', '❌ Critical error:', error);
@@ -1063,8 +1161,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Handle page unload
 window.addEventListener('beforeunload', () => {
     try {
-        if (dualEngineHueHueApp) {
-            dualEngineHueHueApp.stop();
+        if (tripleEngineHueHueApp) {
+            tripleEngineHueHueApp.stop();
         }
     } catch (error) {
         CONFIG.log('error', 'Error during unload:', error);

@@ -1,4 +1,4 @@
-/* HueHue Professional Trading Dashboard - Enhanced with v1/v2 Toggle */
+/* HueHue Professional Trading Dashboard - Enhanced with v1/v2/v3 Triple Toggle */
 
 /* Base styles remain the same */
 * {
@@ -29,7 +29,7 @@ body {
     position: relative;
 }
 
-/* Enhanced Header with Toggle */
+/* Enhanced Header with Triple Toggle */
 .header {
     text-align: center;
     margin-bottom: 20px;
@@ -82,14 +82,16 @@ body {
     animation: pulse-red 2s infinite;
 }
 
-/* Simple Engine Toggle */
-.simple-toggle-container {
+/* Triple Engine Toggle */
+.triple-toggle-container {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     margin: 15px 0;
+    gap: 10px;
 }
 
-.simple-toggle {
+.triple-toggle {
     position: relative;
     display: flex;
     background: rgba(255, 255, 255, 0.1);
@@ -97,19 +99,19 @@ body {
     padding: 4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(5px);
-    min-width: 120px;
+    min-width: 180px;
 }
 
-.simple-toggle input[type="radio"] {
+.triple-toggle input[type="radio"] {
     display: none;
 }
 
-.simple-toggle .toggle-option {
+.triple-toggle .toggle-option {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 20px;
+    padding: 10px 16px;
     cursor: pointer;
     transition: all 0.3s ease;
     border-radius: 20px;
@@ -120,19 +122,20 @@ body {
     color: #a0a0a0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    flex: 1;
 }
 
 /* Active toggle styles */
-.simple-toggle input[type="radio"]:checked + .toggle-option {
+.triple-toggle input[type="radio"]:checked + .toggle-option {
     color: #000000;
 }
 
 /* Toggle slider background */
-.simple-toggle .toggle-slider {
+.triple-toggle .toggle-slider {
     position: absolute;
     top: 4px;
     left: 4px;
-    width: calc(50% - 4px);
+    width: calc(33.333% - 4px);
     height: calc(100% - 8px);
     background: linear-gradient(45deg, #00d4ff, #0099cc);
     border-radius: 20px;
@@ -142,10 +145,30 @@ body {
 }
 
 /* Move slider when v2 is selected */
-.simple-toggle input[name="engine"]:nth-of-type(2):checked ~ .toggle-slider {
+.triple-toggle input[name="engine"]:nth-of-type(2):checked ~ .toggle-slider {
     transform: translateX(100%);
     background: linear-gradient(45deg, #ff6b35, #ff4757);
     box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+/* Move slider when v3 is selected */
+.triple-toggle input[name="engine"]:nth-of-type(3):checked ~ .toggle-slider {
+    transform: translateX(200%);
+    background: linear-gradient(45deg, #00ff88, #00cc6a);
+    box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+}
+
+/* Engine Description */
+.engine-description {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: 0.8em;
+    color: #a0a0a0;
+    text-align: center;
+    max-width: 300px;
+    transition: all 0.3s ease;
 }
 
 /* Session indicator */
@@ -205,10 +228,16 @@ body {
     border: 1px solid rgba(0, 212, 255, 0.2);
 }
 
-/* v2 Enhanced Border (Clean) */
+/* v2 Enhanced Border */
 .asset-card.ai-enhanced {
     border-color: rgba(255, 107, 53, 0.4);
     box-shadow: 0 0 20px rgba(255, 107, 53, 0.15);
+}
+
+/* v3 Simple Border */
+.asset-card.simple-enhanced {
+    border-color: rgba(0, 255, 136, 0.4);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
 }
 
 /* Asset Header Layout */
@@ -415,6 +444,11 @@ body {
 .score-medium { color: #ffa502; }
 .score-low { color: #ff4757; }
 
+/* v3 Enhanced Scores */
+.score-value.v3-enhanced {
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+}
+
 /* Trade Levels */
 .trade-levels {
     background: rgba(0, 212, 255, 0.05);
@@ -491,6 +525,16 @@ body {
     margin-left: 8px;
 }
 
+.signals-version.v2-active {
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.2);
+}
+
+.signals-version.v3-active {
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.2);
+}
+
 .signals-header-right {
     display: flex;
     align-items: center;
@@ -557,9 +601,15 @@ body {
     border-left-color: #ff4757;
 }
 
-/* v2 AI signals (clean styling) */
+/* v2 AI signals */
 .signal-item.ai-signal {
     border-left-color: #ff6b35;
+}
+
+/* v3 Simple signals */
+.signal-item.v3-signal {
+    border-left-color: #00ff88;
+    border-left-width: 6px;
 }
 
 .signal-meta {
@@ -617,6 +667,16 @@ body {
     margin-left: 8px;
 }
 
+.performance-version.v2-active {
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.2);
+}
+
+.performance-version.v3-active {
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.2);
+}
+
 .performance-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -650,7 +710,7 @@ body {
     font-weight: 500;
 }
 
-/* NEW: Engine Comparison Widget */
+/* Enhanced Engine Comparison Widget */
 .engine-comparison {
     background: rgba(255, 255, 255, 0.03);
     border-radius: 14px;
@@ -669,7 +729,7 @@ body {
 
 .comparison-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 10px;
 }
 
@@ -775,19 +835,25 @@ body {
         font-weight: 700;
     }
     
-    /* Mobile Toggle Adjustments */
-    .simple-toggle-container {
+    /* Mobile Triple Toggle Adjustments */
+    .triple-toggle-container {
         margin: 10px 0;
     }
     
-    .simple-toggle {
-        min-width: 100px;
+    .triple-toggle {
+        min-width: 150px;
     }
     
-    .simple-toggle .toggle-option {
-        padding: 8px 16px;
+    .triple-toggle .toggle-option {
+        padding: 8px 12px;
         font-size: 0.8em;
-        min-width: 40px;
+        min-width: 30px;
+    }
+    
+    .engine-description {
+        font-size: 0.75em;
+        padding: 6px 12px;
+        max-width: 250px;
     }
     
     .session-indicator {
@@ -893,14 +959,20 @@ body {
         padding: 6px 12px;
     }
     
-    .simple-toggle {
-        min-width: 90px;
+    .triple-toggle {
+        min-width: 130px;
     }
     
-    .simple-toggle .toggle-option {
-        padding: 6px 12px;
+    .triple-toggle .toggle-option {
+        padding: 6px 10px;
         font-size: 0.75em;
-        min-width: 35px;
+        min-width: 25px;
+    }
+    
+    .engine-description {
+        font-size: 0.7em;
+        padding: 5px 10px;
+        max-width: 200px;
     }
     
     .asset-card {
@@ -973,10 +1045,16 @@ body {
         padding: 5px 10px;
     }
     
-    .simple-toggle .toggle-option {
-        padding: 5px 10px;
+    .triple-toggle .toggle-option {
+        padding: 5px 8px;
         font-size: 0.7em;
-        min-width: 30px;
+        min-width: 20px;
+    }
+    
+    .engine-description {
+        font-size: 0.65em;
+        padding: 4px 8px;
+        max-width: 180px;
     }
     
     .asset-header {

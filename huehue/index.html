@@ -14,23 +14,31 @@
 </head>
 <body>
     <div class="container">
-        <!-- Enhanced Professional Header with v1/v2 Toggle -->
+        <!-- Enhanced Professional Header with v1/v2/v3 Triple Toggle -->
         <div class="header">
             <div class="header-top">
                 <h1>HueHue</h1>
                 <span class="vps-status" id="vpsStatus">VPS Live</span>
             </div>
             
-            <!-- Simple Engine Toggle -->
-            <div class="simple-toggle-container">
-                <div class="simple-toggle" id="engineToggle">
+            <!-- Triple Engine Toggle (v1/v2/v3) -->
+            <div class="triple-toggle-container">
+                <div class="triple-toggle" id="engineToggle">
                     <input type="radio" name="engine" id="engineV1" value="v1" checked>
                     <label for="engineV1" class="toggle-option">v1</label>
                     
                     <input type="radio" name="engine" id="engineV2" value="v2">
                     <label for="engineV2" class="toggle-option">v2</label>
                     
+                    <input type="radio" name="engine" id="engineV3" value="v3">
+                    <label for="engineV3" class="toggle-option">v3</label>
+                    
                     <div class="toggle-slider"></div>
+                </div>
+                
+                <!-- Engine Description -->
+                <div class="engine-description" id="engineDescription">
+                    <span id="engineDescText">Smart Analysis - Proven technical indicators</span>
                 </div>
             </div>
             
@@ -68,19 +76,19 @@
                     
                     <div class="analysis-scores">
                         <div class="score-item">
-                            <span class="score-label">Technical</span>
+                            <span class="score-label" id="xauusd-score-label-1">Technical</span>
                             <span class="score-value" id="xauusd-technical-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Structure</span>
+                            <span class="score-label" id="xauusd-score-label-2">Structure</span>
                             <span class="score-value" id="xauusd-structure-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Patterns</span>
+                            <span class="score-label" id="xauusd-score-label-3">Patterns</span>
                             <span class="score-value" id="xauusd-pattern-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Volume</span>
+                            <span class="score-label" id="xauusd-score-label-4">Volume</span>
                             <span class="score-value" id="xauusd-volume-score">--</span>
                         </div>
                     </div>
@@ -124,19 +132,19 @@
                     
                     <div class="analysis-scores">
                         <div class="score-item">
-                            <span class="score-label">Technical</span>
+                            <span class="score-label" id="usdjpy-score-label-1">Technical</span>
                             <span class="score-value" id="usdjpy-technical-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Structure</span>
+                            <span class="score-label" id="usdjpy-score-label-2">Structure</span>
                             <span class="score-value" id="usdjpy-structure-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Patterns</span>
+                            <span class="score-label" id="usdjpy-score-label-3">Patterns</span>
                             <span class="score-value" id="usdjpy-pattern-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Volume</span>
+                            <span class="score-label" id="usdjpy-score-label-4">Volume</span>
                             <span class="score-value" id="usdjpy-volume-score">--</span>
                         </div>
                     </div>
@@ -180,19 +188,19 @@
         
                     <div class="analysis-scores">
                         <div class="score-item">
-                            <span class="score-label">Technical</span>
+                            <span class="score-label" id="btcusd-score-label-1">Technical</span>
                             <span class="score-value" id="btcusd-technical-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Structure</span>
+                            <span class="score-label" id="btcusd-score-label-2">Structure</span>
                             <span class="score-value" id="btcusd-structure-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Patterns</span>
+                            <span class="score-label" id="btcusd-score-label-3">Patterns</span>
                             <span class="score-value" id="btcusd-pattern-score">--</span>
                         </div>
                         <div class="score-item">
-                            <span class="score-label">Volume</span>
+                            <span class="score-label" id="btcusd-score-label-4">Volume</span>
                             <span class="score-value" id="btcusd-volume-score">--</span>
                         </div>
                     </div>
@@ -232,7 +240,7 @@
                         <span class="signal-time">Starting</span>
                     </div>
                     <div class="signal-details">
-                        Dual-engine analyzer initializing... Looking for high-quality opportunities with both v1 and v2.
+                        Triple-engine analyzer initializing... Looking for high-quality opportunities with v1, v2, and v3.
                     </div>
                 </div>
             </div>
@@ -272,6 +280,10 @@
                         <span class="comparison-label">v2 Confidence:</span>
                         <span class="comparison-value" id="v2AvgConfidence">--</span>
                     </div>
+                    <div class="comparison-item">
+                        <span class="comparison-label">v3 Confidence:</span>
+                        <span class="comparison-value" id="v3AvgConfidence">--</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -280,7 +292,7 @@
         <div class="mobile-footer">
             <div class="footer-info">
                 <span>HueHue Trading Dashboard</span>
-                <span>Dual-engine analysis • Smart v1 + AI v2 • Quality signals only</span>
+                <span>Triple-engine analysis • Smart v1 + AI v2 + Simple v3 • Quality signals only</span>
             </div>
         </div>
     </div>
