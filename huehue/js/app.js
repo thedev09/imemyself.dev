@@ -212,7 +212,6 @@ class TripleEngineHueHueApp {
     updateEngineStatus(engine) {
         const signalsVersion = document.getElementById('signalsVersion');
         const performanceVersion = document.getElementById('performanceVersion');
-        const engineDescription = document.getElementById('engineDescText');
         
         if (signalsVersion) {
             signalsVersion.textContent = `(${engine})`;
@@ -222,10 +221,6 @@ class TripleEngineHueHueApp {
         if (performanceVersion) {
             performanceVersion.textContent = `(${engine})`;
             performanceVersion.className = `performance-version ${engine === 'v1' ? 'v1-active' : engine === 'v2' ? 'v2-active' : 'v3-active'}`;
-        }
-        
-        if (engineDescription) {
-            engineDescription.textContent = this.engineDescriptions[engine];
         }
         
         // Update asset cards visual indicators
@@ -417,7 +412,7 @@ class TripleEngineHueHueApp {
         const now = Date.now();
         
         if (!vpsData) {
-            this.updateVpsStatusElement('VPS Offline', 'offline');
+            this.updateVpsStatusElement('Offline', 'offline');
             return;
         }
         
@@ -426,18 +421,14 @@ class TripleEngineHueHueApp {
         const offlineThreshold = 3 * 60 * 1000; // 3 minutes
         
         if (timeSinceHeartbeat > offlineThreshold) {
-            const minutesAgo = Math.round(timeSinceHeartbeat / 60000);
-            this.updateVpsStatusElement(`VPS Offline (${minutesAgo}m ago)`, 'offline');
+            this.updateVpsStatusElement('Offline', 'offline');
         } else {
             const status = vpsData.status || 'active';
-            const engineType = vpsData.type || 'unknown';
             
             if (status === 'active') {
-                // Enhanced status with engine info
-                const statusText = engineType.includes('triple') ? 'VPS Live (Triple)' : 'VPS Live';
-                this.updateVpsStatusElement(statusText, 'online');
+                this.updateVpsStatusElement('Live', 'online');
             } else {
-                this.updateVpsStatusElement(`VPS ${status}`, 'offline');
+                this.updateVpsStatusElement('Offline', 'offline');
             }
         }
     }

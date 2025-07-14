@@ -47,6 +47,15 @@
         .filter-group {
             display: flex;
             flex-direction: column;
+            position: relative;
+        }
+
+        .filter-group select {
+            padding-right: 35px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px;
         }
 
         .filter-group label {
@@ -62,6 +71,25 @@
             color: white;
             padding: 8px 12px;
             border-radius: 8px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .filter-group select option {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .filter-group input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
         }
 
         .stats-overview {
@@ -104,7 +132,7 @@
             background: rgba(255, 255, 255, 0.1);
             padding: 15px 20px;
             display: grid;
-            grid-template-columns: 120px 100px 80px 100px 100px 120px 80px;
+            grid-template-columns: 120px 100px 80px 100px 100px 120px 100px 80px;
             gap: 15px;
             font-weight: bold;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -113,7 +141,7 @@
         .table-row {
             padding: 15px 20px;
             display: grid;
-            grid-template-columns: 120px 100px 80px 100px 100px 120px 80px;
+            grid-template-columns: 120px 100px 80px 100px 100px 120px 100px 80px;
             gap: 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
@@ -132,7 +160,7 @@
             border-left: 4px solid #ff4757;
         }
 
-        .strength-badge {
+        .confidence-badge {
             background: rgba(0, 212, 255, 0.2);
             color: #00d4ff;
             padding: 4px 8px;
@@ -140,7 +168,29 @@
             font-size: 0.8em;
         }
 
-        .strength-badge.high-strength {
+        .confidence-badge.high-confidence {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .engine-badge {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .engine-badge.v1 {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        .engine-badge.v2 {
+            background: rgba(255, 107, 53, 0.2);
+            color: #ff6b35;
+        }
+
+        .engine-badge.v3 {
             background: rgba(0, 255, 136, 0.2);
             color: #00ff88;
         }
@@ -226,11 +276,21 @@
         <!-- Filters Section -->
         <div class="filters-section">
             <div class="filter-group">
+                <label>Engine</label>
+                <select id="engineFilter">
+                    <option value="all">All Engines</option>
+                    <option value="v1">v1 - Smart</option>
+                    <option value="v2">v2 - AI Enhanced</option>
+                    <option value="v3">v3 - Simple</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>Symbol</label>
                 <select id="symbolFilter">
                     <option value="all">All Symbols</option>
                     <option value="XAUUSD">XAUUSD</option>
                     <option value="USDJPY">USDJPY</option>
+                    <option value="BTCUSD">BTCUSD</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -250,12 +310,13 @@
                 <input type="date" id="dateToFilter">
             </div>
             <div class="filter-group">
-                <label>Min Strength</label>
-                <select id="strengthFilter">
-                    <option value="0">All Strengths</option>
-                    <option value="4">4+ Strong</option>
-                    <option value="5">5+ Very Strong</option>
-                    <option value="6">6 Perfect</option>
+                <label>Min Confidence</label>
+                <select id="confidenceFilter">
+                    <option value="0">All Confidence</option>
+                    <option value="50">50%+</option>
+                    <option value="65">65%+ (v3 threshold)</option>
+                    <option value="75">75%+ (v1 threshold)</option>
+                    <option value="80">80%+ (v2 threshold)</option>
                 </select>
             </div>
         </div>
@@ -267,12 +328,12 @@
                 <div class="stat-label">Total Signals</div>
             </div>
             <div class="stat-card-large">
-                <div class="stat-number" style="color: #00d4ff;" id="avgStrengthDisplay">0.0</div>
-                <div class="stat-label">Average Strength</div>
+                <div class="stat-number" style="color: #00d4ff;" id="avgConfidenceDisplay">0%</div>
+                <div class="stat-label">Average Confidence</div>
             </div>
             <div class="stat-card-large">
-                <div class="stat-number" style="color: #ffa502;" id="strongSignalsDisplay">0</div>
-                <div class="stat-label">Strong Signals (5-6)</div>
+                <div class="stat-number" style="color: #ffa502;" id="highConfidenceDisplay">0</div>
+                <div class="stat-label">High Confidence (75%+)</div>
             </div>
             <div class="stat-card-large">
                 <div class="stat-number" style="color: #ff6b35;" id="todaySignalsDisplay">0</div>
@@ -292,10 +353,11 @@
                 <div>Date & Time</div>
                 <div>Symbol</div>
                 <div>Action</div>
-                <div>Strength</div>
+                <div>Confidence</div>
                 <div>Entry Price</div>
-                <div>Conditions</div>
-                <div>Source</div>
+                <div>Stop Loss</div>
+                <div>Take Profit</div>
+                <div>Engine</div>
             </div>
             <div id="signalsTableBody">
                 <!-- Table rows will be populated here -->
@@ -306,7 +368,7 @@
         <div class="no-signals" id="noSignalsState" style="display: none;">
             <h3>📊 No Trading Signals Found</h3>
             <p>No signals match your current filters.</p>
-            <p>Try adjusting the date range or reducing the minimum strength requirement.</p>
+            <p>Try adjusting the date range or reducing the minimum confidence requirement.</p>
         </div>
 
         <!-- Pagination -->
@@ -319,24 +381,25 @@
     <script src="firebase-config.js"></script>
     <script src="js/config.js"></script>
     <script>
-        class RealSignalsHistory {
+        class TripleEngineSignalsHistory {
             constructor() {
                 this.signals = [];
                 this.filteredSignals = [];
                 this.currentPage = 1;
                 this.pageSize = 25;
                 this.firebaseStorage = null;
+                this.currentEngine = 'all';
             }
 
             async initialize() {
                 try {
-                    console.log('🚀 Initializing Real Signals History...');
+                    console.log('🚀 Initializing Triple-Engine Signals History...');
                     
                     // Wait for Firebase
                     await this.waitForFirebase();
                     
-                    // Load real signals from Firebase
-                    await this.loadRealSignals();
+                    // Load signals from all engines
+                    await this.loadAllEngineSignals();
                     
                     // Setup filters
                     this.setupFilters();
@@ -365,53 +428,72 @@
                 }
             }
 
-            async loadRealSignals() {
+            async loadAllEngineSignals() {
                 if (!this.firebaseStorage) {
                     throw new Error('Firebase storage not available');
                 }
                 
                 try {
-                    console.log('📥 Loading real signals from Firebase...');
+                    console.log('📥 Loading signals from all engines...');
                     
-                    // Load up to 500 signals from Firebase
-                    const firebaseSignals = await this.firebaseStorage.getSignals(500);
+                    const allSignals = [];
+                    const engines = ['v1', 'v2', 'v3'];
                     
-                    if (firebaseSignals && firebaseSignals.length > 0) {
-                        // Process real Firebase signals
-                        this.signals = firebaseSignals
+                    for (const engine of engines) {
+                        const collectionName = `signals_${engine}`;
+                        console.log(`Loading ${engine} signals from ${collectionName}...`);
+                        
+                        try {
+                            const signalsQuery = this.firebaseStorage.query(
+                                this.firebaseStorage.collection(this.firebaseStorage.db, collectionName),
+                                this.firebaseStorage.orderBy('timestamp', 'desc'),
+                                this.firebaseStorage.limit(200)
+                            );
+                            
+                            const querySnapshot = await this.firebaseStorage.getDocs(signalsQuery);
+                            
+                            querySnapshot.forEach((doc) => {
+                                const data = doc.data();
+                                allSignals.push({ 
+                                    id: doc.id, 
+                                    ...data,
+                                    engine: engine,
+                                    source: `${engine}_analyzer`
+                                });
+                            });
+                            
+                            console.log(`✅ Loaded ${querySnapshot.size} signals from ${engine}`);
+                            
+                        } catch (error) {
+                            console.warn(`Could not load ${engine} signals:`, error);
+                        }
+                    }
+                    
+                    if (allSignals.length > 0) {
+                        // Process and sort signals
+                        this.signals = allSignals
                             .filter(signal => {
-                                // Only include signals with required fields
                                 return signal.symbol && signal.action && signal.timestamp;
                             })
-                            .map(signal => {
-                                // Ensure all required fields exist
-                                return {
-                                    ...signal,
-                                    strength: signal.strength || 0,
-                                    entry: signal.entry || signal.price || 0,
-                                    bias: signal.bias || 'NEUTRAL',
-                                    source: signal.source || 'Firebase'
-                                };
-                            })
-                            .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+                            .sort((a, b) => b.timestamp - a.timestamp);
                         
                         this.filteredSignals = [...this.signals];
-                        console.log(`✅ Loaded ${this.signals.length} real signals from Firebase`);
+                        console.log(`✅ Total signals loaded: ${this.signals.length}`);
                         
                     } else {
-                        console.log('📊 No signals found in Firebase');
+                        console.log('📊 No signals found in any engine');
                         this.signals = [];
                         this.filteredSignals = [];
                     }
                     
                 } catch (error) {
-                    console.error('❌ Error loading signals from Firebase:', error);
+                    console.error('❌ Error loading signals:', error);
                     throw error;
                 }
             }
 
             setupFilters() {
-                const filters = ['symbolFilter', 'actionFilter', 'dateFromFilter', 'dateToFilter', 'strengthFilter'];
+                const filters = ['engineFilter', 'symbolFilter', 'actionFilter', 'dateFromFilter', 'dateToFilter', 'confidenceFilter'];
                 
                 filters.forEach(filterId => {
                     const element = document.getElementById(filterId);
@@ -434,6 +516,12 @@
 
             applyFilters() {
                 let filtered = [...this.signals];
+                
+                // Engine filter
+                const engine = document.getElementById('engineFilter')?.value;
+                if (engine && engine !== 'all') {
+                    filtered = filtered.filter(s => s.engine === engine);
+                }
                 
                 // Symbol filter
                 const symbol = document.getElementById('symbolFilter')?.value;
@@ -461,10 +549,10 @@
                     filtered = filtered.filter(s => s.timestamp <= toTime);
                 }
                 
-                // Strength filter
-                const minStrength = parseInt(document.getElementById('strengthFilter')?.value || '0');
-                if (minStrength > 0) {
-                    filtered = filtered.filter(s => (s.strength || 0) >= minStrength);
+                // Confidence filter
+                const minConfidence = parseInt(document.getElementById('confidenceFilter')?.value || '0');
+                if (minConfidence > 0) {
+                    filtered = filtered.filter(s => (s.confidence || 0) >= minConfidence);
                 }
                 
                 this.filteredSignals = filtered;
@@ -492,14 +580,14 @@
                     new Date(s.timestamp).toDateString() === today
                 );
                 
-                const strongSignals = signals.filter(s => (s.strength || 0) >= 5);
+                const highConfidenceSignals = signals.filter(s => (s.confidence || 0) >= 75);
                 
-                const avgStrength = signals.length > 0 ? 
-                    signals.reduce((sum, s) => sum + (s.strength || 0), 0) / signals.length : 0;
+                const avgConfidence = signals.length > 0 ? 
+                    signals.reduce((sum, s) => sum + (s.confidence || 0), 0) / signals.length : 0;
                 
                 this.updateElement('totalSignals', signals.length);
-                this.updateElement('avgStrengthDisplay', avgStrength.toFixed(1));
-                this.updateElement('strongSignalsDisplay', strongSignals.length);
+                this.updateElement('avgConfidenceDisplay', `${avgConfidence.toFixed(1)}%`);
+                this.updateElement('highConfidenceDisplay', highConfidenceSignals.length);
                 this.updateElement('todaySignalsDisplay', todaySignals.length);
             }
 
@@ -522,19 +610,18 @@
                     const date = new Date(signal.timestamp);
                     const dateTimeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
                     
-                    const strengthBadge = signal.strength >= 5 ? 'high-strength' : '';
-                    
-                    // Count active conditions
-                    const conditionsCount = this.countActiveConditions(signal.conditions);
+                    const confidenceBadge = signal.confidence >= 75 ? 'high-confidence' : '';
+                    const engineClass = signal.engine || 'unknown';
                     
                     row.innerHTML = `
                         <div data-label="Date & Time">${dateTimeStr}</div>
                         <div data-label="Symbol">${signal.symbol}</div>
                         <div data-label="Action">${signal.action}</div>
-                        <div data-label="Strength"><span class="strength-badge ${strengthBadge}">${signal.strength || 0}/6</span></div>
+                        <div data-label="Confidence"><span class="confidence-badge ${confidenceBadge}">${signal.confidence || 0}%</span></div>
                         <div data-label="Entry Price">${this.formatPrice(signal.symbol, signal.entry)}</div>
-                        <div data-label="Conditions">${conditionsCount}/6</div>
-                        <div data-label="Source">${signal.source || 'Firebase'}</div>
+                        <div data-label="Stop Loss">${this.formatPrice(signal.symbol, signal.stopLoss)}</div>
+                        <div data-label="Take Profit">${this.formatPrice(signal.symbol, signal.takeProfit)}</div>
+                        <div data-label="Engine"><span class="engine-badge ${engineClass}">${signal.engine || 'unknown'}</span></div>
                     `;
                     
                     // Add click handler for signal details
@@ -546,18 +633,6 @@
                 });
                 
                 signalsTable.style.display = 'block';
-            }
-
-            countActiveConditions(conditions) {
-                if (!conditions || typeof conditions !== 'object') return 0;
-                
-                let count = 0;
-                for (const [key, condition] of Object.entries(conditions)) {
-                    if (condition && (condition.longCondition || condition.shortCondition)) {
-                        count++;
-                    }
-                }
-                return count;
             }
 
             renderPagination() {
@@ -606,7 +681,13 @@
             }
 
             showSignalDetails(signal) {
-                alert(`Signal Details:\n\nSymbol: ${signal.symbol}\nAction: ${signal.action}\nStrength: ${signal.strength}/6\nBias: ${signal.bias}\nEntry: ${this.formatPrice(signal.symbol, signal.entry)}\nTime: ${new Date(signal.timestamp).toLocaleString()}`);
+                const engineNames = {
+                    v1: 'Smart Analysis',
+                    v2: 'AI Enhanced',
+                    v3: 'Simple & Effective'
+                };
+                
+                alert(`Signal Details:\n\nSymbol: ${signal.symbol}\nAction: ${signal.action}\nConfidence: ${signal.confidence}%\nEngine: ${engineNames[signal.engine] || signal.engine}\nEntry: ${this.formatPrice(signal.symbol, signal.entry)}\nStop Loss: ${this.formatPrice(signal.symbol, signal.stopLoss)}\nTake Profit: ${this.formatPrice(signal.symbol, signal.takeProfit)}\nTime: ${new Date(signal.timestamp).toLocaleString()}`);
             }
 
             showNoSignalsState(message = null) {
@@ -641,6 +722,8 @@
                     return `$${price.toFixed(2)}`;
                 } else if (symbol === 'USDJPY') {
                     return `¥${price.toFixed(3)}`;
+                } else if (symbol === 'BTCUSD') {
+                    return `$${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
                 }
                 return price.toFixed(4);
             }
@@ -659,7 +742,7 @@
 
         // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', async () => {
-            const signalsHistory = new RealSignalsHistory();
+            const signalsHistory = new TripleEngineSignalsHistory();
             await signalsHistory.initialize();
         });
     </script>

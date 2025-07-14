@@ -82,13 +82,13 @@ body {
     animation: pulse-red 2s infinite;
 }
 
+
 /* Triple Engine Toggle */
 .triple-toggle-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     margin: 15px 0;
-    gap: 10px;
 }
 
 .triple-toggle {
