@@ -12,6 +12,97 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
     <style>
+        /* Fixed Menu Button - Clean three lines without background box */
+        .menu-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            padding: 6px;
+            cursor: pointer;
+            font-size: 1.4em;
+            transition: all 0.3s ease;
+            outline: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Fix header-right alignment */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-btn:hover {
+            color: #00d4ff;
+            transform: scale(1.1);
+        }
+
+        /* Three lines for hamburger menu */
+        .menu-btn span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: currentColor;
+            transition: all 0.3s ease;
+        }
+
+        /* Menu dropdown positioning */
+        .menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(26, 26, 46, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            min-width: 220px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .menu-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Clean menu items without emojis, left aligned */
+        .menu-item {
+            display: block;
+            padding: 14px 18px;
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .menu-item:hover {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .menu-item:first-child {
+            border-radius: 12px 12px 0 0;
+        }
+
         /* Live Trading Specific Styles */
         .live-trades-section {
             background: rgba(255, 255, 255, 0.05);
@@ -291,13 +382,16 @@
                     <span class="vps-status" id="vpsStatus">Loading...</span>
                     
                     <div class="nav-menu">
-                        <button class="menu-btn" id="menuBtn">☰</button>
+                        <button class="menu-btn" id="menuBtn">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
                         <div class="menu-dropdown" id="menuDropdown">
-                            <a href="trade-management.html" class="menu-item">💼 Active Trades</a>
-                            <a href="trade-analytics.html" class="menu-item">📊 Performance Analytics</a>
-                            <a href="trade-history.html" class="menu-item">📈 Trade History</a>
-                            <a href="#" class="menu-item" onclick="window.location.reload()">🔄 Refresh Dashboard</a>
-                            <a href="#" class="menu-item" onclick="alert('HueHue v4.0 - Live Trading System')">ℹ️ About</a>
+                            <a href="trade-management.html" class="menu-item">Active Trades</a>
+                            <a href="trade-analytics.html" class="menu-item">Performance Analytics</a>
+                            <a href="#" class="menu-item" onclick="window.location.reload()">Refresh Dashboard</a>
+                            <a href="#" class="menu-item" onclick="alert('HueHue v4.0 - Live Trading System')">About</a>
                         </div>
                     </div>
                 </div>
@@ -507,13 +601,13 @@
             <div class="signals-header-right">
             <span class="active-trades-count" id="activeTradesCount">Loading...</span>
             <!-- KEEP: Button goes to trade management for managing active trades -->
-            <a href="trade-management.html" class="manage-trades-btn">💼 Manage All</a>
+            <a href="trade-management.html" class="manage-trades-btn">Manage All</a>
             </div>
             </div>
             
             <div class="signals-list" id="liveTradesList">
                 <div class="no-active-trades">
-                    <h3>🤖 Triple-Engine System Active</h3>
+                    <h3>Triple-Engine System Active</h3>
                     <p>No active trades currently. The system is monitoring market conditions and will open trades when high-quality opportunities are found.</p>
                 </div>
             </div>
@@ -524,7 +618,7 @@
             <div class="performance-header">
     <h3>Trading Performance <span class="performance-version" id="performanceVersion">(v1)</span></h3>
     <!-- CHANGE THIS: From "Active Trades" to "Analytics" and redirect to trade-analytics.html -->
-    <a href="trade-analytics.html" class="view-all-btn">📊 Analytics</a>
+    <a href="trade-analytics.html" class="view-all-btn">Analytics</a>
 </div>
             <div class="performance-grid">
                 <div class="perf-card">
