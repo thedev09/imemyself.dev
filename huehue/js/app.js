@@ -1,4 +1,4 @@
-// app.js - Enhanced HueHue Application with TRIPLE-ENGINE v1/v2/v3 Toggle System
+// app.js - Enhanced HueHue Application with LIVE TRADING DASHBOARD
 class TripleEngineHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
@@ -18,16 +18,23 @@ class TripleEngineHueHueApp {
         // TRIPLE ENGINE STATE
         this.currentEngine = 'v1'; // Default to v1 (Smart)
         this.engineListeners = {
-            v1: { analysis: [], signals: [] },
-            v2: { analysis: [], signals: [] },
-            v3: { analysis: [], signals: [] }
+            v1: { analysis: [], signals: [], trades: [] },
+            v2: { analysis: [], signals: [], trades: [] },
+            v3: { analysis: [], signals: [], trades: [] }
+        };
+        
+        // ✅ NEW: Live Trading State
+        this.activeTrades = {
+            v1: [],
+            v2: [],
+            v3: []
         };
         
         // Performance stats for all three engines
         this.performanceStats = {
-            v1: { signalsToday: 0, totalSignals: 0, avgConfidence: 0, qualitySignals: 0 },
-            v2: { signalsToday: 0, totalSignals: 0, avgConfidence: 0, qualitySignals: 0 },
-            v3: { signalsToday: 0, totalSignals: 0, avgConfidence: 0, qualitySignals: 0 }
+            v1: { trades: 0, totalPips: 0, winRate: 0, activeTrades: 0 },
+            v2: { trades: 0, totalPips: 0, winRate: 0, activeTrades: 0 },
+            v3: { trades: 0, totalPips: 0, winRate: 0, activeTrades: 0 }
         };
         
         // Engine descriptions
@@ -37,12 +44,12 @@ class TripleEngineHueHueApp {
             v3: 'Simple & Effective - Fast signals + lower thresholds'
         };
         
-        CONFIG.log('info', '🤖 Triple-Engine HueHue Application initialized (v1 Smart + v2 AI + v3 Simple)');
+        CONFIG.log('info', '🤖 Triple-Engine Live Trading Dashboard initialized (v1 Smart + v2 AI + v3 Simple)');
     }
 
     async initialize() {
         try {
-            CONFIG.log('info', '🚀 Starting Triple-Engine HueHue initialization...');
+            CONFIG.log('info', '🚀 Starting Triple-Engine Live Trading Dashboard...');
             
             // Initialize UI first
             this.updateConnectionStatus('connecting');
@@ -57,11 +64,17 @@ class TripleEngineHueHueApp {
             // Setup real-time listeners for current engine
             await this.setupTripleEngineListeners();
             
+            // ✅ NEW: Setup live trades listeners
+            await this.setupLiveTradesListeners();
+            
             // Setup VPS status monitoring
             await this.setupVpsStatusMonitoring();
             
             // Load initial data for current engine
             await this.loadInitialData();
+            
+            // ✅ NEW: Load initial live trades
+            await this.loadInitialTrades();
             
             // Start update loops
             this.startUpdateLoops();
@@ -71,7 +84,7 @@ class TripleEngineHueHueApp {
             
             this.isRunning = true;
             this.updateConnectionStatus('connected');
-            CONFIG.log('info', '✅ Triple-Engine HueHue application ready!');
+            CONFIG.log('info', '✅ Triple-Engine Live Trading Dashboard ready!');
             CONFIG.log('info', `🎯 Current Engine: ${this.currentEngine} (${this.getEngineDisplayName(this.currentEngine)})`);
             
             return true;
@@ -94,7 +107,7 @@ class TripleEngineHueHueApp {
         
         if (window.firebaseStorage) {
             this.firebaseStorage = window.firebaseStorage;
-            CONFIG.log('info', '🔥 Firebase connected to Triple-Engine App');
+            CONFIG.log('info', '🔥 Firebase connected to Live Trading Dashboard');
         } else {
             throw new Error('Firebase not available');
         }
@@ -155,8 +168,12 @@ class TripleEngineHueHueApp {
             // Setup new listeners
             await this.setupCurrentEngineListeners();
             
+            // ✅ NEW: Switch live trades view
+            await this.switchLiveTradesEngine(newEngine);
+            
             // Reload data for new engine
             await this.loadInitialData();
+            await this.loadInitialTrades();
             
             // Update performance stats
             this.updatePerformanceDisplay();
@@ -173,6 +190,277 @@ class TripleEngineHueHueApp {
             this.currentEngine = oldEngine;
             this.updateEngineStatus(oldEngine);
         }
+    }
+
+    // ✅ NEW: Setup Live Trades Listeners
+    async setupLiveTradesListeners() {
+        if (!this.firebaseStorage) return;
+        
+        CONFIG.log('info', '📊 Setting up live trades listeners for all engines...');
+        
+        const engines = ['v1', 'v2', 'v3'];
+        
+        for (const engine of engines) {
+            try {
+                const tradesRef = this.firebaseStorage.collection(this.firebaseStorage.db, `active_trades_${engine}`);
+                const tradesQuery = this.firebaseStorage.query(
+                    tradesRef,
+                    this.firebaseStorage.orderBy('openTime', 'desc')
+                );
+                
+                const unsubscribe = this.firebaseStorage.onSnapshot(tradesQuery, (snapshot) => {
+                    const trades = [];
+                    snapshot.forEach((doc) => {
+                        trades.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    this.activeTrades[engine] = trades;
+                    
+                    // Update display if this is the current engine
+                    if (engine === this.currentEngine) {
+                        this.updateLiveTradesDisplay(trades);
+                    }
+                    
+                    // Update performance stats
+                    this.updateTradePerformanceStats(engine, trades);
+                    
+                    CONFIG.log('debug', `📊 ${engine} live trades updated: ${trades.length} active`);
+                });
+                
+                this.engineListeners[engine].trades.push({ unsubscribe });
+                
+            } catch (error) {
+                CONFIG.log('error', `Error setting up ${engine} trades listener:`, error);
+            }
+        }
+        
+        CONFIG.log('info', '✅ Live trades listeners ready for all engines');
+    }
+
+    // ✅ NEW: Switch Live Trades Engine View
+    async switchLiveTradesEngine(engine) {
+        CONFIG.log('info', `🔄 Switching live trades view to ${engine}`);
+        
+        const trades = this.activeTrades[engine] || [];
+        this.updateLiveTradesDisplay(trades);
+        
+        // Update trades version indicator
+        const tradesVersion = document.getElementById('tradesVersion');
+        if (tradesVersion) {
+            tradesVersion.textContent = `(${engine})`;
+        }
+    }
+
+    // ✅ NEW: Update Live Trades Display
+    updateLiveTradesDisplay(trades) {
+    const liveTradesList = document.getElementById('liveTradesList');
+    const activeTradesCount = document.getElementById('activeTradesCount');
+    
+    if (!liveTradesList) return;
+    
+    // Update active trades count
+    if (activeTradesCount) {
+        activeTradesCount.textContent = `${trades.length} active`;
+    }
+    
+    if (trades.length === 0) {
+        liveTradesList.innerHTML = `
+            <div class="no-active-trades">
+                <h3>🤖 ${this.getEngineDisplayName(this.currentEngine)} Active</h3>
+                <p>No active trades currently. The system is monitoring market conditions and will open trades when high-quality opportunities are found.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // FIXED: Sort trades by openTime (newest first)
+    const sortedTrades = [...trades].sort((a, b) => {
+        const timeA = a.openTime || a.timestamp || Date.now();
+        const timeB = b.openTime || b.timestamp || Date.now();
+        return timeB - timeA; // Newest first
+    });
+    
+    liveTradesList.innerHTML = sortedTrades.map(trade => this.createLiveTradeElement(trade)).join('');
+}
+
+    // ✅ NEW: Create Live Trade Element
+    createLiveTradeElement(trade) {
+    try {
+        const currentPrice = trade.currentPrice || trade.entry;
+        const pnl = this.calculateTradePnL(trade, currentPrice);
+        const progress = this.calculateTradeProgress(trade, currentPrice);
+        const duration = this.formatTradeDuration(Date.now() - trade.openTime);
+        
+        const pnlClass = pnl.pips > 0 ? 'profit' : pnl.pips < 0 ? 'loss' : 'neutral';
+        const pnlSign = pnl.pips > 0 ? '+' : '';
+        
+        return `
+            <div class="live-trade-item ${pnlClass}" onclick="this.showTradeDetails('${trade.id}')">
+                <!-- REMOVED: <div class="engine-indicator ${trade.engine}">${trade.engine.toUpperCase()}</div> -->
+                
+                <div class="trade-header">
+                    <div class="trade-symbol-direction">
+                        <span class="trade-symbol">${trade.symbol}</span>
+                        <span class="trade-direction ${trade.direction.toLowerCase()}">${trade.direction}</span>
+                    </div>
+                    <div class="trade-pnl ${pnlClass}">
+                        ${pnlSign}${pnl.pips.toFixed(1)} pips
+                    </div>
+                </div>
+                
+                <div class="trade-details">
+                    Entry: ${this.formatPrice(trade.symbol, trade.entry)} → Current: ${this.formatPrice(trade.symbol, currentPrice)}
+                    <br>SL: ${this.formatPrice(trade.symbol, trade.stopLoss)} | TP: ${this.formatPrice(trade.symbol, trade.takeProfit)} | ${duration}
+                </div>
+                
+                <div class="trade-progress">
+                    <div class="trade-progress-bar ${pnlClass}" style="width: ${progress}%"></div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        CONFIG.log('error', 'Error creating live trade element:', error);
+        return '';
+    }
+}
+
+    // ✅ NEW: Calculate Trade P&L
+    calculateTradePnL(trade, currentPrice) {
+        let pips = 0;
+        const priceDiff = trade.direction === 'BUY' ? 
+            currentPrice - trade.entry : 
+            trade.entry - currentPrice;
+        
+        if (trade.symbol === 'XAUUSD') {
+            pips = priceDiff * 10;
+        } else if (trade.symbol === 'USDJPY') {
+            pips = priceDiff * 100;
+        } else if (trade.symbol === 'BTCUSD') {
+            pips = priceDiff;
+        }
+        
+        const percentage = (priceDiff / trade.entry) * 100;
+        
+        return { pips, percentage };
+    }
+
+    // ✅ NEW: Calculate Trade Progress to TP/SL
+    calculateTradeProgress(trade, currentPrice) {
+        const entry = trade.entry;
+        const stopLoss = trade.stopLoss;
+        const takeProfit = trade.takeProfit;
+        
+        if (!entry || !stopLoss || !takeProfit) return 50;
+        
+        const totalDistance = Math.abs(takeProfit - stopLoss);
+        let currentDistance;
+        
+        if (trade.direction === 'BUY') {
+            currentDistance = currentPrice - stopLoss;
+        } else {
+            currentDistance = stopLoss - currentPrice;
+        }
+        
+        const progress = (currentDistance / totalDistance) * 100;
+        return Math.max(0, Math.min(100, progress));
+    }
+
+    // ✅ NEW: Update Trade Performance Stats
+    updateTradePerformanceStats(engine, trades) {
+        this.performanceStats[engine].activeTrades = trades.length;
+        
+        // Calculate total P&L for active trades
+        let totalPips = 0;
+        trades.forEach(trade => {
+            const currentPrice = trade.currentPrice || trade.entry;
+            const pnl = this.calculateTradePnL(trade, currentPrice);
+            totalPips += pnl.pips;
+        });
+        
+        this.performanceStats[engine].totalPips = totalPips;
+        
+        // Update display if this is current engine
+        if (engine === this.currentEngine) {
+            this.updatePerformanceDisplay();
+        }
+    }
+
+    // ✅ NEW: Load Initial Trades
+    async loadInitialTrades() {
+        if (!this.firebaseStorage) return;
+        
+        CONFIG.log('info', '📊 Loading initial live trades...');
+        
+        try {
+            const engine = this.currentEngine;
+            const tradesRef = this.firebaseStorage.collection(this.firebaseStorage.db, `active_trades_${engine}`);
+            const querySnapshot = await this.firebaseStorage.getDocs(tradesRef);
+            
+            const trades = [];
+            querySnapshot.forEach((doc) => {
+                trades.push({ id: doc.id, ...doc.data() });
+            });
+            
+            this.activeTrades[engine] = trades;
+            this.updateLiveTradesDisplay(trades);
+            this.updateTradePerformanceStats(engine, trades);
+            
+            CONFIG.log('info', `📊 Loaded ${trades.length} active trades for ${engine}`);
+        } catch (error) {
+            CONFIG.log('error', 'Error loading initial trades:', error);
+        }
+    }
+
+    // SETUP TRIPLE-ENGINE LISTENERS
+    async setupTripleEngineListeners() {
+        if (!this.firebaseStorage) return;
+        
+        CONFIG.log('info', '📡 Setting up triple-engine real-time listeners...');
+        
+        // Setup listeners for current engine
+        await this.setupCurrentEngineListeners();
+        
+        CONFIG.log('info', '✅ Triple-engine listeners ready');
+    }
+
+    // SETUP LISTENERS FOR CURRENT ENGINE
+    async setupCurrentEngineListeners() {
+        const engine = this.currentEngine;
+        const analysisCollection = `analysis_${engine}`;
+        
+        CONFIG.log('info', `📡 Setting up ${engine} listeners (${analysisCollection})...`);
+        
+        // Listen for analysis updates for each asset
+        ['XAUUSD', 'USDJPY', 'BTCUSD'].forEach(symbol => {
+            const analysisRef = this.firebaseStorage.doc(this.firebaseStorage.db, analysisCollection, symbol);
+            
+            const analysisUnsub = this.firebaseStorage.onSnapshot(analysisRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    CONFIG.log('info', `📊 ${symbol} ${engine} analysis update: ${data.bias} (${data.confidence}%)`);
+                    this.handleAnalysisUpdate(symbol, data, engine);
+                }
+            });
+            
+            this.engineListeners[engine].analysis.push({ symbol, unsubscribe: analysisUnsub });
+        });
+        
+        // Listen for price updates (shared collection)
+        ['XAUUSD', 'USDJPY', 'BTCUSD'].forEach(symbol => {
+            const priceRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
+            
+            const priceUnsub = this.firebaseStorage.onSnapshot(priceRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    CONFIG.log('debug', `💰 ${symbol} price update: ${data.price}`);
+                    this.handlePriceUpdate(symbol, data);
+                }
+            });
+            
+            this.unsubscribers.push(priceUnsub);
+        });
+        
+        CONFIG.log('info', `✅ ${engine} listeners setup complete`);
     }
 
     // Get engine display name
@@ -210,12 +498,12 @@ class TripleEngineHueHueApp {
 
     // UPDATE ENGINE STATUS UI
     updateEngineStatus(engine) {
-        const signalsVersion = document.getElementById('signalsVersion');
+        const tradesVersion = document.getElementById('tradesVersion');
         const performanceVersion = document.getElementById('performanceVersion');
         
-        if (signalsVersion) {
-            signalsVersion.textContent = `(${engine})`;
-            signalsVersion.className = `signals-version ${engine === 'v1' ? 'v1-active' : engine === 'v2' ? 'v2-active' : 'v3-active'}`;
+        if (tradesVersion) {
+            tradesVersion.textContent = `(${engine})`;
+            tradesVersion.className = `signals-version ${engine === 'v1' ? 'v1-active' : engine === 'v2' ? 'v2-active' : 'v3-active'}`;
         }
         
         if (performanceVersion) {
@@ -265,76 +553,6 @@ class TripleEngineHueHueApp {
         });
     }
 
-    // SETUP TRIPLE-ENGINE LISTENERS
-    async setupTripleEngineListeners() {
-        if (!this.firebaseStorage) return;
-        
-        CONFIG.log('info', '📡 Setting up triple-engine real-time listeners...');
-        
-        // Setup listeners for current engine
-        await this.setupCurrentEngineListeners();
-        
-        CONFIG.log('info', '✅ Triple-engine listeners ready');
-    }
-
-    // SETUP LISTENERS FOR CURRENT ENGINE
-    async setupCurrentEngineListeners() {
-        const engine = this.currentEngine;
-        const analysisCollection = `analysis_${engine}`;
-        const signalsCollection = `signals_${engine}`;
-        
-        CONFIG.log('info', `📡 Setting up ${engine} listeners (${analysisCollection}, ${signalsCollection})...`);
-        
-        // Listen for analysis updates for each asset
-        ['XAUUSD', 'USDJPY', 'BTCUSD'].forEach(symbol => {
-            const analysisRef = this.firebaseStorage.doc(this.firebaseStorage.db, analysisCollection, symbol);
-            
-            const analysisUnsub = this.firebaseStorage.onSnapshot(analysisRef, (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
-                    CONFIG.log('info', `📊 ${symbol} ${engine} analysis update: ${data.bias} (${data.confidence}%)`);
-                    this.handleAnalysisUpdate(symbol, data, engine);
-                }
-            });
-            
-            this.engineListeners[engine].analysis.push({ symbol, unsubscribe: analysisUnsub });
-        });
-        
-        // Listen for price updates (shared collection)
-        ['XAUUSD', 'USDJPY', 'BTCUSD'].forEach(symbol => {
-            const priceRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol);
-            
-            const priceUnsub = this.firebaseStorage.onSnapshot(priceRef, (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
-                    CONFIG.log('debug', `💰 ${symbol} price update: ${data.price}`);
-                    this.handlePriceUpdate(symbol, data);
-                }
-            });
-            
-            this.unsubscribers.push(priceUnsub);
-        });
-        
-        // Listen for signals for current engine
-        const signalsQuery = this.firebaseStorage.query(
-            this.firebaseStorage.collection(this.firebaseStorage.db, signalsCollection),
-            this.firebaseStorage.orderBy('timestamp', 'desc'),
-            this.firebaseStorage.limit(20)
-        );
-        
-        const signalsUnsub = this.firebaseStorage.onSnapshot(signalsQuery, (snapshot) => {
-            const signals = [];
-            snapshot.forEach((doc) => {
-                signals.push({ id: doc.id, ...doc.data() });
-            });
-            this.handleSignalsUpdate(signals, engine);
-        });
-        
-        this.engineListeners[engine].signals.push({ unsubscribe: signalsUnsub });
-        
-        CONFIG.log('info', `✅ ${engine} listeners setup complete`);
-    }
-
     // CLEANUP ENGINE LISTENERS
     cleanupEngineListeners(engine) {
         CONFIG.log('info', `🧹 Cleaning up ${engine} listeners...`);
@@ -347,13 +565,13 @@ class TripleEngineHueHueApp {
         });
         this.engineListeners[engine].analysis = [];
         
-        // Cleanup signals listeners
-        this.engineListeners[engine].signals.forEach(listener => {
+        // Cleanup trades listeners
+        this.engineListeners[engine].trades.forEach(listener => {
             if (listener.unsubscribe) {
                 listener.unsubscribe();
             }
         });
-        this.engineListeners[engine].signals = [];
+        this.engineListeners[engine].trades = [];
         
         CONFIG.log('info', `✅ ${engine} listeners cleaned up`);
     }
@@ -362,7 +580,7 @@ class TripleEngineHueHueApp {
     async setupVpsStatusMonitoring() {
         if (!this.firebaseStorage) return;
         
-        CONFIG.log('info', '📡 Setting up VPS status monitoring for triple-engine...');
+        CONFIG.log('info', '📡 Setting up VPS status monitoring...');
         
         try {
             const vpsRef = this.firebaseStorage.doc(this.firebaseStorage.db, 'system', 'generator');
@@ -381,7 +599,7 @@ class TripleEngineHueHueApp {
             }, 30000);
             
             await this.checkVpsStatus();
-            CONFIG.log('info', '✅ VPS status monitoring active (triple-engine aware)');
+            CONFIG.log('info', '✅ VPS status monitoring active');
             
         } catch (error) {
             CONFIG.log('error', 'Error setting up VPS monitoring:', error);
@@ -441,7 +659,7 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // HANDLE ANALYSIS UPDATES (enhanced for triple-engine)
+    // HANDLE ANALYSIS UPDATES
     handleAnalysisUpdate(symbol, analysis, sourceEngine) {
         try {
             // Only process if this update is for the currently active engine
@@ -489,16 +707,13 @@ class TripleEngineHueHueApp {
             
             CONFIG.log('debug', `Updated ${symbol} ${sourceEngine} confidence to ${analysis.confidence}%`);
             
-            // Update analysis scores (engine-specific handling)
+            // Update analysis scores
             if (analysis.analysis) {
                 this.updateAnalysisScores(symbolLower, analysis.analysis, sourceEngine);
             }
             
             // Update trade levels
             this.updateTradeLevels(symbolLower, analysis);
-            
-            // Show engine-specific features
-            this.updateEngineFeatures(symbolLower, analysis, sourceEngine);
             
             CONFIG.log('info', `✅ ${symbol} ${sourceEngine} display updated successfully`);
             
@@ -536,69 +751,36 @@ class TripleEngineHueHueApp {
                 changeElement.className = `price-change ${priceData.change >= 0 ? 'price-up' : 'price-down'}`;
             }
             
+            // ✅ NEW: Update live trades with new prices
+            this.updateLiveTradesWithPrice(symbol, priceData.price);
+            
         } catch (error) {
             CONFIG.log('error', `Error updating ${symbol} price:`, error);
         }
     }
 
-    // HANDLE SIGNALS UPDATE (enhanced for triple-engine)
-    handleSignalsUpdate(signals, sourceEngine) {
-        try {
-            // Only process if this update is for the currently active engine
-            if (sourceEngine !== this.currentEngine) {
-                CONFIG.log('debug', `Ignoring signals from ${sourceEngine} (current: ${this.currentEngine})`);
-                return;
-            }
+    // ✅ NEW: Update Live Trades with New Price
+    updateLiveTradesWithPrice(symbol, newPrice) {
+        const currentTrades = this.activeTrades[this.currentEngine] || [];
+        const symbolTrades = currentTrades.filter(trade => trade.symbol === symbol);
+        
+        if (symbolTrades.length > 0) {
+            // Update current price for these trades
+            symbolTrades.forEach(trade => {
+                trade.currentPrice = newPrice;
+            });
             
-            CONFIG.log('info', `📡 Received ${signals.length} ${sourceEngine} signals`);
-            
-            const signalsList = document.getElementById('signalsList');
-            if (!signalsList) return;
-            
-            signalsList.innerHTML = '';
-            
-            const recentSignals = signals.slice(0, 10);
-            
-            if (recentSignals.length === 0) {
-                const engineName = this.getEngineDisplayName(sourceEngine);
-                signalsList.innerHTML = `
-                    <div class="signal-item">
-                        <div class="signal-meta">
-                            <span class="signal-asset">SYSTEM</span>
-                            <span class="signal-time">Monitoring</span>
-                        </div>
-                        <div class="signal-details">
-                            ${engineName} monitoring market conditions... No quality signals found yet.
-                        </div>
-                    </div>
-                `;
-            } else {
-                recentSignals.forEach(signal => {
-                    try {
-                        const element = this.createSignalElement(signal, sourceEngine);
-                        if (element) signalsList.appendChild(element);
-                    } catch (error) {
-                        CONFIG.log('error', 'Error creating signal element:', error);
-                    }
-                });
-            }
-            
-            this.updateElementSafely('signalCount', `${recentSignals.length} signals`);
-            this.updatePerformanceStats(signals, sourceEngine);
-            
-        } catch (error) {
-            CONFIG.log('error', `Error handling ${sourceEngine} signals update:`, error);
+            // Refresh display if we're viewing this engine
+            this.updateLiveTradesDisplay(currentTrades);
         }
     }
 
     // UI UPDATE METHODS
-
     updateConfidenceDisplay(symbolLower, confidence) {
         const confidenceElement = document.getElementById(`${symbolLower}-confidence`);
         if (confidenceElement && confidence !== undefined && confidence !== null) {
             confidenceElement.textContent = `${confidence}%`;
             
-            // Force display update
             confidenceElement.style.opacity = '0.5';
             setTimeout(() => {
                 confidenceElement.style.opacity = '1';
@@ -614,8 +796,6 @@ class TripleEngineHueHueApp {
             }
             
             CONFIG.log('debug', `Confidence display updated: ${symbolLower} = ${confidence}%`);
-        } else {
-            CONFIG.log('warn', `Failed to update confidence: element=${!!confidenceElement}, confidence=${confidence}`);
         }
     }
 
@@ -636,20 +816,17 @@ class TripleEngineHueHueApp {
     }
 
     updateAnalysisScores(symbolLower, analysis, sourceEngine) {
-        // Handle different score structures for different engines
         if (sourceEngine === 'v3') {
-            // v3 has: technical, momentum, trend, volatility
             const scores = [
                 { id: `${symbolLower}-technical-score`, value: analysis.technical },
-                { id: `${symbolLower}-structure-score`, value: analysis.momentum }, // momentum maps to structure slot
-                { id: `${symbolLower}-pattern-score`, value: analysis.trend }, // trend maps to pattern slot
-                { id: `${symbolLower}-volume-score`, value: analysis.volatility } // volatility maps to volume slot
+                { id: `${symbolLower}-structure-score`, value: analysis.momentum },
+                { id: `${symbolLower}-pattern-score`, value: analysis.trend },
+                { id: `${symbolLower}-volume-score`, value: analysis.volatility }
             ];
             scores.forEach(score => {
                 this.updateScoreDisplay(score.id, score.value, sourceEngine);
             });
         } else {
-            // v1/v2 have: technical, structure, patterns, volume
             const scores = [
                 { id: `${symbolLower}-technical-score`, value: analysis.technical },
                 { id: `${symbolLower}-structure-score`, value: analysis.structure },
@@ -676,7 +853,6 @@ class TripleEngineHueHueApp {
                 element.classList.add('score-low');
             }
             
-            // Add engine-specific styling
             if (sourceEngine === 'v2') {
                 element.classList.add('ai-enhanced-score');
             } else if (sourceEngine === 'v3') {
@@ -700,91 +876,7 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // UPDATE ENGINE-SPECIFIC FEATURES
-    updateEngineFeatures(symbolLower, analysis, sourceEngine) {
-        const assetCard = document.querySelector(`[data-symbol="${symbolLower}"]`);
-        if (assetCard) {
-            if (sourceEngine === 'v2' && analysis.aiFeatures) {
-                // Add AI-specific tooltip
-                const aiInfo = `Session: ${analysis.aiFeatures.sessionWeight}x | Volatility: ${analysis.aiFeatures.volatilityRegime} | Confluence: ${analysis.aiFeatures.confluence}%`;
-                assetCard.setAttribute('title', aiInfo);
-            } else if (sourceEngine === 'v3') {
-                // Add v3-specific tooltip
-                const v3Info = `Simple & Effective Analysis | Lower Thresholds | Fast Signals`;
-                assetCard.setAttribute('title', v3Info);
-            } else {
-                // Remove tooltip for v1
-                assetCard.removeAttribute('title');
-            }
-        }
-    }
-
-    createSignalElement(signal, sourceEngine) {
-        try {
-            if (!signal?.symbol) return null;
-            
-            const signalDiv = document.createElement('div');
-            signalDiv.className = `signal-item signal-${(signal.action || 'neutral').toLowerCase()}`;
-            
-            // Add engine-specific signal styling
-            if (sourceEngine === 'v2') {
-                signalDiv.classList.add('ai-signal');
-            } else if (sourceEngine === 'v3') {
-                signalDiv.classList.add('v3-signal');
-            }
-            
-            const timestamp = signal.timestamp || Date.now();
-            const timeStr = new Date(timestamp).toLocaleTimeString();
-            const dateStr = new Date(timestamp).toLocaleDateString();
-            
-            const confidence = signal.confidence || 0;
-            const thresholds = { v1: 75, v2: 80, v3: 65 };
-            const isHighQuality = confidence >= thresholds[sourceEngine];
-            
-            if (isHighQuality && (signal.type?.includes('SIGNAL'))) {
-                // High quality signal
-                const engineEmojis = { v1: '🧠', v2: '🤖', v3: '⚡' };
-                const engineNames = { v1: 'Smart', v2: 'AI Enhanced', v3: 'Simple & Effective' };
-                
-                const engineBadge = engineEmojis[sourceEngine];
-                const engineName = engineNames[sourceEngine];
-                
-                signalDiv.className += ' professional';
-                signalDiv.innerHTML = `
-                    <div class="signal-meta">
-                        <span class="signal-asset">
-                            ${signal.symbol} ${signal.action} 
-                            <span class="signal-confidence">${confidence}%</span>
-                            ${engineBadge}
-                        </span>
-                        <span class="signal-time">${dateStr} ${timeStr}</span>
-                    </div>
-                    <div class="signal-details">
-                        Entry: ${CONFIG.formatPrice(signal.symbol, signal.entry)} | SL: ${CONFIG.formatPrice(signal.symbol, signal.stopLoss)} | TP: ${CONFIG.formatPrice(signal.symbol, signal.takeProfit)} | ${engineName} Analysis
-                    </div>
-                `;
-            } else {
-                // Monitoring update
-                signalDiv.innerHTML = `
-                    <div class="signal-meta">
-                        <span class="signal-asset">${signal.symbol || 'SYSTEM'}</span>
-                        <span class="signal-time">${timeStr}</span>
-                    </div>
-                    <div class="signal-details">
-                        ${signal.note || `${sourceEngine.toUpperCase()} Monitoring - ${confidence}% confidence`}
-                    </div>
-                `;
-            }
-            
-            return signalDiv;
-            
-        } catch (error) {
-            CONFIG.log('error', 'Error creating signal element:', error);
-            return null;
-        }
-    }
-
-    // LOAD INITIAL DATA (enhanced for current engine)
+    // LOAD INITIAL DATA
     async loadInitialData() {
         const assets = ['XAUUSD', 'USDJPY', 'BTCUSD'];
         const engine = this.currentEngine;
@@ -798,7 +890,6 @@ class TripleEngineHueHueApp {
                 this.updateConfidenceDisplay(symbol.toLowerCase(), 0);
                 
                 if (this.firebaseStorage) {
-                    // Get latest analysis for current engine
                     const analysisDoc = await this.firebaseStorage.getDoc(
                         this.firebaseStorage.doc(this.firebaseStorage.db, analysisCollection, symbol)
                     );
@@ -808,7 +899,6 @@ class TripleEngineHueHueApp {
                         this.handleAnalysisUpdate(symbol, analysis, engine);
                     }
                     
-                    // Get latest price (shared)
                     const priceDoc = await this.firebaseStorage.getDoc(
                         this.firebaseStorage.doc(this.firebaseStorage.db, 'prices', symbol)
                     );
@@ -824,102 +914,18 @@ class TripleEngineHueHueApp {
                 this.handleAssetError(symbol, error);
             }
         }
-        
-        // Load historical signals for current engine
-        await this.loadHistoricalSignals();
     }
 
-    async loadHistoricalSignals() {
-        if (!this.firebaseStorage) return;
-        
-        const engine = this.currentEngine;
-        const signalsCollection = `signals_${engine}`;
-        
-        try {
-            const signalsQuery = this.firebaseStorage.query(
-                this.firebaseStorage.collection(this.firebaseStorage.db, signalsCollection),
-                this.firebaseStorage.orderBy('timestamp', 'desc'),
-                this.firebaseStorage.limit(20)
-            );
-            const querySnapshot = await this.firebaseStorage.getDocs(signalsQuery);
-            
-            const signals = [];
-            querySnapshot.forEach((doc) => {
-                signals.push({ id: doc.id, ...doc.data() });
-            });
-            
-            if (signals.length > 0) {
-                this.handleSignalsUpdate(signals, engine);
-            }
-        } catch (error) {
-            CONFIG.log('warn', `Could not load historical ${engine} signals:`, error);
-        }
-    }
-
-    // PERFORMANCE STATS (enhanced for triple-engine)
-    updatePerformanceStats(signals, sourceEngine) {
-        if (!signals?.length) {
-            this.resetPerformanceDisplay(sourceEngine);
-            return;
-        }
-        
-        try {
-            const today = new Date().toDateString();
-            const thisWeek = this.getWeekStart();
-            
-            // Different confidence thresholds for each engine
-            const confidenceThresholds = { v1: 75, v2: 80, v3: 65 };
-            const minConfidence = confidenceThresholds[sourceEngine];
-            
-            const qualitySignals = signals.filter(s => {
-                return s.confidence >= minConfidence;
-            });
-            
-            const todaySignals = qualitySignals.filter(s => 
-                s.timestamp && new Date(s.timestamp).toDateString() === today
-            );
-            
-            const weekSignals = qualitySignals.filter(s => 
-                s.timestamp && new Date(s.timestamp) >= thisWeek
-            );
-            
-            // Update stats for current engine
-            this.performanceStats[sourceEngine] = {
-                signalsToday: todaySignals.length,
-                totalSignals: qualitySignals.length,
-                avgConfidence: qualitySignals.length > 0 ? 
-                    qualitySignals.reduce((sum, s) => sum + (s.confidence || 0), 0) / qualitySignals.length : 0,
-                qualitySignals: qualitySignals.length
-            };
-            
-            // Update display for current engine only
-            if (sourceEngine === this.currentEngine) {
-                this.updatePerformanceDisplay();
-            }
-            
-        } catch (error) {
-            CONFIG.log('error', `Error updating ${sourceEngine} performance stats:`, error);
-        }
-    }
-
-    resetPerformanceDisplay(sourceEngine) {
-        if (sourceEngine === this.currentEngine) {
-            this.updateElementSafely('dailySignals', '0');
-            this.updateElementSafely('weeklySignals', '0');
-            this.updateElementSafely('avgConfidence', '0%');
-            this.updateElementSafely('qualitySignals', '0');
-        }
-    }
-
+    // ✅ NEW: Update Performance Display (Enhanced for Trading)
     updatePerformanceDisplay() {
         const stats = this.performanceStats[this.currentEngine];
         
-        this.updateElementSafely('dailySignals', stats.signalsToday);
-        this.updateElementSafely('weeklySignals', stats.totalSignals);
-        this.updateElementSafely('avgConfidence', `${stats.avgConfidence.toFixed(0)}%`);
-        this.updateElementSafely('qualitySignals', stats.qualitySignals);
+        this.updateElementSafely('dailyTrades', stats.trades);
+        this.updateElementSafely('activeTrades', stats.activeTrades);
+        this.updateElementSafely('totalPnL', `${stats.totalPips > 0 ? '+' : ''}${stats.totalPips.toFixed(1)}`);
+        this.updateElementSafely('winRate', `${stats.winRate.toFixed(1)}%`);
         
-        // Show comparison if multiple engines have data
+        // Update comparison if multiple engines have data
         this.updateEngineComparison();
     }
 
@@ -929,22 +935,14 @@ class TripleEngineHueHueApp {
         const v3Stats = this.performanceStats.v3;
         const comparisonElement = document.getElementById('engineComparison');
         
-        // Show comparison if at least 2 engines have data
-        const enginesWithData = [v1Stats, v2Stats, v3Stats].filter(stats => stats.totalSignals > 0);
+        const enginesWithData = [v1Stats, v2Stats, v3Stats].filter(stats => stats.trades > 0);
         
         if (comparisonElement && enginesWithData.length >= 2) {
-            this.updateElementSafely('v1AvgConfidence', `${v1Stats.avgConfidence.toFixed(1)}%`);
-            this.updateElementSafely('v2AvgConfidence', `${v2Stats.avgConfidence.toFixed(1)}%`);
-            this.updateElementSafely('v3AvgConfidence', `${v3Stats.avgConfidence.toFixed(1)}%`);
+            this.updateElementSafely('v1Performance', `${v1Stats.totalPips.toFixed(1)} pips`);
+            this.updateElementSafely('v2Performance', `${v2Stats.totalPips.toFixed(1)} pips`);
+            this.updateElementSafely('v3Performance', `${v3Stats.totalPips.toFixed(1)} pips`);
             comparisonElement.style.display = 'block';
         }
-    }
-
-    getWeekStart() {
-        const now = new Date();
-        const dayOfWeek = now.getDay();
-        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        return new Date(now.setDate(diff));
     }
 
     // UPDATE LOOPS AND UI MANAGEMENT
@@ -1022,12 +1020,9 @@ class TripleEngineHueHueApp {
     }
 
     initializeUI() {
-        CONFIG.log('info', '🎨 Triple-Engine Professional UI initialized');
+        CONFIG.log('info', '🎨 Live Trading Dashboard UI initialized');
         
-        // Set initial engine status
         this.updateEngineStatus(this.currentEngine);
-        
-        // Update score labels for current engine
         this.updateScoreLabels(this.currentEngine);
     }
 
@@ -1070,6 +1065,31 @@ class TripleEngineHueHueApp {
         }
     }
 
+    // ✅ NEW: Helper Methods for Trading
+    formatPrice(symbol, price) {
+        if (!price || price === 0) return '--';
+        
+        if (symbol === 'XAUUSD') {
+            return `${price.toFixed(2)}`;
+        } else if (symbol === 'USDJPY') {
+            return `¥${price.toFixed(3)}`;
+        } else if (symbol === 'BTCUSD') {
+            return `${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+        }
+        return price.toFixed(4);
+    }
+
+    formatTradeDuration(ms) {
+        const hours = Math.floor(ms / (60 * 60 * 1000));
+        const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        } else {
+            return `${minutes}m`;
+        }
+    }
+
     updateElementSafely(elementId, value) {
         try {
             const element = document.getElementById(elementId);
@@ -1092,7 +1112,6 @@ class TripleEngineHueHueApp {
         try {
             this.isRunning = false;
             
-            // Clear intervals
             Object.values(this.updateIntervals).forEach(interval => {
                 clearInterval(interval);
             });
@@ -1102,21 +1121,19 @@ class TripleEngineHueHueApp {
                 this.vpsStatusInterval = null;
             }
             
-            // Cleanup all engine listeners
             Object.keys(this.engineListeners).forEach(engine => {
                 this.cleanupEngineListeners(engine);
             });
             
-            // Cleanup shared listeners
             this.unsubscribers.forEach(unsubscribe => {
                 if (typeof unsubscribe === 'function') {
                     unsubscribe();
                 }
             });
             
-            CONFIG.log('info', '🛑 Triple-Engine application stopped');
+            CONFIG.log('info', '🛑 Live Trading Dashboard stopped');
         } catch (error) {
-            CONFIG.log('error', 'Error stopping triple-engine application:', error);
+            CONFIG.log('error', 'Error stopping application:', error);
         }
     }
 }
@@ -1131,7 +1148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    CONFIG.log('info', '🚀 Starting Triple-Engine HueHue Application...');
+    CONFIG.log('info', '🚀 Starting Live Trading Dashboard...');
     
     try {
         tripleEngineHueHueApp = new TripleEngineHueHueApp();
@@ -1140,9 +1157,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const initialized = await tripleEngineHueHueApp.initialize();
         
         if (initialized) {
-            CONFIG.log('info', '✅ Triple-Engine HueHue is running with v1 Smart + v2 AI + v3 Simple!');
+            CONFIG.log('info', '✅ Live Trading Dashboard is running with v1 Smart + v2 AI + v3 Simple!');
         } else {
-            CONFIG.log('error', '❌ Failed to start Triple-Engine HueHue');
+            CONFIG.log('error', '❌ Failed to start Live Trading Dashboard');
         }
     } catch (error) {
         CONFIG.log('error', '❌ Critical error:', error);

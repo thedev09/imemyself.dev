@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HueHue - Trade Analytics & Performance</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        /* Same styles as before */
+        .analytics-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .analytics-header h1 {
+            color: #ffffff;
+            font-size: 2.2em;
+            margin: 0;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .back-btn {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            padding: 12px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .back-btn:hover {
+            background: #00d4ff;
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        .loading-analytics {
+            text-align: center;
+            padding: 60px;
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .loading-analytics::before {
+            content: "📊";
+            font-size: 3em;
+            display: block;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 60px;
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 71, 87, 0.2);
+        }
+
+        .error-state h3 {
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .retry-btn {
+            background: #00d4ff;
+            border: none;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .retry-btn:hover {
+            background: #00b8e6;
+            transform: translateY(-2px);
+        }
+
+        /* Engine cards and other styles remain the same */
+        .engine-overview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .engine-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid;
+            transition: all 0.3s ease;
+        }
+
+        .engine-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .engine-card.v1 { border-color: rgba(0, 255, 136, 0.4); }
+        .engine-card.v2 { border-color: rgba(0, 212, 255, 0.4); }
+        .engine-card.v3 { border-color: rgba(255, 165, 2, 0.4); }
+
+        .engine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .engine-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .engine-badge {
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .engine-badge.v1 {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .engine-badge.v2 {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .engine-badge.v3 {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffa502;
+            border: 1px solid rgba(255, 165, 2, 0.3);
+        }
+
+        .engine-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            color: #a0a0a0;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .performance-analysis {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-title {
+            color: #ffffff;
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .placeholder-content {
+            text-align: center;
+            padding: 40px;
+            color: #a0a0a0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .engine-overview {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="analytics-container">
+        <!-- Header -->
+        <div class="analytics-header">
+            <h1>📊 Trade Analytics & Performance</h1>
+            <a href="index.html" class="back-btn">← Back to Dashboard</a>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-analytics" id="loadingState">
+            <h3>Loading Analytics Data...</h3>
+            <p>Connecting to Firebase and fetching performance data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div class="error-state" id="errorState" style="display: none;">
+            <h3>❌ Unable to Load Analytics</h3>
+            <p id="errorMessage">Failed to connect to Firebase. Please check your connection.</p>
+            <button class="retry-btn" onclick="location.reload()">Retry</button>
+        </div>
+
+        <!-- Analytics Content -->
+        <div id="analyticsContent" style="display: none;">
+            <!-- Engine Performance Overview -->
+            <div class="engine-overview">
+                <div class="engine-card v1">
+                    <div class="engine-header">
+                        <span class="engine-name">Smart Analysis</span>
+                        <span class="engine-badge v1">v1</span>
+                    </div>
+                    <div class="engine-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #00ff88;" id="v1-total-pips">+0</div>
+                            <div class="metric-label">Total Pips</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #00d4ff;" id="v1-win-rate">0%</div>
+                            <div class="metric-label">Win Rate</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #ffa502;" id="v1-total-trades">0</div>
+                            <div class="metric-label">Total Trades</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #ff6b35;" id="v1-active-trades">0</div>
+                            <div class="metric-label">Active Now</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="engine-card v2">
+                    <div class="engine-header">
+                        <span class="engine-name">AI Enhanced</span>
+                        <span class="engine-badge v2">v2</span>
+                    </div>
+                    <div class="engine-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #00ff88;" id="v2-total-pips">+0</div>
+                            <div class="metric-label">Total Pips</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #00d4ff;" id="v2-win-rate">0%</div>
+                            <div class="metric-label">Win Rate</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #ffa502;" id="v2-total-trades">0</div>
+                            <div class="metric-label">Total Trades</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #ff6b35;" id="v2-active-trades">0</div>
+                            <div class="metric-label">Active Now</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="engine-card v3">
+                    <div class="engine-header">
+                        <span class="engine-name">Simple & Effective</span>
+                        <span class="engine-badge v3">v3</span>
+                    </div>
+                    <div class="engine-metrics">
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #00ff88;" id="v3-total-pips">+0</div>
+                            <div class="metric-label">Total Pips</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #00d4ff;" id="v3-win-rate">0%</div>
+                            <div class="metric-label">Win Rate</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #ffa502;" id="v3-total-trades">0</div>
+                            <div class="metric-label">Total Trades</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" style="color: #ff6b35;" id="v3-active-trades">0</div>
+                            <div class="metric-label">Active Now</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Placeholder sections for future features -->
+            <div class="performance-analysis">
+                <h2 class="section-title">📈 Performance Charts</h2>
+                <div class="placeholder-content">
+                    <h3>📊 Charts Coming Soon</h3>
+                    <p>Performance charts and detailed analytics will be available in the next update.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="js/config.js"></script>
+    <script>
+        // Simplified Trade Analytics - FIXED VERSION
+        class TradeAnalytics {
+            constructor() {
+                this.firebaseStorage = null;
+                this.retryCount = 0;
+                this.maxRetries = 3;
+            }
+
+            async initialize() {
+                try {
+                    console.log('📊 Initializing Trade Analytics...');
+                    
+                    // Wait for Firebase with timeout
+                    await this.waitForFirebase();
+                    
+                    // Load analytics data
+                    await this.loadAnalyticsData();
+                    
+                    // Show content
+                    this.showContent();
+                    
+                    console.log('✅ Trade Analytics loaded successfully');
+                } catch (error) {
+                    console.error('❌ Error loading analytics:', error);
+                    this.showError(error.message);
+                }
+            }
+
+            async waitForFirebase() {
+                console.log('⏳ Waiting for Firebase...');
+                
+                return new Promise((resolve, reject) => {
+                    let attempts = 0;
+                    const maxAttempts = 50; // 5 seconds
+                    
+                    const checkFirebase = () => {
+                        attempts++;
+                        
+                        if (window.firebaseStorage) {
+                            this.firebaseStorage = window.firebaseStorage;
+                            console.log('✅ Firebase connected to Analytics');
+                            resolve();
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error('Firebase connection timeout'));
+                        } else {
+                            setTimeout(checkFirebase, 100);
+                        }
+                    };
+                    
+                    checkFirebase();
+                });
+            }
+
+            async loadAnalyticsData() {
+                console.log('📊 Loading analytics data...');
+                
+                // Load data for all engines
+                const engines = ['v1', 'v2', 'v3'];
+                
+                for (const engine of engines) {
+                    await this.loadEngineData(engine);
+                }
+            }
+
+            async loadEngineData(engine) {
+                try {
+                    console.log(`📊 Loading data for ${engine}...`);
+                    
+                    // Load trade history
+                    const historyRef = this.firebaseStorage.collection(this.firebaseStorage.db, 'trade_history');
+                    const historyQuery = this.firebaseStorage.query(
+                        historyRef,
+                        this.firebaseStorage.orderBy('closeTime', 'desc'),
+                        this.firebaseStorage.limit(100)
+                    );
+                    const historySnapshot = await this.firebaseStorage.getDocs(historyQuery);
+
+                    let totalPips = 0;
+                    let wins = 0;
+                    let totalTrades = 0;
+
+                    historySnapshot.forEach(doc => {
+                        const trade = doc.data();
+                        if (trade.engine === engine && trade.pnlPips !== undefined) {
+                            totalTrades++;
+                            totalPips += trade.pnlPips;
+                            if (trade.pnlPips > 0) wins++;
+                        }
+                    });
+
+                    // Load active trades
+                    const activeRef = this.firebaseStorage.collection(this.firebaseStorage.db, `active_trades_${engine}`);
+                    const activeSnapshot = await this.firebaseStorage.getDocs(activeRef);
+                    const activeTrades = activeSnapshot.size;
+
+                    // Update UI
+                    const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
+                    
+                    this.updateElement(`${engine}-total-pips`, `${totalPips >= 0 ? '+' : ''}${totalPips.toFixed(1)}`);
+                    this.updateElement(`${engine}-win-rate`, `${winRate.toFixed(1)}%`);
+                    this.updateElement(`${engine}-total-trades`, totalTrades.toString());
+                    this.updateElement(`${engine}-active-trades`, activeTrades.toString());
+
+                    console.log(`✅ ${engine} data loaded: ${totalTrades} trades, ${totalPips.toFixed(1)} pips, ${winRate.toFixed(1)}% win rate`);
+                } catch (error) {
+                    console.error(`❌ Error loading ${engine} data:`, error);
+                    // Set fallback values
+                    this.updateElement(`${engine}-total-pips`, '+0.0');
+                    this.updateElement(`${engine}-win-rate`, '0.0%');
+                    this.updateElement(`${engine}-total-trades`, '0');
+                    this.updateElement(`${engine}-active-trades`, '0');
+                }
+            }
+
+            updateElement(id, value) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            showContent() {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'none';
+                document.getElementById('analyticsContent').style.display = 'block';
+            }
+
+            showError(message) {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('analyticsContent').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+                document.getElementById('errorMessage').textContent = message;
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📊 Trade Analytics page loaded');
+            
+            const analytics = new TradeAnalytics();
+            analytics.initialize();
+        });
+    </script>
+</body>
+</html>

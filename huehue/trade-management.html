@@ -7,55 +7,509 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/trades.css">
     <style>
-        /* Fix header layout to match signals-history.html */
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
         .history-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
 
+        /* Header */
         .history-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         .history-header h1 {
             color: #ffffff;
-            font-size: 1.8em;
+            font-size: 2.2em;
+            font-weight: 700;
             margin: 0;
-            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         .back-btn {
             background: rgba(0, 212, 255, 0.2);
             border: 1px solid #00d4ff;
             color: #00d4ff;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 25px;
             text-decoration: none;
+            font-weight: 600;
             transition: all 0.3s ease;
-            font-size: 0.9em;
-            font-weight: 500;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         .back-btn:hover {
             background: #00d4ff;
             color: #000;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
-        /* Fix dropdown styling */
+        /* Navigation */
+        .page-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #a0a0a0;
+            background: transparent;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .nav-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .nav-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Sections */
+        .active-trades-section,
+        .trade-history-section,
+        .performance-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            color: #ffffff;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .section-title::before {
+            content: "📊";
+            font-size: 1.2em;
+        }
+
+        .trade-history-section .section-title::before {
+            content: "📈";
+        }
+
+        .performance-section .section-title::before {
+            content: "🎯";
+        }
+
+        /* =================================
+           DYNAMIC GRID SYSTEM FOR ACTIVE TRADES
+           ================================= */
+
+        .trades-grid {
+            display: grid;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        /* Single trade - full width */
+        .trades-grid.single-trade {
+            grid-template-columns: 1fr;
+        }
+
+        /* Two or more trades - 2x2 grid */
+        .trades-grid.multi-trade {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* =================================
+           DESKTOP ACTIVE TRADE CARD REDESIGN
+           ================================= */
+
+        @media (min-width: 769px) {
+            .active-trade-card {
+                background: rgba(255, 255, 255, 0.08);
+                border-radius: 16px;
+                padding: 24px;
+                border: 2px solid;
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s ease;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto auto auto auto auto;
+                gap: 16px;
+                min-height: 320px;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            .active-trade-card:hover {
+                background: rgba(255, 255, 255, 0.12);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            }
+
+            .active-trade-card.buy {
+                border-color: rgba(0, 255, 136, 0.4);
+            }
+
+            .active-trade-card.sell {
+                border-color: rgba(255, 71, 87, 0.4);
+            }
+
+            /* Desktop Layout Structure */
+            .desktop-header {
+                grid-column: 1 / 3;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+
+            .desktop-symbol {
+                font-size: 1.4em;
+                font-weight: bold;
+                color: #ffffff;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            .desktop-engine-direction {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .engine-badge-desktop {
+                padding: 4px 8px;
+                border-radius: 8px;
+                font-size: 0.75em;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            .engine-badge-desktop.v1 {
+                background: rgba(0, 212, 255, 0.2);
+                color: #00d4ff;
+            }
+
+            .engine-badge-desktop.v2 {
+                background: rgba(255, 107, 53, 0.2);
+                color: #ff6b35;
+            }
+
+            .engine-badge-desktop.v3 {
+                background: rgba(0, 255, 136, 0.2);
+                color: #00ff88;
+            }
+
+            .direction-badge-desktop {
+                padding: 6px 12px;
+                border-radius: 12px;
+                font-weight: bold;
+                font-size: 0.8em;
+                text-transform: uppercase;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            .direction-badge-desktop.buy {
+                background: linear-gradient(135deg, #00ff88, #00cc6a);
+                color: #000;
+            }
+
+            .direction-badge-desktop.sell {
+                background: linear-gradient(135deg, #ff4757, #ff3742);
+                color: #fff;
+            }
+
+            /* Grid positioning */
+            .desktop-entry { grid-column: 1; grid-row: 2; }
+            .desktop-current { grid-column: 2; grid-row: 2; }
+            .desktop-duration { grid-column: 1; grid-row: 3; }
+            .desktop-confidence { grid-column: 2; grid-row: 3; }
+            .desktop-pips { grid-column: 1 / 3; grid-row: 4; }
+            .desktop-progress { grid-column: 1 / 3; grid-row: 5; }
+            .desktop-sl { grid-column: 1; grid-row: 6; }
+            .desktop-tp { grid-column: 2; grid-row: 6; }
+
+            /* Pips display */
+            .desktop-pips {
+                text-align: center;
+                padding: 16px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 12px;
+                margin: 8px 0;
+            }
+
+            .desktop-pips-value {
+                font-size: 1.8em;
+                font-weight: bold;
+                margin-bottom: 4px;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            .desktop-pips-value.profit { color: #00ff88; }
+            .desktop-pips-value.loss { color: #ff4757; }
+
+            .desktop-pips-percentage {
+                font-size: 1em;
+                color: #a0a0a0;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            /* ✅ FIXED: Simplified Progress Bar */
+            .desktop-progress {
+                padding: 12px 16px;
+                background: rgba(255, 255, 255, 0.03);
+                border-radius: 10px;
+                margin: 4px 0;
+            }
+
+            .progress-container {
+                position: relative;
+                height: 8px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+                overflow: visible;
+            }
+
+            .progress-track {
+                position: absolute;
+                height: 100%;
+                border-radius: 4px;
+                transition: all 0.3s ease;
+            }
+
+            .progress-track.profit {
+                background: linear-gradient(90deg, #ff4757, #ffa502, #00ff88);
+            }
+
+            .progress-track.loss {
+                background: linear-gradient(90deg, #ff4757, #ffa502);
+            }
+
+            .progress-markers {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                top: 0;
+            }
+
+            /* ✅ FIXED: Only Entry marker */
+            .progress-marker.entry {
+                position: absolute;
+                width: 3px;
+                height: 16px;
+                background: #00d4ff;
+                border-radius: 2px;
+                top: -4px;
+                z-index: 3;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            }
+
+            /* ✅ FIXED: Only SL and TP labels */
+            .progress-labels {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 8px;
+                font-size: 0.7em;
+                color: #a0a0a0;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            /* Detail items */
+            .desktop-detail-item {
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 10px;
+                padding: 12px;
+                text-align: center;
+            }
+
+            .desktop-detail-label {
+                color: #a0a0a0;
+                font-size: 0.8em;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 6px;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+
+            .desktop-detail-value {
+                font-size: 1.1em;
+                font-weight: 600;
+                color: #ffffff;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+        }
+
+        /* =================================
+           TRADE HISTORY TABLE - FIXED FONT & WIDTH
+           ================================= */
+
+        .history-table {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-table-inner {
+            width: 100%;
+            min-width: 900px;
+        }
+
+        .history-header-row {
+            background: rgba(255, 255, 255, 0.1);
+            display: grid;
+            grid-template-columns: 1fr 2fr 1.5fr 1.5fr 1.2fr 1.2fr 1fr 1.5fr;
+            gap: 12px;
+            padding: 16px 12px;
+            font-weight: 600;
+            font-size: 0.8em;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .history-trade-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1.5fr 1.5fr 1.2fr 1.2fr 1fr 1.5fr;
+            gap: 12px;
+            padding: 16px 12px;
+            font-size: 0.85em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            align-items: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .history-trade-row:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .history-trade-row.profit {
+            border-left: 4px solid #00ff88;
+        }
+
+        .history-trade-row.loss {
+            border-left: 4px solid #ff4757;
+        }
+
+        .history-cell {
+            color: #ffffff;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .history-cell.symbol {
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .history-cell.date-time {
+            font-size: 0.75em;
+            color: #d0d0d0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .history-cell.price {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.8em;
+        }
+
+        .history-cell.pips {
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .history-cell.pips.profit {
+            color: #00ff88;
+        }
+
+        .history-cell.pips.loss {
+            color: #ff4757;
+        }
+
+        .history-cell.duration {
+            font-size: 0.8em;
+            color: #d0d0d0;
+        }
+
+        .history-cell.reason {
+            font-size: 0.75em;
+            color: #a0a0a0;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-align: center;
+            max-width: fit-content;
+        }
+
+        /* Enhanced Filters */
+        .history-filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .history-filters select {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
             min-width: 120px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
@@ -75,79 +529,114 @@
         .history-filters select option {
             background: #1a1a2e;
             color: white;
-            padding: 10px;
+            padding: 8px;
         }
 
-        /* Improve trade cards */
-        .active-trade-card, .history-trade-card {
+        /* ✅ FIXED: Triple Engine Performance Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .engine-stats-card {
             background: rgba(255, 255, 255, 0.08);
             border-radius: 16px;
             padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid;
-            position: relative;
-            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
+            border-left: 4px solid;
         }
 
-        .active-trade-card:hover, .history-trade-card:hover {
+        .engine-stats-card.v1 {
+            border-left-color: #00d4ff;
+        }
+
+        .engine-stats-card.v2 {
+            border-left-color: #ff6b35;
+        }
+
+        .engine-stats-card.v3 {
+            border-left-color: #00ff88;
+        }
+
+        .engine-stats-card:hover {
+            transform: translateY(-3px);
             background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-2px);
         }
 
-        /* Fix active trades section */
-        .section-title {
-            color: #ffffff;
-            font-size: 1.4em;
-            margin-bottom: 20px;
-            font-weight: 600;
+        .engine-stats-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .section-title::before {
-            content: "📊";
-            font-size: 1.2em;
-        }
-
-        .trade-history-section .section-title::before {
-            content: "📈";
-        }
-
-        .performance-section .section-title::before {
-            content: "🎯";
-        }
-
-        /* Improve spacing */
-        .active-trades-section,
-        .trade-history-section,
-        .performance-section {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        /* Fix no-trades message */
-        .no-trades {
-            text-align: center;
-            padding: 60px 20px;
-            color: #a0a0a0;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .no-trades h3 {
+        .engine-stats-name {
+            font-size: 1em;
+            font-weight: 600;
             color: #ffffff;
-            margin-bottom: 10px;
-            font-size: 1.2em;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        /* Loading spinner improvement */
+        .engine-stats-badge {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .engine-stats-badge.v1 {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        .engine-stats-badge.v2 {
+            background: rgba(255, 107, 53, 0.2);
+            color: #ff6b35;
+        }
+
+        .engine-stats-badge.v3 {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .engine-stats-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .engine-stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .engine-stat-label {
+            font-size: 0.8em;
+            color: #a0a0a0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .engine-stat-value {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .engine-stat-value.pips {
+            color: #00ff88;
+        }
+
+        .engine-stat-value.pips.negative {
+            color: #ff4757;
+        }
+
+        /* Loading States */
         .loading-spinner {
             text-align: center;
             padding: 40px;
@@ -155,6 +644,8 @@
             background: rgba(0, 212, 255, 0.05);
             border-radius: 12px;
             border: 1px solid rgba(0, 212, 255, 0.2);
+            grid-column: span 2;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         .loading-spinner::before {
@@ -169,20 +660,100 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        .no-trades {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0a0a0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            grid-column: span 2;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .no-trades h3 {
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* =================================
+           MOBILE RESPONSIVE
+           ================================= */
+
+        @media (max-width: 768px) {
+            .history-container {
+                padding: 10px;
+            }
+
+            .history-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .page-navigation {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .history-filters {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .trades-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* ✅ MOBILE: Horizontal scroll for trade history */
+            .history-table {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            .history-table-inner {
+                min-width: 800px !important;
+            }
+
+            .history-header-row,
+            .history-trade-row {
+                grid-template-columns: 70px 140px 90px 90px 80px 80px 60px 100px !important;
+                gap: 8px !important;
+                padding: 12px 8px !important;
+            }
+
+            .history-cell {
+                font-size: 0.75em !important;
+            }
+
+            /* ✅ MOBILE: Stack engine stats vertically */
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="history-container">
-        <!-- Fixed Header Layout -->
+        <!-- Header -->
         <div class="history-header">
             <h1>💼 Trade Management</h1>
             <a href="index.html" class="back-btn">← Back to Dashboard</a>
         </div>
 
+        <!-- Navigation Between Pages -->
+        <div class="page-navigation">
+            <a href="trade-management.html" class="nav-btn active">💼 Live Trades</a>
+            <a href="trade-analytics.html" class="nav-btn">📊 Analytics</a>
+        </div>
+
         <!-- Active Trades Section -->
         <div class="active-trades-section">
             <h2 class="section-title">Active Trades</h2>
-            <div id="activeTradesContainer" class="trades-container">
+            <div id="activeTradesContainer" class="trades-grid">
                 <div class="loading-spinner">Loading active trades...</div>
             </div>
         </div>
@@ -202,17 +773,109 @@
                     <option value="profit">Profit Only</option>
                     <option value="loss">Loss Only</option>
                 </select>
+                <select id="timeFilter">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+                <select id="symbolFilter">
+                    <option value="all">All Symbols</option>
+                    <option value="XAUUSD">XAUUSD</option>
+                    <option value="USDJPY">USDJPY</option>
+                    <option value="BTCUSD">BTCUSD</option>
+                </select>
             </div>
-            <div id="tradeHistoryContainer" class="trades-container">
-                <div class="loading-spinner">Loading trade history...</div>
+            
+            <!-- ✅ FIXED: Trade History Table with proper width and font -->
+            <div class="history-table" id="tradeHistoryTable">
+                <div class="history-table-inner">
+                    <div class="history-header-row">
+                        <div>Symbol</div>
+                        <div>Open Date/Time</div>
+                        <div>Open Price</div>
+                        <div>Close Price</div>
+                        <div>Take Profit</div>
+                        <div>Stop Loss</div>
+                        <div>Duration</div>
+                        <div>Reason</div>
+                    </div>
+                    <div id="tradeHistoryContainer">
+                        <div class="loading-spinner">Loading trade history...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Performance Stats -->
+        <!-- ✅ FIXED: Triple Engine Performance Stats -->
         <div class="performance-section">
             <h2 class="section-title">Performance Statistics</h2>
             <div id="performanceStats" class="stats-grid">
-                <div class="loading-spinner">Calculating performance...</div>
+                <!-- v1 Engine Stats -->
+                <div class="engine-stats-card v1" id="v1StatsCard">
+                    <div class="engine-stats-header">
+                        <div class="engine-stats-name">Smart Analysis</div>
+                        <div class="engine-stats-badge v1">v1</div>
+                    </div>
+                    <div class="engine-stats-metrics">
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Total Pips</span>
+                            <span class="engine-stat-value pips" id="v1-total-pips">+0</span>
+                        </div>
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Win Rate</span>
+                            <span class="engine-stat-value" id="v1-win-rate">0%</span>
+                        </div>
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Total Trades</span>
+                            <span class="engine-stat-value" id="v1-total-trades">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v2 Engine Stats -->
+                <div class="engine-stats-card v2" id="v2StatsCard">
+                    <div class="engine-stats-header">
+                        <div class="engine-stats-name">AI Enhanced</div>
+                        <div class="engine-stats-badge v2">v2</div>
+                    </div>
+                    <div class="engine-stats-metrics">
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Total Pips</span>
+                            <span class="engine-stat-value pips" id="v2-total-pips">+0</span>
+                        </div>
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Win Rate</span>
+                            <span class="engine-stat-value" id="v2-win-rate">0%</span>
+                        </div>
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Total Trades</span>
+                            <span class="engine-stat-value" id="v2-total-trades">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v3 Engine Stats -->
+                <div class="engine-stats-card v3" id="v3StatsCard">
+                    <div class="engine-stats-header">
+                        <div class="engine-stats-name">Simple & Effective</div>
+                        <div class="engine-stats-badge v3">v3</div>
+                    </div>
+                    <div class="engine-stats-metrics">
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Total Pips</span>
+                            <span class="engine-stat-value pips" id="v3-total-pips">+0</span>
+                        </div>
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Win Rate</span>
+                            <span class="engine-stat-value" id="v3-win-rate">0%</span>
+                        </div>
+                        <div class="engine-stat-item">
+                            <span class="engine-stat-label">Total Trades</span>
+                            <span class="engine-stat-value" id="v3-total-trades">0</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

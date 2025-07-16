@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>HueHue - One Sattebaazi Stop!</title>
+    <title>HueHue - Live Trading Dashboard</title>
     <link rel="stylesheet" href="css/main.css">
     <meta name="theme-color" content="#0f0f23">
     <meta name="mobile-web-app-capable" content="yes">
@@ -12,96 +12,50 @@
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
     <style>
-        /* FIXED: Navigation Menu Styles */
-        .nav-menu {
-            position: relative;
-            display: inline-block;
-        }
-
-        .menu-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.2em;
-            transition: all 0.3s ease;
-        }
-
-        .menu-btn:hover {
-            background: rgba(0, 212, 255, 0.2);
-            border-color: #00d4ff;
-        }
-
-        .menu-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: rgba(26, 26, 46, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            min-width: 200px;
+        /* Live Trading Specific Styles */
+        .live-trades-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
             backdrop-filter: blur(10px);
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
         }
 
-        .menu-dropdown.active {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .menu-item {
-            display: block;
-            padding: 12px 16px;
-            color: #ffffff;
-            text-decoration: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .menu-item:hover {
-            background: rgba(0, 212, 255, 0.2);
-            color: #00d4ff;
-        }
-
-        .menu-item:last-child {
-            border-bottom: none;
-        }
-
-        /* FIXED: Header layout - proper positioning */
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .header-left {
-            flex: 0 0 auto;
-        }
-
-        .header-right {
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        /* Performance Header with Trade Management Button */
-        .performance-header {
+        .live-trades-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .trade-management-btn {
+        .live-trades-header h2 {
+            color: #ffffff;
+            font-size: 1.4em;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .live-indicator {
+            color: #00ff88;
+            font-size: 0.7em;
+            font-weight: 500;
+            background: rgba(0, 255, 136, 0.2);
+            padding: 2px 8px;
+            border-radius: 8px;
+            margin-left: 8px;
+            animation: pulse-green 2s infinite;
+        }
+
+        .active-trades-count {
+            color: #00d4ff;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+
+        .manage-trades-btn {
             background: rgba(0, 212, 255, 0.2);
             border: 1px solid #00d4ff;
             color: #00d4ff;
@@ -114,42 +68,242 @@
             white-space: nowrap;
         }
 
-        .trade-management-btn:hover {
+        .manage-trades-btn:hover {
             background: #00d4ff;
             color: #000;
             transform: translateY(-1px);
+        }
+
+        /* Live Trade Items */
+        .live-trade-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .live-trade-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(2px);
+        }
+
+        .live-trade-item.profit {
+            border-left-color: #00ff88;
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.05) 0%, rgba(255, 255, 255, 0.03) 100%);
+        }
+
+        .live-trade-item.loss {
+            border-left-color: #ff4757;
+            background: linear-gradient(90deg, rgba(255, 71, 87, 0.05) 0%, rgba(255, 255, 255, 0.03) 100%);
+        }
+
+        .live-trade-item.neutral {
+            border-left-color: #ffa502;
+        }
+
+        .trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .trade-symbol-direction {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .trade-symbol {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #ffffff;
+        }
+
+        .trade-direction {
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .trade-direction.buy {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .trade-direction.sell {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+
+        .trade-pnl {
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+
+        .trade-pnl.profit {
+            color: #00ff88;
+        }
+
+        .trade-pnl.loss {
+            color: #ff4757;
+        }
+
+        .trade-pnl.neutral {
+            color: #ffa502;
+        }
+
+        .trade-details {
+            font-size: 0.8em;
+            color: #d0d0d0;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .trade-progress {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .trade-progress-bar {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .trade-progress-bar.profit {
+            background: linear-gradient(90deg, #ffa502, #00ff88);
+        }
+
+        .trade-progress-bar.loss {
+            background: linear-gradient(90deg, #ff4757, #ffa502);
+        }
+
+        .engine-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.6em;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 6px;
+            opacity: 0.7;
+        }
+
+        .engine-indicator.v1 {
+            background: rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+        }
+
+        .engine-indicator.v2 {
+            background: rgba(255, 107, 53, 0.3);
+            color: #ff6b35;
+        }
+
+        .engine-indicator.v3 {
+            background: rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        /* Performance Summary Updates */
+        .performance-summary .performance-header h3 {
+            color: #ffffff;
+            font-size: 1.4em;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .performance-summary .perf-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .performance-summary .perf-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .no-active-trades {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0a0a0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .no-active-trades h3 {
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .live-trades-header h2 {
+                font-size: 1.2em;
+            }
+            
+            .trade-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .trade-symbol-direction {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .trade-pnl {
+                align-self: flex-end;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- FIXED: Enhanced Professional Header with Proper Navigation Layout -->
+        <!-- Enhanced Header -->
         <div class="header">
             <div class="header-top">
-                <!-- Left side: Logo only -->
                 <div class="header-left">
                     <h1>HueHue</h1>
                 </div>
                 
-                <!-- Right side: VPS Status + Navigation Menu -->
                 <div class="header-right">
-                    <!-- VPS Status -->
                     <span class="vps-status" id="vpsStatus">Loading...</span>
                     
-                    <!-- Navigation Menu -->
                     <div class="nav-menu">
                         <button class="menu-btn" id="menuBtn">☰</button>
                         <div class="menu-dropdown" id="menuDropdown">
-                            <a href="trade-management.html" class="menu-item">💼 Trade Management</a>
-                            <a href="signals-history.html" class="menu-item">📊 Signals History</a>
+                            <a href="trade-management.html" class="menu-item">💼 Active Trades</a>
+                            <a href="trade-analytics.html" class="menu-item">📊 Performance Analytics</a>
+                            <a href="trade-history.html" class="menu-item">📈 Trade History</a>
                             <a href="#" class="menu-item" onclick="window.location.reload()">🔄 Refresh Dashboard</a>
-                            <a href="#" class="menu-item" onclick="alert('HueHue v4.0 - Triple Engine Trading System')">ℹ️ About</a>
+                            <a href="#" class="menu-item" onclick="alert('HueHue v4.0 - Live Trading System')">ℹ️ About</a>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Triple Engine Toggle (centered) -->
+            <!-- Triple Engine Toggle -->
             <div class="triple-toggle-container">
                 <div class="triple-toggle" id="engineToggle">
                     <input type="radio" name="engine" id="engineV1" value="v1" checked>
@@ -165,7 +319,7 @@
                 </div>
             </div>
             
-            <!-- Session indicator - centered below toggle -->
+            <!-- Session indicator -->
             <div class="session-indicator session-active" id="sessionIndicator">
                 Loading...
             </div>
@@ -346,71 +500,66 @@
             </div>
         </div>
 
-        <!-- Enhanced Signals Section with Version Indicator -->
-        <div class="signals-section">
-            <div class="signals-header">
-                <h2>Recent Signals <span class="signals-version" id="signalsVersion">(v1)</span></h2>
-                <div class="signals-header-right">
-                    <span id="signalCount">Loading...</span>
-                    <a href="signals-history.html" class="view-all-btn">📊 View All</a>
-                </div>
+        <!-- ✅ NEW: Live Trades Section (Replaces Signals) -->
+        <div class="live-trades-section">
+            <div class="live-trades-header">
+            <h2>Live Trades <span class="live-indicator" id="liveIndicator">LIVE</span> <span class="signals-version" id="tradesVersion">(v1)</span></h2>
+            <div class="signals-header-right">
+            <span class="active-trades-count" id="activeTradesCount">Loading...</span>
+            <!-- KEEP: Button goes to trade management for managing active trades -->
+            <a href="trade-management.html" class="manage-trades-btn">💼 Manage All</a>
+            </div>
             </div>
             
-            <div class="signals-list" id="signalsList">
-                <div class="signal-item">
-                    <div class="signal-meta">
-                        <span class="signal-asset">SYSTEM</span>
-                        <span class="signal-time">Starting</span>
-                    </div>
-                    <div class="signal-details">
-                        Triple-engine analyzer initializing... Looking for high-quality opportunities with v1, v2, and v3.
-                    </div>
+            <div class="signals-list" id="liveTradesList">
+                <div class="no-active-trades">
+                    <h3>🤖 Triple-Engine System Active</h3>
+                    <p>No active trades currently. The system is monitoring market conditions and will open trades when high-quality opportunities are found.</p>
                 </div>
             </div>
         </div>
 
-        <!-- Enhanced Performance Summary with Trade Management Button -->
+        <!-- Enhanced Performance Summary -->
         <div class="performance-summary">
             <div class="performance-header">
-                <h3>Performance <span class="performance-version" id="performanceVersion">(v1)</span></h3>
-                <a href="trade-management.html" class="trade-management-btn">
-                    💼 Trade Management
-                </a>
-            </div>
+    <h3>Trading Performance <span class="performance-version" id="performanceVersion">(v1)</span></h3>
+    <!-- CHANGE THIS: From "Active Trades" to "Analytics" and redirect to trade-analytics.html -->
+    <a href="trade-analytics.html" class="view-all-btn">📊 Analytics</a>
+</div>
             <div class="performance-grid">
                 <div class="perf-card">
-                    <div class="perf-number" style="color: #00ff88;" id="dailySignals">0</div>
+                    <div class="perf-number" style="color: #00ff88;" id="dailyTrades">0</div>
                     <div class="perf-label">Today</div>
                 </div>
                 <div class="perf-card">
-                    <div class="perf-number" style="color: #00d4ff;" id="weeklySignals">0</div>
-                    <div class="perf-label">Week</div>
+                    <div class="perf-number" style="color: #00d4ff;" id="activeTrades">0</div>
+                    <div class="perf-label">Active</div>
                 </div>
                 <div class="perf-card">
-                    <div class="perf-number" style="color: #ffa502;" id="avgConfidence">0</div>
-                    <div class="perf-label">Avg %</div>
+                    <div class="perf-number" style="color: #ffa502;" id="totalPnL">+0</div>
+                    <div class="perf-label">P&L Pips</div>
                 </div>
                 <div class="perf-card">
-                    <div class="perf-number" style="color: #ff6b35;" id="qualitySignals">0</div>
-                    <div class="perf-label">Quality</div>
+                    <div class="perf-number" style="color: #ff6b35;" id="winRate">0%</div>
+                    <div class="perf-label">Win Rate</div>
                 </div>
             </div>
             
             <!-- Engine Comparison Widget -->
             <div class="engine-comparison" id="engineComparison" style="display: none;">
-                <div class="comparison-header">Engine Comparison</div>
+                <div class="comparison-header">Engine Performance Comparison</div>
                 <div class="comparison-grid">
                     <div class="comparison-item">
-                        <span class="comparison-label">v1 Confidence:</span>
-                        <span class="comparison-value" id="v1AvgConfidence">--</span>
+                        <span class="comparison-label">v1 Performance:</span>
+                        <span class="comparison-value" id="v1Performance">--</span>
                     </div>
                     <div class="comparison-item">
-                        <span class="comparison-label">v2 Confidence:</span>
-                        <span class="comparison-value" id="v2AvgConfidence">--</span>
+                        <span class="comparison-label">v2 Performance:</span>
+                        <span class="comparison-value" id="v2Performance">--</span>
                     </div>
                     <div class="comparison-item">
-                        <span class="comparison-label">v3 Confidence:</span>
-                        <span class="comparison-value" id="v3AvgConfidence">--</span>
+                        <span class="comparison-label">v3 Performance:</span>
+                        <span class="comparison-value" id="v3Performance">--</span>
                     </div>
                 </div>
             </div>
@@ -419,8 +568,8 @@
         <!-- Footer -->
         <div class="mobile-footer">
             <div class="footer-info">
-                <span>HueHue Trading Dashboard</span>
-                <span>Triple-engine analysis • Smart v1 + AI v2 + Simple v3 • Quality signals only</span>
+                <span>HueHue Live Trading System</span>
+                <span>Triple-engine analysis • Real trades with TP/SL • Independent engine comparison</span>
             </div>
         </div>
     </div>
