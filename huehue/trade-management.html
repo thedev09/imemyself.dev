@@ -16,18 +16,20 @@
             min-height: 100vh;
         }
 
+        /* FIXED: Container consistency with dashboard */
         .history-container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
         }
 
-        /* Header */
+        /* FIXED: Header matching dashboard spacing */
         .history-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            padding: 10px;
             flex-wrap: wrap;
             gap: 20px;
         }
@@ -118,19 +120,6 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        .section-title::before {
-            content: "📊";
-            font-size: 1.2em;
-        }
-
-        .trade-history-section .section-title::before {
-            content: "📈";
-        }
-
-        .performance-section .section-title::before {
-            content: "🎯";
-        }
-
         /* =================================
            DYNAMIC GRID SYSTEM FOR ACTIVE TRADES
            ================================= */
@@ -158,8 +147,8 @@
         @media (min-width: 769px) {
             .active-trade-card {
                 background: rgba(255, 255, 255, 0.08);
-                border-radius: 16px;
-                padding: 24px;
+                border-radius: 10px;
+                padding: 12px;
                 border: 2px solid;
                 position: relative;
                 overflow: hidden;
@@ -167,8 +156,8 @@
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: auto auto auto auto auto auto;
-                gap: 16px;
-                min-height: 320px;
+                gap: 8px;
+                min-height: 180px;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             }
 
@@ -196,7 +185,7 @@
             }
 
             .desktop-symbol {
-                font-size: 1.4em;
+                font-size: 1.1em;
                 font-weight: bold;
                 color: #ffffff;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -264,16 +253,16 @@
             /* Pips display */
             .desktop-pips {
                 text-align: center;
-                padding: 16px;
+                padding: 8px;
                 background: rgba(255, 255, 255, 0.05);
-                border-radius: 12px;
-                margin: 8px 0;
+                border-radius: 8px;
+                margin: 4px 0;
             }
 
             .desktop-pips-value {
-                font-size: 1.8em;
+                font-size: 1.3em;
                 font-weight: bold;
-                margin-bottom: 4px;
+                margin-bottom: 2px;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             }
 
@@ -351,23 +340,23 @@
             /* Detail items */
             .desktop-detail-item {
                 background: rgba(255, 255, 255, 0.05);
-                border-radius: 10px;
-                padding: 12px;
+                border-radius: 6px;
+                padding: 8px;
                 text-align: center;
             }
 
             .desktop-detail-label {
                 color: #a0a0a0;
-                font-size: 0.8em;
+                font-size: 0.7em;
                 font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-                margin-bottom: 6px;
+                margin-bottom: 4px;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             }
 
             .desktop-detail-value {
-                font-size: 1.1em;
+                font-size: 0.9em;
                 font-weight: 600;
                 color: #ffffff;
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -404,6 +393,7 @@
             letter-spacing: 0.5px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            align-items: center;
         }
 
         .history-trade-row {
@@ -685,13 +675,15 @@
 
         @media (max-width: 768px) {
             .history-container {
-                padding: 10px;
+                padding: 8px;
             }
 
             .history-header {
                 flex-direction: column;
                 gap: 15px;
                 text-align: center;
+                padding: 15px 5px;
+                margin-bottom: 20px;
             }
 
             .page-navigation {
@@ -740,14 +732,14 @@
     <div class="history-container">
         <!-- Header -->
         <div class="history-header">
-            <h1>💼 Trade Management</h1>
+            <h1>Trade Management</h1>
             <a href="index.html" class="back-btn">← Back to Dashboard</a>
         </div>
 
         <!-- Navigation Between Pages -->
         <div class="page-navigation">
-            <a href="trade-management.html" class="nav-btn active">💼 Live Trades</a>
-            <a href="trade-analytics.html" class="nav-btn">📊 Analytics</a>
+            <a href="trade-management.html" class="nav-btn active">Live Trades</a>
+            <a href="trade-analytics.html" class="nav-btn">Analytics</a>
         </div>
 
         <!-- Active Trades Section -->
