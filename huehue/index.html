@@ -11,17 +11,145 @@
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <style>
+        /* FIXED: Navigation Menu Styles */
+        .nav-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+
+        .menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: rgba(26, 26, 46, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            min-width: 200px;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .menu-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .menu-item {
+            display: block;
+            padding: 12px 16px;
+            color: #ffffff;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .menu-item:hover {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        /* FIXED: Header layout - proper positioning */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .header-left {
+            flex: 0 0 auto;
+        }
+
+        .header-right {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Performance Header with Trade Management Button */
+        .performance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .trade-management-btn {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            padding: 8px 16px;
+            border-radius: 18px;
+            text-decoration: none;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .trade-management-btn:hover {
+            background: #00d4ff;
+            color: #000;
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <!-- Enhanced Professional Header with v1/v2/v3 Triple Toggle -->
+        <!-- FIXED: Enhanced Professional Header with Proper Navigation Layout -->
         <div class="header">
             <div class="header-top">
-                <h1>HueHue</h1>
-                <span class="vps-status" id="vpsStatus">Loading...</span>
+                <!-- Left side: Logo only -->
+                <div class="header-left">
+                    <h1>HueHue</h1>
+                </div>
+                
+                <!-- Right side: VPS Status + Navigation Menu -->
+                <div class="header-right">
+                    <!-- VPS Status -->
+                    <span class="vps-status" id="vpsStatus">Loading...</span>
+                    
+                    <!-- Navigation Menu -->
+                    <div class="nav-menu">
+                        <button class="menu-btn" id="menuBtn">☰</button>
+                        <div class="menu-dropdown" id="menuDropdown">
+                            <a href="trade-management.html" class="menu-item">💼 Trade Management</a>
+                            <a href="signals-history.html" class="menu-item">📊 Signals History</a>
+                            <a href="#" class="menu-item" onclick="window.location.reload()">🔄 Refresh Dashboard</a>
+                            <a href="#" class="menu-item" onclick="alert('HueHue v4.0 - Triple Engine Trading System')">ℹ️ About</a>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <!-- Triple Engine Toggle (v1/v2/v3) -->
+            <!-- Triple Engine Toggle (centered) -->
             <div class="triple-toggle-container">
                 <div class="triple-toggle" id="engineToggle">
                     <input type="radio" name="engine" id="engineV1" value="v1" checked>
@@ -37,7 +165,7 @@
                 </div>
             </div>
             
-            <!-- Session indicator - top right positioned -->
+            <!-- Session indicator - centered below toggle -->
             <div class="session-indicator session-active" id="sessionIndicator">
                 Loading...
             </div>
@@ -241,9 +369,14 @@
             </div>
         </div>
 
-        <!-- Enhanced Performance Summary with Engine Comparison -->
+        <!-- Enhanced Performance Summary with Trade Management Button -->
         <div class="performance-summary">
-            <h3>Performance <span class="performance-version" id="performanceVersion">(v1)</span></h3>
+            <div class="performance-header">
+                <h3>Performance <span class="performance-version" id="performanceVersion">(v1)</span></h3>
+                <a href="trade-management.html" class="trade-management-btn">
+                    💼 Trade Management
+                </a>
+            </div>
             <div class="performance-grid">
                 <div class="perf-card">
                     <div class="perf-number" style="color: #00ff88;" id="dailySignals">0</div>
@@ -296,5 +429,28 @@
     <script src="firebase-config.js"></script>
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
+    
+    <script>
+        // Navigation Menu Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuBtn = document.getElementById('menuBtn');
+            const menuDropdown = document.getElementById('menuDropdown');
+            
+            menuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menuDropdown.classList.toggle('active');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function() {
+                menuDropdown.classList.remove('active');
+            });
+            
+            // Prevent menu from closing when clicking inside it
+            menuDropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
 </body>
 </html>

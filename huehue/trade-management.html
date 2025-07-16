@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HueHue - Trade Management</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/trades.css">
+    <style>
+        /* Fix header layout to match signals-history.html */
+        .history-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .history-header h1 {
+            color: #ffffff;
+            font-size: 1.8em;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            background: #00d4ff;
+            color: #000;
+            transform: translateY(-1px);
+        }
+
+        /* Fix dropdown styling */
+        .history-filters select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            min-width: 120px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffffff' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px;
+            padding-right: 35px;
+        }
+
+        .history-filters select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .history-filters select option {
+            background: #1a1a2e;
+            color: white;
+            padding: 10px;
+        }
+
+        /* Improve trade cards */
+        .active-trade-card, .history-trade-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .active-trade-card:hover, .history-trade-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+
+        /* Fix active trades section */
+        .section-title {
+            color: #ffffff;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: "📊";
+            font-size: 1.2em;
+        }
+
+        .trade-history-section .section-title::before {
+            content: "📈";
+        }
+
+        .performance-section .section-title::before {
+            content: "🎯";
+        }
+
+        /* Improve spacing */
+        .active-trades-section,
+        .trade-history-section,
+        .performance-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Fix no-trades message */
+        .no-trades {
+            text-align: center;
+            padding: 60px 20px;
+            color: #a0a0a0;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .no-trades h3 {
+            color: #ffffff;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        /* Loading spinner improvement */
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .loading-spinner::before {
+            content: "⏳";
+            font-size: 2em;
+            display: block;
+            margin-bottom: 10px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="history-container">
+        <!-- Fixed Header Layout -->
+        <div class="history-header">
+            <h1>💼 Trade Management</h1>
+            <a href="index.html" class="back-btn">← Back to Dashboard</a>
+        </div>
+
+        <!-- Active Trades Section -->
+        <div class="active-trades-section">
+            <h2 class="section-title">Active Trades</h2>
+            <div id="activeTradesContainer" class="trades-container">
+                <div class="loading-spinner">Loading active trades...</div>
+            </div>
+        </div>
+
+        <!-- Trade History Section -->
+        <div class="trade-history-section">
+            <h2 class="section-title">Trade History</h2>
+            <div class="history-filters">
+                <select id="engineFilter">
+                    <option value="all">All Engines</option>
+                    <option value="v1">v1 - Smart</option>
+                    <option value="v2">v2 - AI Enhanced</option>
+                    <option value="v3">v3 - Simple</option>
+                </select>
+                <select id="resultFilter">
+                    <option value="all">All Results</option>
+                    <option value="profit">Profit Only</option>
+                    <option value="loss">Loss Only</option>
+                </select>
+            </div>
+            <div id="tradeHistoryContainer" class="trades-container">
+                <div class="loading-spinner">Loading trade history...</div>
+            </div>
+        </div>
+
+        <!-- Performance Stats -->
+        <div class="performance-section">
+            <h2 class="section-title">Performance Statistics</h2>
+            <div id="performanceStats" class="stats-grid">
+                <div class="loading-spinner">Calculating performance...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/trade-manager-ui.js"></script>
+</body>
+</html>

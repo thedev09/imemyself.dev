@@ -1,4 +1,4 @@
-/* HueHue Professional Trading Dashboard - Enhanced with v1/v2/v3 Triple Toggle */
+/* HueHue Professional Trading Dashboard - Enhanced with v1/v2/v3 Triple Toggle + Navigation Menu */
 
 /* Base styles remain the same */
 * {
@@ -29,7 +29,7 @@ body {
     position: relative;
 }
 
-/* Enhanced Header with Triple Toggle */
+/* FIXED Enhanced Header with Navigation Menu */
 .header {
     text-align: center;
     margin-bottom: 20px;
@@ -39,10 +39,10 @@ body {
 
 .header-top {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-    gap: 15px;
+    position: relative;
 }
 
 .header h1 {
@@ -52,9 +52,81 @@ body {
     -webkit-text-fill-color: transparent;
     margin: 0;
     font-weight: 700;
+    flex: 0 0 auto;
 }
 
-/* VPS Status */
+/* Navigation Menu */
+.nav-menu {
+    position: relative;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+.menu-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.menu-btn:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: #00d4ff;
+}
+
+.menu-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: rgba(26, 26, 46, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    min-width: 200px;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    margin-top: 5px;
+}
+
+.menu-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.menu-item {
+    display: block;
+    padding: 12px 16px;
+    color: #ffffff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.menu-item:hover {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00d4ff;
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+    border-radius: 0 0 12px 12px;
+}
+
+.menu-item:first-child {
+    border-radius: 12px 12px 0 0;
+}
+
+/* VPS Status - positioned properly */
 .vps-status {
     background: rgba(0, 255, 136, 0.2);
     color: #00ff88;
@@ -66,6 +138,7 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     transition: all 0.3s ease;
+    flex: 0 0 auto;
 }
 
 .vps-status.online {
@@ -82,8 +155,7 @@ body {
     animation: pulse-red 2s infinite;
 }
 
-
-/* Triple Engine Toggle */
+/* Triple Engine Toggle - positioned in center */
 .triple-toggle-container {
     display: flex;
     flex-direction: column;
@@ -158,30 +230,17 @@ body {
     box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
 }
 
-/* Engine Description */
-.engine-description {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 8px 16px;
-    font-size: 0.8em;
-    color: #a0a0a0;
-    text-align: center;
-    max-width: 300px;
-    transition: all 0.3s ease;
-}
-
-/* Session indicator */
+/* Session indicator - positioned below the toggle */
 .session-indicator {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+    position: static;
+    display: inline-block;
     background: rgba(255, 255, 255, 0.1);
     padding: 6px 12px;
     border-radius: 15px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     font-size: 0.8em;
     color: #ffffff;
+    margin-top: 10px;
 }
 
 .session-active {
@@ -194,6 +253,7 @@ body {
     color: #a0a0a0;
     font-size: 0.8em;
     margin-top: 10px;
+    text-align: center;
 }
 
 /* Asset Cards Grid */
@@ -639,7 +699,7 @@ body {
     word-break: break-word;
 }
 
-/* Enhanced Performance Summary */
+/* Enhanced Performance Summary with Trade Management Button */
 .performance-summary {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 20px;
@@ -649,11 +709,17 @@ body {
     backdrop-filter: blur(10px);
 }
 
+.performance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 .performance-summary h3 {
     color: #ffffff;
     font-size: 1.4em;
-    margin-bottom: 20px;
-    text-align: center;
+    margin: 0;
     font-weight: 600;
 }
 
@@ -675,6 +741,25 @@ body {
 .performance-version.v3-active {
     color: #00ff88;
     background: rgba(0, 255, 136, 0.2);
+}
+
+.trade-management-btn {
+    background: rgba(0, 212, 255, 0.2);
+    border: 1px solid #00d4ff;
+    color: #00d4ff;
+    padding: 8px 16px;
+    border-radius: 18px;
+    text-decoration: none;
+    font-size: 0.85em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.trade-management-btn:hover {
+    background: #00d4ff;
+    color: #000;
+    transform: translateY(-1px);
 }
 
 .performance-grid {
@@ -807,7 +892,7 @@ body {
     background: rgba(0, 212, 255, 0.5);
 }
 
-/* Enhanced Mobile Responsive Design */
+/* Enhanced Mobile Responsive Design - FIXED VERSION */
 @media (max-width: 768px) {
     .container {
         padding: 8px;
@@ -818,21 +903,45 @@ body {
         margin-bottom: 20px;
     }
     
+    /* FIXED: Header layout for mobile */
     .header-top {
-        flex-direction: column;
-        gap: 12px;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100%;
+    }
+    
+    .header-left {
+        flex: 0 0 auto;
+    }
+    
+    .header-right {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     
     .header h1 {
-        font-size: 2.2em !important;
-        margin-bottom: 8px;
+        font-size: 1.8em !important;
         font-weight: 800;
+        margin: 0;
     }
     
     .vps-status {
-        font-size: 0.9em !important;
-        padding: 6px 14px;
+        font-size: 0.75em !important;
+        padding: 4px 8px;
         font-weight: 700;
+    }
+    
+    .menu-btn {
+        padding: 6px 10px;
+        font-size: 1em;
+    }
+    
+    .menu-dropdown {
+        min-width: 180px;
+        right: 0;
     }
     
     /* Mobile Triple Toggle Adjustments */
@@ -850,18 +959,10 @@ body {
         min-width: 30px;
     }
     
-    .engine-description {
-        font-size: 0.75em;
-        padding: 6px 12px;
-        max-width: 250px;
-    }
-    
     .session-indicator {
-        position: static;
-        margin: 12px auto 0;
-        display: inline-block;
-        font-size: 0.9em;
-        padding: 8px 14px;
+        font-size: 0.75em;
+        padding: 6px 10px;
+        margin-top: 8px;
     }
     
     .main-grid {
@@ -916,21 +1017,449 @@ body {
         gap: 15px;
     }
     
-    .signals-header {
-        flex-direction: column;
-        align-items: flex-start;
+    /* FIXED: Consistent button layout for mobile */
+    .signals-header,
+    .performance-header {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
         gap: 10px;
     }
     
+    .signals-header h2,
+    .performance-summary h3 {
+        margin: 0;
+        flex: 1;
+        font-size: 1.2em;
+    }
+    
     .signals-header-right {
-        align-self: stretch;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+    
+    .view-all-btn,
+    .trade-management-btn {
+        background: rgba(0, 212, 255, 0.2);
+        border: 1px solid #00d4ff;
+        color: #00d4ff;
+        padding: 6px 12px;
+        border-radius: 15px;
+        text-decoration: none;
+        font-size: 0.75em;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+    
+    .view-all-btn:hover,
+    .trade-management-btn:hover {
+        background: #00d4ff;
+        color: #000;
+        transform: translateY(-1px);
+    }
+    
+    #signalCount {
+        color: #a0a0a0;
+        font-size: 0.7em;
+        white-space: nowrap;
+    }
+    
+/* Enhanced Mobile Responsive Design - FIXED VERSION */
+@media (max-width: 768px) {
+    .container {
+        padding: 8px;
+    }
+    
+    .header {
+        padding: 15px 5px;
+        margin-bottom: 20px;
+    }
+    
+    /* FIXED: Header layout for mobile */
+    .header-top {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100%;
+    }
+    
+    .header-left {
+        flex: 0 0 auto;
+    }
+    
+    .header-right {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .header h1 {
+        font-size: 1.8em !important;
+        font-weight: 800;
+        margin: 0;
+    }
+    
+    .vps-status {
+        font-size: 0.75em !important;
+        padding: 4px 8px;
+        font-weight: 700;
+    }
+    
+    .menu-btn {
+        padding: 6px 10px;
+        font-size: 1em;
+    }
+    
+    .menu-dropdown {
+        min-width: 180px;
+        right: 0;
+    }
+    
+    /* Mobile Triple Toggle Adjustments */
+    .triple-toggle-container {
+        margin: 10px 0;
+    }
+    
+    .triple-toggle {
+        min-width: 150px;
+    }
+    
+    .triple-toggle .toggle-option {
+        padding: 8px 12px;
+        font-size: 0.8em;
+        min-width: 30px;
+    }
+    
+    .session-indicator {
+        font-size: 0.75em;
+        padding: 6px 10px;
+        margin-top: 8px;
+    }
+    
+    .main-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .asset-card {
+        min-height: auto;
+        padding: 20px;
+    }
+    
+    .asset-header {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 15px;
         justify-content: space-between;
     }
     
-    .comparison-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
+    .asset-info {
+        flex: 1;
+        min-width: 0;
     }
+    
+    .bias-indicator {
+        text-align: right;
+        min-width: 120px;
+        flex: 0 0 auto;
+    }
+    
+    .bias-label {
+        min-width: auto;
+        font-size: 1.1em;
+        padding: 6px 12px;
+        width: 100%;
+        text-align: center;
+    }
+    
+    .confidence-score {
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    
+    .analysis-scores {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .performance-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    /* FIXED: Consistent button layout for mobile */
+    .signals-header,
+    .performance-header {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 10px;
+    }
+    
+    .signals-header h2,
+    .performance-summary h3 {
+        margin: 0;
+        flex: 1;
+        font-size: 1.2em;
+    }
+    
+    .signals-header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+    }
+    
+    .view-all-btn,
+    .trade-management-btn {
+        background: rgba(0, 212, 255, 0.2);
+        border: 1px solid #00d4ff;
+        color: #00d4ff;
+        padding: 6px 12px;
+        border-radius: 15px;
+        text-decoration: none;
+        font-size: 0.75em;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+    
+    .view-all-btn:hover,
+    .trade-management-btn:hover {
+        background: #00d4ff;
+        color: #000;
+        transform: translateY(-1px);
+    }
+    
+    #signalCount {
+        color: #a0a0a0;
+        font-size: 0.7em;
+        white-space: nowrap;
+    }
+    
+    .performance-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 15px;
+    }
+    
+    .perf-card {
+        padding: 15px 12px;
+    }
+    
+    .perf-number {
+        font-size: 1.6em;
+        margin-bottom: 6px;
+    }
+    
+    .perf-label {
+        font-size: 0.8em;
+    }
+
+    /* TRADE MANAGEMENT MOBILE STYLES */
+    
+    /* FIXED: Active Trade Card - Mobile-First Design */
+    .active-trade-card {
+        padding: 16px !important;
+        margin-bottom: 16px !important;
+        border-radius: 12px !important;
+    }
+    
+    .trade-header {
+        flex-direction: column !important;
+        gap: 8px !important;
+        align-items: flex-start !important;
+        margin-bottom: 12px !important;
+    }
+    
+    .trade-symbol {
+        font-size: 1.3em !important;
+        font-weight: bold !important;
+        width: 100% !important;
+    }
+    
+    .trade-direction {
+        align-self: flex-start !important;
+        padding: 4px 12px !important;
+        font-size: 0.8em !important;
+    }
+    
+    /* Mobile trade details grid */
+    .trade-details {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    .detail-item {
+        text-align: left !important;
+        padding: 8px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 8px !important;
+    }
+    
+    .detail-label {
+        font-size: 0.7em !important;
+        margin-bottom: 4px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    .detail-value {
+        font-size: 1em !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Mobile P&L display */
+    .pnl-display {
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    .pnl-value {
+        font-size: 1.5em !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .pnl-percentage {
+        font-size: 1em !important;
+    }
+    
+    /* Mobile progress bar */
+    .trade-progress {
+        height: 25px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    /* Mobile trade levels - compact grid */
+    .trade-details:last-child {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+        margin-top: 12px !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .trade-details:last-child .detail-item {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 6px 10px !important;
+    }
+    
+    .trade-details:last-child .detail-label {
+        margin-bottom: 0 !important;
+        font-size: 0.75em !important;
+    }
+    
+    .trade-details:last-child .detail-value {
+        font-size: 0.9em !important;
+        text-align: right !important;
+    }
+    
+    /* FIXED: Trade history mobile layout - proper left-right alignment */
+    .history-trade-card {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+        padding: 16px !important;
+        border-radius: 10px !important;
+        grid-template-columns: unset !important;
+    }
+    
+    .mobile-trade-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 10px 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        font-size: 0.9em !important;
+    }
+    
+    .mobile-trade-row:last-child {
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+    }
+    
+    .mobile-trade-row:first-child {
+        padding-top: 0 !important;
+    }
+    
+    .mobile-trade-label {
+        font-weight: 600 !important;
+        color: #a0a0a0 !important;
+        font-size: 0.85em !important;
+        text-align: left !important;
+        flex: 0 0 auto !important;
+    }
+    
+    .mobile-trade-value {
+        font-weight: 600 !important;
+        text-align: right !important;
+        flex: 1 !important;
+        margin-left: 10px !important;
+    }
+    
+    /* Specific mobile trade value styling */
+    .mobile-trade-value.symbol {
+        color: #ffffff !important;
+        font-size: 1.1em !important;
+    }
+    
+    .mobile-trade-value.date {
+        color: #a0a0a0 !important;
+        font-size: 0.8em !important;
+    }
+    
+    .mobile-trade-value.pips-only {
+        font-size: 1.1em !important;
+        font-weight: bold !important;
+    }
+    
+    .mobile-trade-value.details {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        gap: 2px !important;
+    }
+    
+    .exit-reason {
+        font-size: 0.8em !important;
+        color: #a0a0a0 !important;
+    }
+    
+    .trade-duration {
+        font-size: 0.8em !important;
+        color: #00d4ff !important;
+    }
+    
+    /* Performance stats grid - 2x2 on mobile */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    
+    .stat-card {
+        padding: 12px 8px !important;
+        border-radius: 10px !important;
+    }
+    
+    .stat-value {
+        font-size: 1.3em !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .stat-label {
+        font-size: 0.7em !important;
+        line-height: 1.2 !important;
+    }
+}
 }
 
 /* Small Mobile Screens */
@@ -943,20 +1472,41 @@ body {
         padding: 12px 5px;
     }
     
+    /* FIXED: Smaller header elements */
+    .header-top {
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    
     .header h1 {
-        font-size: 2em !important;
+        font-size: 1.6em !important;
         font-weight: 800;
     }
     
     .vps-status {
-        font-size: 0.85em !important;
-        padding: 5px 12px;
+        font-size: 0.7em !important;
+        padding: 3px 6px;
         font-weight: 700;
     }
     
-    .session-indicator {
+    .menu-btn {
+        padding: 5px 8px;
+        font-size: 0.9em;
+    }
+    
+    .menu-dropdown {
+        min-width: 160px;
+    }
+    
+    .menu-item {
+        padding: 10px 12px;
         font-size: 0.85em;
-        padding: 6px 12px;
+    }
+    
+    .session-indicator {
+        font-size: 0.7em;
+        padding: 4px 8px;
     }
     
     .triple-toggle {
@@ -967,12 +1517,6 @@ body {
         padding: 6px 10px;
         font-size: 0.75em;
         min-width: 25px;
-    }
-    
-    .engine-description {
-        font-size: 0.7em;
-        padding: 5px 10px;
-        max-width: 200px;
     }
     
     .asset-card {
@@ -1013,8 +1557,21 @@ body {
     }
     
     .performance-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .perf-card {
+        padding: 12px 10px;
+    }
+    
+    .perf-number {
+        font-size: 1.4em;
+        margin-bottom: 4px;
+    }
+    
+    .perf-label {
+        font-size: 0.75em;
     }
     
     .signals-section,
@@ -1022,39 +1579,96 @@ body {
         padding: 15px;
         margin-bottom: 15px;
     }
+
+    /* TRADE MANAGEMENT SMALL MOBILE ADJUSTMENTS */
+    
+    /* Active trade card adjustments */
+    .active-trade-card {
+        padding: 14px !important;
+    }
+    
+    .trade-symbol {
+        font-size: 1.2em !important;
+    }
+    
+    .trade-details {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+    }
+    
+    .detail-item {
+        padding: 6px 8px !important;
+    }
+    
+    .pnl-display {
+        padding: 10px !important;
+    }
+    
+    .pnl-value {
+        font-size: 1.3em !important;
+    }
+    
+    /* Trade history adjustments */
+    .history-trade-card {
+        padding: 12px !important;
+        border-radius: 8px !important;
+    }
+    
+    .mobile-trade-row {
+        padding: 8px 0 !important;
+        font-size: 0.85em !important;
+    }
+    
+    .mobile-trade-label {
+        font-size: 0.8em !important;
+    }
+    
+    /* Performance stats - maintain 2x2 on small screens */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+    }
+    
+    .stat-card {
+        padding: 10px 6px !important;
+    }
+    
+    .stat-value {
+        font-size: 1.2em !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .stat-label {
+        font-size: 0.65em !important;
+    }
 }
 
 /* Very Small Screens */
 @media (max-width: 360px) {
-    .header-top {
-        gap: 8px;
-    }
-    
     .header h1 {
-        font-size: 1.8em !important;
+        font-size: 1.4em !important;
         font-weight: 800;
     }
     
     .vps-status {
-        font-size: 0.8em !important;
-        padding: 4px 10px;
+        font-size: 0.65em !important;
+        padding: 2px 5px;
+    }
+    
+    .menu-btn {
+        padding: 4px 6px;
+        font-size: 0.8em;
     }
     
     .session-indicator {
-        font-size: 0.8em;
-        padding: 5px 10px;
+        font-size: 0.65em;
+        padding: 3px 6px;
     }
     
     .triple-toggle .toggle-option {
         padding: 5px 8px;
         font-size: 0.7em;
         min-width: 20px;
-    }
-    
-    .engine-description {
-        font-size: 0.65em;
-        padding: 4px 8px;
-        max-width: 180px;
     }
     
     .asset-header {
