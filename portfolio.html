@@ -1,204 +1,391 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<title>myform</title>
-<style type=text/css>
-body {
- background: linear-gradient(-45deg, #ffaaaa,#aaffff,#ffaaff,#aaffaa,#aaaaff );
- background-size: 400% 400%;
- animation: gradient 15s ease infinite;
- height: 100vh;
-}
-
-@keyframes gradient {
- 0% {
-  background-position: 0% 50%;
- }
- 50% {
-  background-position: 100% 50%;
- }
- 100% {
-  background-position: 0% 50%;
- }
-}
-.div1
-{
-width:57%;
-border:5px solid teal;
-height:97%;
-margin:auto;
-}
-.odiv1
-{
-width:100%;
-margin-top:4px;
-height:24%;
-}
-.heading
-{
-margin-left:3px;
-margin-top:3px;
-width:67%;
-border:2px solid teal;
-height:9%
-}
-.info
-{
-margin-left:26px;
-margin-top:3px;
-width:60%;
-border:2px dashed teal;
-height:20%
-}
-.img
-{
-width:30%;
-margin-right:3px;
-border:3px solid teal;
-float:right;
-height:30%
-}
-.about
-{
-margin-top:6px;
-margin-left:11px;
-width:45%;
-border:2px dashed teal;
-height:97%
-}
-.qual
-{
-margin-top:2px;
-margin-right:15px;
-width:45%;
-border:2px dashed teal;
-height:97%;
-float:right
-}
-.like
-{
-margin-top:6px;
-margin-left:11px;
-width:45%;
-border:2px dashed teal;
-height:97%
-}
-.hate
-{
-margin-top:6px;
-margin-right:3px;
-width:45%;
-border:2px dashed teal;
-height:97%;
-float:right
-}
-.odiv2
-{
-margin-top:2px;
-margin-left:2px;
-width:66%;
-height:23%;
-float:left
-}
-.love
-{
-margin-top:9px;
-margin-right:15px;
-width:28%;
-border:2px dashed teal;
-height:22.3%;
-float:right
-}
-.address
-{
-margin-top:15px;
-margin-left:15px;
-width:46%;
-border:2px dashed teal;
-height:15%;
-float:left
-}
-.contact
-{
-margin-top:15px;
-margin-left:30px;
-width:46%;
-height:15%;
-float:left
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Trade Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Reset and base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #1a2236 0%, #252e47 100%);
+      color: #eaeaea;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      padding: 30px;
+      min-height: 100vh;
+    }
+    h1, h2, h3 { font-weight: 700; margin-bottom: 12px; }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .nav {
+      display: flex;
+      gap: 18px;
+    }
+    .nav button, .back-btn {
+      background: #223567;
+      border: none;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 24px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    .nav button.active, .back-btn:hover {
+      background: #20e59d;
+      color: #222;
+      font-weight: bold;
+    }
+    .back-btn {
+      font-size: 13px;
+      margin-right: 15px;
+      background: #252e47;
+    }
+    /* Card styles */
+    .card {
+      background: #222840;
+      border-radius: 15px;
+      padding: 24px 24px 18px 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 16px rgba(38, 52, 90, 0.14);
+    }
+    /* Active trades section */
+    .trade-status {
+      display: flex;
+      align-items: center;
+      margin-bottom: 22px;
+      gap: 20px;
+    }
+    .trade-direction {
+      padding: 6px 16px;
+      border-radius: 14px;
+      font-weight: bold;
+      color: #d9fce0;
+      background: #154c33;
+      margin-right: 10px;
+      font-size: 16px;
+    }
+    .trade-info-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px 20px;
+      margin-bottom: 18px;
+    }
+    .trade-info-label {
+      font-size: 13px;
+      color: #a6b6ce;
+    }
+    .trade-info-value {
+      font-size: 15px;
+      font-weight: 500;
+      color: #23e6b9;
+    }
+    .progress-bar-wrap {
+      width: 100%;
+      background: #373e5a;
+      border-radius: 10px;
+      height: 11px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .progress-bar {
+      height: 11px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #fd2b49 0%, #f8e54c 50%, #23e6b9 100%);
+      transition: width 0.4s;
+    }
+    .progress-indicator {
+      position: absolute;
+      top: -5px;
+      width: 2px;
+      height: 21px;
+      background: #20e59d;
+      left: 0;
+      transform: translateX(-1px);
+    }
+    /* Trade history table */
+    .filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    select {
+      background: #222840;
+      border: 1px solid #323c5f;
+      color: #eaeaea;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .history-table th, .history-table td {
+      padding: 9px 12px;
+      text-align: left;
+    }
+    .history-table th {
+      background: #28304c;
+      color: #ace3e9;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .history-table tr {
+      border-bottom: 1px solid #31385c;
+    }
+    .history-table td.win { color: #23e6b9; font-weight: 600; }
+    .history-table td.loss { color: #fd2b49; font-weight: 600; }
+    .reason-badge {
+      font-size: 12px;
+      color: #ffd500;
+      background: #373e5a;
+      border-radius: 6px;
+      padding: 3px 8px;
+      margin-left: 7px;
+    }
+    /* Performance statistics */
+    .stats-table {
+      width: 100%;
+      margin-top: 8px;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+    .stats-table th, .stats-table td {
+      padding: 9px 14px;
+    }
+    .stats-table th {
+      background: #28304c;
+      color: #ace3e9;
+    }
+    .stats-table td {
+      text-align: center;
+    }
+    .stats-table tr {
+      border-bottom: 1px solid #31385c;
+    }
+    /* Responsive */
+    @media (max-width: 900px) {
+      .trade-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .container {
+        padding: 8px;
+      }
+      .history-table, .stats-table {
+        font-size: 13px;
+      }
+    }
+    @media (max-width: 600px) {
+      .header, .nav { flex-direction: column; gap: 8px; align-items: stretch; }
+      .card { padding: 16px 8px; }
+      .history-table, .stats-table { font-size: 12px; }
+      .trade-info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-<div class=div1><form name=portfolio>
-<div class=img><img src=G:\riverscene2.jpg width=100% height=80%>--------------------
-OR-------------------<input type=file name=pfile ></div>
-<div class=heading><i><font face=jokerman color=teal size=20><b><center>P O R T F O L I O 
-</center></b></font></i></div>
-<div class=info> <center>
- <table height=100%>
-<tr ><td><b>Name:</b></td><td><input type=text name=name id="first name" placeholder="first name" 
-size=10> <input type=text name=name id="last name" size=13 placeholder="last name"></td></tr>
-<tr><td><b>Email:</b></td><td><input type=text name=name value="" placeholder="eg: 
-abc@gmail.com"></td></tr>
-<tr><td><b>Phone Number:</td><td></b><input type=text name=name 
-value=""></td></tr></table></div>
-
-
-<div class=odiv1>
-<div class=qual><table width=30px height=20px>
-<table width=100% border=1px height=100%>
-<tr border=1px><td>Qualification</td><td>Year of passing</td><td>Board</td><td>Marks 
-obtained</td></tr>
-<tr height=20px>
-<td><label for="class1">10th</label>  </td>
-<td><input type=text name=name id="last name" size=4></td>
-<td><input type=text name=name id="last name" size=3></td>
-<td><input type=text name=name id="last name" size=3></td>
-</tr>
-<tr height=20px>
-<td><label for="class2">12th</label>   </td>
-<td><input type=text name=name id="last name" size=4></td>
-<td><input type=text name=name id="last name" size=3></td>
-<td><input type=text name=name id="last name" size=3></td>
-</tr>
-<tr height=20px>
-<td><input type=text name=name id="bach" size=7 placeholder="Bachelors"> </td>
-<td><input type=text name=name id="last name" size=4></td>
-<td><input type=text name=name id="last name" size=3></td>
-<td><input type=text name=name id="last name" size=3></td>
-</tr>
-<tr height=20px>
-<td><input type=text name=name id="mast" size=7 placeholder="Masters" > </td>
-<td><input type=text name=name id="last name" size=4.5></td>
-<td><input type=text name=name id="last name" size=3></td>
-<td><input type=text name=name id="last name" size=3></td>
-</tr>
-</table></div>
-<div class=about><center><textarea rows=9 cols=43 name=addtxt>Tell us something about 
-you...</textarea></center></div>
-</div>
-
-<div class=odiv2>
-<div class=hate><center><textarea rows=9 cols=23 name=addtxt>Things that you 
-hate...</textarea></center></div>
-<div class=like><center><textarea rows=9 cols=23 name=addtxt>Things that you 
-like...</textarea></center></div>
-</div>
-<div class=love><center><textarea rows=9 cols=21 name=addtxt>Things that you 
-love...</textarea></center></div>
-<div class=address><textarea rows=6 cols=45 name=addtxt>Address</textarea></div>
-<div class=contact><h4><center>Contact us at:</center></h4>
-<a href="https://wa.me/8382800029" target=blank><img src=G:\whatsapp.jpg height=30 
-width=30></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
-<a href="https://instagram.com/hanjra_.29?igshid=YmMyMTA2M2Y=" target=blank><img src=G:
-\instagram.jpg height=30 width=30></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
-<a href="https://www.snapchat.com/add/rimpalhanjra29?
-share_id=otOBKnqTRtGOMeRSrZ6Big&locale=en_CA" target=blank><img src=G:\snapchat.jpg 
-height=30 width=30></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
-<a href="https://www.facebook.com/rex.meet.12?mibextid=LQQJ4d" target=blank><img src=G:
-\facebook.jpg height=30 
-width=30></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp
-<a href="http://Discordapp.com/users/850033792109248525" target=blank><img src=G:\discord.jpg 
-height=30 width=30></a>
-</form></div></div>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <button class="back-btn" onclick="alert('Back to Dashboard')">← Back to Dashboard</button>
+      </div>
+      <h1>Trade Management</h1>
+      <div class="nav">
+        <button class="active">Live Trades</button>
+        <button onclick="alert('Analytics under development!')">Analytics</button>
+      </div>
+    </div>
+    <!-- Active Trades -->
+    <div class="card">
+      <h2>Open Position</h2>
+      <div class="trade-status">
+        <span class="trade-direction">BUY</span>
+        <span><b>USD/JPY</b></span>
+        <span style="color:#23e6b9;font-size:16px;margin-left:18px;">+20.7 pips (+0.14%)</span>
+      </div>
+      <div class="trade-info-grid">
+        <div>
+          <div class="trade-info-label">Entry</div>
+          <div class="trade-info-value" id="entryPrice">¥148.449</div>
+        </div>
+        <div>
+          <div class="trade-info-label">Current</div>
+          <div class="trade-info-value" id="currentPrice">¥148.656</div>
+        </div>
+        <div>
+          <div class="trade-info-label">Duration</div>
+          <div class="trade-info-value">8h 19m</div>
+        </div>
+        <div>
+          <div class="trade-info-label">Confidence</div>
+          <div class="trade-info-value" style="color:#FFD500;">60%</div>
+        </div>
+        <div>
+          <div class="trade-info-label">Stop Loss</div>
+          <div class="trade-info-value">¥147.707</div>
+        </div>
+        <div>
+          <div class="trade-info-label">Take Profit</div>
+          <div class="trade-info-value">¥149.649</div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap" style="margin-top:20px; margin-bottom:10px; position:relative;">
+        <div id="progressBar" class="progress-bar" style="width:40%;"></div>
+        <div id="progressIndicator" class="progress-indicator"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size:13px; color:#7fabd8;">
+        <span>SL: ¥147.707</span>
+        <span>TP: ¥149.649</span>
+      </div>
+    </div>
+    <!-- Trade History -->
+    <div class="card">
+      <h2>Trade History</h2>
+      <div class="filters">
+        <select>
+          <option>All Engines</option>
+        </select>
+        <select>
+          <option>All Results</option>
+        </select>
+        <select>
+          <option>All Time</option>
+        </select>
+        <select>
+          <option>All Symbols</option>
+        </select>
+      </div>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Time</th>
+            <th>Open Price</th>
+            <th>Close Price</th>
+            <th>Take Profit</th>
+            <th>Stop Loss</th>
+            <th>Duration</th>
+            <th>Win/Loss</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>XAU/USD</td>
+            <td>07/16 10:44 PM</td>
+            <td>$3,331.91</td>
+            <td>$3,353.10</td>
+            <td>$3,275.91</td>
+            <td>$3,335.15</td>
+            <td>12h 58m</td>
+            <td class="loss">Loss</td>
+            <td>SL Hit<div class="reason-badge">Stop Loss</div></td>
+          </tr>
+          <tr>
+            <td>BTC/USD</td>
+            <td>07/16 08:49 PM</td>
+            <td>$118,196</td>
+            <td>$118,317</td>
+            <td>$120,495</td>
+            <td>$118,384</td>
+            <td>1h 17m</td>
+            <td class="loss">Loss</td>
+            <td>SL Hit<div class="reason-badge">Stop Loss</div></td>
+          </tr>
+          <tr>
+            <td>BTC/USD</td>
+            <td>07/16 07:29 PM</td>
+            <td>$118,725</td>
+            <td>$119,704</td>
+            <td>$119,775</td>
+            <td>$119,004</td>
+            <td>1h 8m</td>
+            <td class="win">Win</td>
+            <td>TP Hit<div class="reason-badge">Take Profit</div></td>
+          </tr>
+          <tr>
+            <td>BTC/USD</td>
+            <td>07/16 06:54 PM</td>
+            <td>$118,484</td>
+            <td>$119,064</td>
+            <td>$119,594</td>
+            <td>$119,554</td>
+            <td>25m</td>
+            <td class="loss">Loss</td>
+            <td>SL Hit<div class="reason-badge">Stop Loss</div></td>
+          </tr>
+          <tr>
+            <td>BTC/USD</td>
+            <td>07/16 06:11 PM</td>
+            <td>$118,987</td>
+            <td>$119,172</td>
+            <td>$119,305</td>
+            <td>$118,775</td>
+            <td>17m</td>
+            <td class="loss">Loss</td>
+            <td>SL Hit<div class="reason-badge">Stop Loss</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Performance Stats -->
+    <div class="card">
+      <h2>Performance Statistics</h2>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Engine Name</th>
+            <th>Total Trades</th>
+            <th>Total Pips</th>
+            <th>Win Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Smart Analysis (V1)</td>
+            <td>0</td>
+            <td>+0.0</td>
+            <td>0.0%</td>
+          </tr>
+          <tr>
+            <td>AI Enhanced (V2)</td>
+            <td>0</td>
+            <td>+0.0</td>
+            <td>0.0%</td>
+          </tr>
+          <tr>
+            <td>Simple &amp; Effective (V3)</td>
+            <td>5</td>
+            <td style="color:#fd2b49;font-weight:600;">-17.8</td>
+            <td style="color:#23e6b9;font-weight:600;">20.0%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    // Update the Progress Bar and Indicator Position for Active Trades
+    const entry = 148.449;
+    const current = 148.656;
+    const sl = 147.707;
+    const tp = 149.649;
+    // Calculate relative percentage (from SL to TP)
+    const progress =
+      ((current - sl) / (tp - sl)) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+    document.getElementById('progressIndicator').style.left = `calc(${progress}% - 1px)`;
+  </script>
 </body>
 </html>

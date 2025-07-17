@@ -5,30 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HueHue - Trade Analytics & Performance</title>
     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/trades.css">
     <style>
-        /* Same styles as before */
-        .analytics-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
         }
 
+        /* FIXED: Container consistency with other pages */
+        .analytics-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        /* FIXED: Header matching exact layout from trade-management.html */
         .analytics-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
+            padding: 10px;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
         .analytics-header h1 {
             color: #ffffff;
             font-size: 2.2em;
-            margin: 0;
             font-weight: 700;
-            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            margin: 0;
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .time-filter {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .time-filter:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .time-filter option {
+            background: #1a1a2e;
+            color: #ffffff;
+            padding: 8px;
         }
 
         .back-btn {
@@ -38,8 +81,9 @@
             padding: 12px 24px;
             border-radius: 25px;
             text-decoration: none;
-            transition: all 0.3s ease;
             font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         .back-btn:hover {
@@ -48,142 +92,199 @@
             transform: translateY(-2px);
         }
 
-        .loading-analytics {
-            text-align: center;
-            padding: 60px;
-            color: #00d4ff;
-            background: rgba(0, 212, 255, 0.05);
-            border-radius: 20px;
-            border: 1px solid rgba(0, 212, 255, 0.2);
+        /* Navigation matching trade-management.html */
+        .page-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .loading-analytics::before {
-            content: "📊";
-            font-size: 3em;
-            display: block;
-            margin-bottom: 15px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        .error-state {
-            text-align: center;
-            padding: 60px;
-            color: #ff4757;
-            background: rgba(255, 71, 87, 0.05);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 71, 87, 0.2);
-        }
-
-        .error-state h3 {
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
-
-        .retry-btn {
-            background: #00d4ff;
-            border: none;
-            color: #000;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 15px;
+        .nav-btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-decoration: none;
             font-weight: 600;
             transition: all 0.3s ease;
+            color: #a0a0a0;
+            background: transparent;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        .retry-btn:hover {
-            background: #00b8e6;
-            transform: translateY(-2px);
-        }
-
-        /* Engine cards and other styles remain the same */
-        .engine-overview {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .engine-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: 20px;
-            padding: 25px;
-            border: 2px solid;
-            transition: all 0.3s ease;
-        }
-
-        .engine-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .engine-card.v1 { border-color: rgba(0, 255, 136, 0.4); }
-        .engine-card.v2 { border-color: rgba(0, 212, 255, 0.4); }
-        .engine-card.v3 { border-color: rgba(255, 165, 2, 0.4); }
-
-        .engine-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .engine-name {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #ffffff;
-        }
-
-        .engine-badge {
-            padding: 8px 16px;
-            border-radius: 15px;
-            font-size: 0.8em;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .engine-badge.v1 {
-            background: rgba(0, 255, 136, 0.2);
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-        }
-
-        .engine-badge.v2 {
+        .nav-btn.active {
             background: rgba(0, 212, 255, 0.2);
             color: #00d4ff;
             border: 1px solid rgba(0, 212, 255, 0.3);
         }
 
-        .engine-badge.v3 {
-            background: rgba(255, 165, 2, 0.2);
-            color: #ffa502;
-            border: 1px solid rgba(255, 165, 2, 0.3);
+        .nav-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
         }
+
+        /* Section styling matching other pages */
+        .analytics-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            color: #ffffff;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Performance Overview Cards */
+        .performance-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .performance-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .performance-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.0em;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .card-icon {
+            font-size: 1.2em;
+        }
+
+        .card-value {
+            font-size: 2.0em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .card-subtitle {
+            color: #a0a0a0;
+            font-size: 0.9em;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .trend-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .trend-up { color: #00ff88; }
+        .trend-down { color: #ff6b6b; }
+        .trend-neutral { color: #ffa502; }
+
+        /* Engine Comparison Grid */
+        .engine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .engine-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .engine-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .engine-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .engine-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .engine-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .engine-badge.v1 { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+        .engine-badge.v2 { background: rgba(255, 165, 2, 0.2); color: #ffa502; }
+        .engine-badge.v3 { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
 
         .engine-metrics {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 12px;
         }
 
         .metric-item {
             text-align: center;
-            padding: 15px;
+            padding: 12px;
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
         }
 
         .metric-value {
-            font-size: 1.4em;
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         .metric-label {
@@ -191,149 +292,622 @@
             font-size: 0.8em;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
-        .performance-analysis {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 40px;
+        /* Advanced Analytics Features */
+        .advanced-analytics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .analytics-panel {
+            background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
         }
 
-        .section-title {
+        .panel-title {
             color: #ffffff;
-            font-size: 1.6em;
+            font-size: 1.1em;
             font-weight: 600;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
+            gap: 8px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Performance Timeline */
+        .timeline-container {
+            margin-top: 10px;
+        }
+
+        .timeline-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid #00d4ff;
+        }
+
+        .timeline-date {
+            color: #a0a0a0;
+            font-size: 0.9em;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .timeline-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Trading Statistics */
+        .stats-list {
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 0.9em;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .stat-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Symbol Analysis */
+        .symbol-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .symbol-analysis-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .symbol-analysis-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .symbol-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .symbol-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .symbol-status {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .symbol-status.profitable {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .symbol-status.losing {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .symbol-status.neutral {
+            background: rgba(255, 165, 2, 0.2);
+            color: #ffa502;
+        }
+
+        .symbol-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 12px;
         }
 
-        .placeholder-content {
+        .symbol-metric {
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
             text-align: center;
-            padding: 40px;
-            color: #a0a0a0;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        .symbol-metric .metric-label {
+            color: #a0a0a0;
+            font-size: 0.8em;
+            margin-bottom: 4px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .symbol-metric .metric-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.1em;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Loading States */
+        .loading-analytics {
+            text-align: center;
+            padding: 80px 20px;
+            color: #00d4ff;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 212, 255, 0.2);
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.05);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 16px;
+        }
+
+        .retry-btn {
+            background: #ff6b6b;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.3s ease;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .retry-btn:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .engine-overview {
+            .analytics-container {
+                padding: 8px;
+            }
+
+            .analytics-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                padding: 5px;
+            }
+
+            .analytics-header h1 {
+                font-size: 1.8em;
+            }
+
+            .header-controls {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+
+            .advanced-analytics {
                 grid-template-columns: 1fr;
+            }
+
+            .engine-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .performance-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .distribution-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .analytics-section {
+                padding: 20px;
+            }
+
+            .page-navigation {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .nav-btn {
+                text-align: center;
             }
         }
     </style>
 </head>
 <body>
     <div class="analytics-container">
-        <!-- Header -->
+        <!-- FIXED: Header matching exact structure from trade-management.html -->
         <div class="analytics-header">
-            <h1>📊 Trade Analytics & Performance</h1>
-            <a href="index.html" class="back-btn">← Back to Dashboard</a>
+            <h1>Trade Analytics</h1>
+            <div class="header-controls">
+                <select class="time-filter" id="timeFilter">
+                    <option value="all">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+                <a href="index.html" class="back-btn">← Back to Dashboard</a>
+            </div>
+        </div>
+
+        <!-- FIXED: Navigation matching trade-management.html -->
+        <div class="page-navigation">
+            <a href="trade-management.html" class="nav-btn">Live Trades</a>
+            <a href="trade-analytics.html" class="nav-btn active">Analytics</a>
         </div>
 
         <!-- Loading State -->
         <div class="loading-analytics" id="loadingState">
+            <div class="loading-spinner"></div>
             <h3>Loading Analytics Data...</h3>
-            <p>Connecting to Firebase and fetching performance data...</p>
+            <p>Fetching performance metrics and insights...</p>
         </div>
 
         <!-- Error State -->
         <div class="error-state" id="errorState" style="display: none;">
             <h3>❌ Unable to Load Analytics</h3>
-            <p id="errorMessage">Failed to connect to Firebase. Please check your connection.</p>
+            <p id="errorMessage">Failed to connect to Firebase.</p>
             <button class="retry-btn" onclick="location.reload()">Retry</button>
         </div>
 
-        <!-- Analytics Content -->
+        <!-- Main Analytics Content -->
         <div id="analyticsContent" style="display: none;">
-            <!-- Engine Performance Overview -->
-            <div class="engine-overview">
-                <div class="engine-card v1">
-                    <div class="engine-header">
-                        <span class="engine-name">Smart Analysis</span>
-                        <span class="engine-badge v1">v1</span>
+            <!-- Performance Overview -->
+            <div class="analytics-section">
+                <div class="section-title">
+                    <span>💰</span>
+                    Performance Overview
+                </div>
+                <div class="performance-overview">
+                    <div class="performance-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-icon">💰</span>
+                                Total P&L
+                            </div>
+                            <div class="trend-indicator trend-up" id="pnlTrend">
+                                <span>▲</span>
+                                <span>12.5%</span>
+                            </div>
+                        </div>
+                        <div class="card-value" id="totalPnL">+0</div>
+                        <div class="card-subtitle">Pips across all engines</div>
                     </div>
-                    <div class="engine-metrics">
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #00ff88;" id="v1-total-pips">+0</div>
-                            <div class="metric-label">Total Pips</div>
+
+                    <div class="performance-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-icon">🎯</span>
+                                Win Rate
+                            </div>
+                            <div class="trend-indicator trend-neutral" id="winRateTrend">
+                                <span>→</span>
+                                <span>0.0%</span>
+                            </div>
                         </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #00d4ff;" id="v1-win-rate">0%</div>
-                            <div class="metric-label">Win Rate</div>
+                        <div class="card-value" id="overallWinRate">0%</div>
+                        <div class="card-subtitle" id="winRateSubtitle">Success rate all time</div>
+                    </div>
+
+                    <div class="performance-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-icon">⚡</span>
+                                Active Trades
+                            </div>
+                            <div class="trend-indicator trend-neutral" id="activeTradesTrend">
+                                <span>→</span>
+                                <span>0</span>
+                            </div>
                         </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #ffa502;" id="v1-total-trades">0</div>
-                            <div class="metric-label">Total Trades</div>
+                        <div class="card-value" id="activeTrades">0</div>
+                        <div class="card-subtitle">Currently running</div>
+                    </div>
+
+                    <div class="performance-card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <span class="card-icon">📈</span>
+                                Best Engine
+                            </div>
+                            <div class="trend-indicator trend-up" id="bestEngineTrend">
+                                <span>▲</span>
+                                <span>v1</span>
+                            </div>
                         </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #ff6b35;" id="v1-active-trades">0</div>
-                            <div class="metric-label">Active Now</div>
-                        </div>
+                        <div class="card-value" id="bestEngine">v3</div>
+                        <div class="card-subtitle" id="bestEngineSubtitle">Top performer all time</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="engine-card v2">
-                    <div class="engine-header">
-                        <span class="engine-name">AI Enhanced</span>
-                        <span class="engine-badge v2">v2</span>
-                    </div>
-                    <div class="engine-metrics">
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #00ff88;" id="v2-total-pips">+0</div>
-                            <div class="metric-label">Total Pips</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #00d4ff;" id="v2-win-rate">0%</div>
-                            <div class="metric-label">Win Rate</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #ffa502;" id="v2-total-trades">0</div>
-                            <div class="metric-label">Total Trades</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #ff6b35;" id="v2-active-trades">0</div>
-                            <div class="metric-label">Active Now</div>
-                        </div>
-                    </div>
+            <!-- Engine Comparison -->
+            <div class="analytics-section">
+                <div class="section-title">
+                    <span>🔧</span>
+                    Engine Performance Comparison
                 </div>
-
-                <div class="engine-card v3">
-                    <div class="engine-header">
-                        <span class="engine-name">Simple & Effective</span>
-                        <span class="engine-badge v3">v3</span>
+                <div class="engine-grid">
+                    <div class="engine-card">
+                        <div class="engine-header">
+                            <span class="engine-name">Smart Analysis</span>
+                            <span class="engine-badge v1">v1</span>
+                        </div>
+                        <div class="engine-metrics">
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #00ff88;" id="v1-pips">+0</div>
+                                <div class="metric-label">Total Pips</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #00d4ff;" id="v1-winrate">0%</div>
+                                <div class="metric-label">Win Rate</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #ffa502;" id="v1-trades">0</div>
+                                <div class="metric-label">Total Trades</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #ff6b35;" id="v1-active">0</div>
+                                <div class="metric-label">Active Now</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="engine-metrics">
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #00ff88;" id="v3-total-pips">+0</div>
-                            <div class="metric-label">Total Pips</div>
+
+                    <div class="engine-card">
+                        <div class="engine-header">
+                            <span class="engine-name">AI Enhanced</span>
+                            <span class="engine-badge v2">v2</span>
                         </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #00d4ff;" id="v3-win-rate">0%</div>
-                            <div class="metric-label">Win Rate</div>
+                        <div class="engine-metrics">
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #00ff88;" id="v2-pips">+0</div>
+                                <div class="metric-label">Total Pips</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #00d4ff;" id="v2-winrate">0%</div>
+                                <div class="metric-label">Win Rate</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #ffa502;" id="v2-trades">0</div>
+                                <div class="metric-label">Total Trades</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #ff6b35;" id="v2-active">0</div>
+                                <div class="metric-label">Active Now</div>
+                            </div>
                         </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #ffa502;" id="v3-total-trades">0</div>
-                            <div class="metric-label">Total Trades</div>
+                    </div>
+
+                    <div class="engine-card">
+                        <div class="engine-header">
+                            <span class="engine-name">Simple & Effective</span>
+                            <span class="engine-badge v3">v3</span>
                         </div>
-                        <div class="metric-item">
-                            <div class="metric-value" style="color: #ff6b35;" id="v3-active-trades">0</div>
-                            <div class="metric-label">Active Now</div>
+                        <div class="engine-metrics">
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #00ff88;" id="v3-pips">+0</div>
+                                <div class="metric-label">Total Pips</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #00d4ff;" id="v3-winrate">0%</div>
+                                <div class="metric-label">Win Rate</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #ffa502;" id="v3-trades">0</div>
+                                <div class="metric-label">Total Trades</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-value" style="color: #ff6b35;" id="v3-active">0</div>
+                                <div class="metric-label">Active Now</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Placeholder sections for future features -->
-            <div class="performance-analysis">
-                <h2 class="section-title">📈 Performance Charts</h2>
-                <div class="placeholder-content">
-                    <h3>📊 Charts Coming Soon</h3>
-                    <p>Performance charts and detailed analytics will be available in the next update.</p>
+            <!-- Advanced Analytics -->
+            <div class="analytics-section">
+                <div class="section-title">
+                    <span>📈</span>
+                    Detailed Performance Metrics
+                </div>
+                <div class="advanced-analytics">
+                    <!-- Performance Timeline -->
+                    <div class="analytics-panel">
+                        <div class="panel-title">
+                            <span>📊</span>
+                            Performance Timeline
+                        </div>
+                        <div class="timeline-container" id="performanceTimeline">
+                            <div class="timeline-item">
+                                <div class="timeline-date">Last 24h</div>
+                                <div class="timeline-value" id="timeline-24h">0 pips</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-date">Last 7 days</div>
+                                <div class="timeline-value" id="timeline-7d">0 pips</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-date">Last 30 days</div>
+                                <div class="timeline-value" id="timeline-30d">0 pips</div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-date">All time</div>
+                                <div class="timeline-value" id="timeline-all">0 pips</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trading Statistics -->
+                    <div class="analytics-panel">
+                        <div class="panel-title">
+                            <span>📋</span>
+                            Trading Statistics
+                        </div>
+                        <div class="stats-list" id="tradingStats">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Trades:</span>
+                                <span class="stat-value" id="total-trades">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Winning Trades:</span>
+                                <span class="stat-value" id="winning-trades">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Losing Trades:</span>
+                                <span class="stat-value" id="losing-trades">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Avg Trade Duration:</span>
+                                <span class="stat-value" id="avg-duration">0h</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Best Trade:</span>
+                                <span class="stat-value" id="best-trade">+0.00 pips</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Worst Trade:</span>
+                                <span class="stat-value" id="worst-trade">-0.00 pips</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Symbol Performance Analysis -->
+            <div class="analytics-section">
+                <div class="section-title">
+                    <span>💹</span>
+                    Symbol Performance Analysis
+                </div>
+                <div class="symbol-analysis-grid">
+                    <div class="symbol-analysis-card" id="xauusd-analysis">
+                        <div class="symbol-header">
+                            <div class="symbol-name">XAUUSD</div>
+                            <div class="symbol-status" id="xauusd-status">No Data</div>
+                        </div>
+                        <div class="symbol-metrics">
+                            <div class="symbol-metric">
+                                <span class="metric-label">Total Trades:</span>
+                                <span class="metric-value" id="xauusd-trades">0</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Win Rate:</span>
+                                <span class="metric-value" id="xauusd-winrate">0%</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Total Pips:</span>
+                                <span class="metric-value" id="xauusd-pips">0.00</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Avg Pips/Trade:</span>
+                                <span class="metric-value" id="xauusd-avg">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="symbol-analysis-card" id="usdjpy-analysis">
+                        <div class="symbol-header">
+                            <div class="symbol-name">USDJPY</div>
+                            <div class="symbol-status" id="usdjpy-status">No Data</div>
+                        </div>
+                        <div class="symbol-metrics">
+                            <div class="symbol-metric">
+                                <span class="metric-label">Total Trades:</span>
+                                <span class="metric-value" id="usdjpy-trades">0</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Win Rate:</span>
+                                <span class="metric-value" id="usdjpy-winrate">0%</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Total Pips:</span>
+                                <span class="metric-value" id="usdjpy-pips">0.00</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Avg Pips/Trade:</span>
+                                <span class="metric-value" id="usdjpy-avg">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="symbol-analysis-card" id="btcusd-analysis">
+                        <div class="symbol-header">
+                            <div class="symbol-name">BTCUSD</div>
+                            <div class="symbol-status" id="btcusd-status">No Data</div>
+                        </div>
+                        <div class="symbol-metrics">
+                            <div class="symbol-metric">
+                                <span class="metric-label">Total Trades:</span>
+                                <span class="metric-value" id="btcusd-trades">0</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Win Rate:</span>
+                                <span class="metric-value" id="btcusd-winrate">0%</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Total Pips:</span>
+                                <span class="metric-value" id="btcusd-pips">0.00</span>
+                            </div>
+                            <div class="symbol-metric">
+                                <span class="metric-label">Avg Pips/Trade:</span>
+                                <span class="metric-value" id="btcusd-avg">0.00</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -342,17 +916,22 @@
     <script src="firebase-config.js"></script>
     <script src="js/config.js"></script>
     <script>
-        // Simplified Trade Analytics - FIXED VERSION
-        class TradeAnalytics {
+        // FIXED: Analytics System with Proper Firebase API Usage
+        class AnalyticsManager {
             constructor() {
                 this.firebaseStorage = null;
-                this.retryCount = 0;
-                this.maxRetries = 3;
+                this.dataCache = new Map();
+                this.updateInterval = null;
+                this.isLoading = false;
+                this.timeFilter = 'all'; // Changed default to 'all'
             }
 
             async initialize() {
                 try {
-                    console.log('📊 Initializing Trade Analytics...');
+                    console.log('🚀 Initializing Analytics Manager...');
+                    
+                    // Set up event listeners
+                    this.setupEventListeners();
                     
                     // Wait for Firebase with timeout
                     await this.waitForFirebase();
@@ -360,14 +939,25 @@
                     // Load analytics data
                     await this.loadAnalyticsData();
                     
+                    // Start real-time updates
+                    this.startRealTimeUpdates();
+                    
                     // Show content
                     this.showContent();
                     
-                    console.log('✅ Trade Analytics loaded successfully');
+                    console.log('✅ Analytics Manager loaded successfully');
                 } catch (error) {
                     console.error('❌ Error loading analytics:', error);
                     this.showError(error.message);
                 }
+            }
+
+            setupEventListeners() {
+                // Time filter change
+                document.getElementById('timeFilter')?.addEventListener('change', (e) => {
+                    this.timeFilter = e.target.value;
+                    this.loadAnalyticsData();
+                });
             }
 
             async waitForFirebase() {
@@ -375,7 +965,7 @@
                 
                 return new Promise((resolve, reject) => {
                     let attempts = 0;
-                    const maxAttempts = 50; // 5 seconds
+                    const maxAttempts = 30; // 3 seconds
                     
                     const checkFirebase = () => {
                         attempts++;
@@ -396,70 +986,366 @@
             }
 
             async loadAnalyticsData() {
-                console.log('📊 Loading analytics data...');
-                
-                // Load data for all engines
-                const engines = ['v1', 'v2', 'v3'];
-                
-                for (const engine of engines) {
-                    await this.loadEngineData(engine);
+                if (this.isLoading) return;
+                this.isLoading = true;
+
+                try {
+                    console.log('📊 Loading analytics data...');
+
+                    // FIXED: Load data using proper Firebase API
+                    const [
+                        v1Data,
+                        v2Data,
+                        v3Data,
+                        tradesData
+                    ] = await Promise.all([
+                        this.loadEngineData('v1'),
+                        this.loadEngineData('v2'),
+                        this.loadEngineData('v3'),
+                        this.loadTradesData()
+                    ]);
+
+                    // Cache the data
+                    this.dataCache.set('engines', { v1: v1Data, v2: v2Data, v3: v3Data });
+                    this.dataCache.set('trades', tradesData);
+
+                    // Update UI
+                    this.updatePerformanceOverview();
+                    this.updateEngineComparison();
+                    this.updateDetailedMetrics();
+                    this.updateSymbolAnalysis();
+
+                    console.log('✅ Analytics data loaded successfully');
+                } catch (error) {
+                    console.error('❌ Error loading analytics data:', error);
+                    this.showError('Failed to load analytics data');
+                } finally {
+                    this.isLoading = false;
                 }
             }
 
             async loadEngineData(engine) {
                 try {
-                    console.log(`📊 Loading data for ${engine}...`);
+                    // FIXED: Load active trades using proper Firebase API
+                    const activeTradesRef = this.firebaseStorage.collection(this.firebaseStorage.db, `active_trades_${engine}`);
+                    const activeTradesSnapshot = await this.firebaseStorage.getDocs(activeTradesRef);
                     
-                    // Load trade history
+                    const activeTrades = [];
+                    activeTradesSnapshot.forEach(doc => {
+                        activeTrades.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    // FIXED: Load trade history using proper Firebase API
                     const historyRef = this.firebaseStorage.collection(this.firebaseStorage.db, 'trade_history');
-                    const historyQuery = this.firebaseStorage.query(
-                        historyRef,
-                        this.firebaseStorage.orderBy('closeTime', 'desc'),
-                        this.firebaseStorage.limit(100)
-                    );
-                    const historySnapshot = await this.firebaseStorage.getDocs(historyQuery);
-
-                    let totalPips = 0;
-                    let wins = 0;
-                    let totalTrades = 0;
-
+                    const historySnapshot = await this.firebaseStorage.getDocs(historyRef);
+                    
+                    const tradeHistory = [];
                     historySnapshot.forEach(doc => {
                         const trade = doc.data();
-                        if (trade.engine === engine && trade.pnlPips !== undefined) {
-                            totalTrades++;
-                            totalPips += trade.pnlPips;
-                            if (trade.pnlPips > 0) wins++;
+                        if (trade.engine === engine && this.isWithinTimeFilter(trade.closeTime || trade.openTime)) {
+                            tradeHistory.push(trade);
                         }
                     });
 
-                    // Load active trades
-                    const activeRef = this.firebaseStorage.collection(this.firebaseStorage.db, `active_trades_${engine}`);
-                    const activeSnapshot = await this.firebaseStorage.getDocs(activeRef);
-                    const activeTrades = activeSnapshot.size;
-
-                    // Update UI
-                    const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
-                    
-                    this.updateElement(`${engine}-total-pips`, `${totalPips >= 0 ? '+' : ''}${totalPips.toFixed(1)}`);
-                    this.updateElement(`${engine}-win-rate`, `${winRate.toFixed(1)}%`);
-                    this.updateElement(`${engine}-total-trades`, totalTrades.toString());
-                    this.updateElement(`${engine}-active-trades`, activeTrades.toString());
-
-                    console.log(`✅ ${engine} data loaded: ${totalTrades} trades, ${totalPips.toFixed(1)} pips, ${winRate.toFixed(1)}% win rate`);
+                    return {
+                        engine,
+                        activeTrades,
+                        tradeHistory,
+                        stats: this.calculateEngineStats(activeTrades, tradeHistory)
+                    };
                 } catch (error) {
                     console.error(`❌ Error loading ${engine} data:`, error);
-                    // Set fallback values
-                    this.updateElement(`${engine}-total-pips`, '+0.0');
-                    this.updateElement(`${engine}-win-rate`, '0.0%');
-                    this.updateElement(`${engine}-total-trades`, '0');
-                    this.updateElement(`${engine}-active-trades`, '0');
+                    return {
+                        engine,
+                        activeTrades: [],
+                        tradeHistory: [],
+                        stats: { totalPips: 0, winRate: 0, totalTrades: 0, activeTrades: 0 }
+                    };
                 }
             }
 
-            updateElement(id, value) {
-                const element = document.getElementById(id);
+            async loadTradesData() {
+                try {
+                    // FIXED: Load all trades using proper Firebase API
+                    const tradesRef = this.firebaseStorage.collection(this.firebaseStorage.db, 'trade_history');
+                    const tradesSnapshot = await this.firebaseStorage.getDocs(tradesRef);
+                    
+                    const trades = [];
+                    tradesSnapshot.forEach(doc => {
+                        const trade = doc.data();
+                        if (this.isWithinTimeFilter(trade.closeTime || trade.openTime)) {
+                            trades.push(trade);
+                        }
+                    });
+
+                    return trades;
+                } catch (error) {
+                    console.error('❌ Error loading trades data:', error);
+                    return [];
+                }
+            }
+
+            calculateEngineStats(activeTrades, tradeHistory) {
+                let totalPips = 0;
+                let wins = 0;
+                let totalTrades = tradeHistory.length;
+
+                // Calculate from trade history
+                tradeHistory.forEach(trade => {
+                    if (trade.pnlPips !== undefined) {
+                        totalPips += trade.pnlPips;
+                        if (trade.pnlPips > 0) {
+                            wins++;
+                        }
+                    }
+                });
+
+                return {
+                    totalPips: Math.round(totalPips * 100) / 100, // 2 decimal places
+                    winRate: totalTrades > 0 ? Math.round((wins / totalTrades) * 100) : 0,
+                    totalTrades,
+                    activeTrades: activeTrades.length
+                };
+            }
+
+            updatePerformanceOverview() {
+                const enginesData = this.dataCache.get('engines');
+                if (!enginesData) return;
+
+                let totalPips = 0;
+                let totalTrades = 0;
+                let totalWins = 0;
+                let totalActiveTrades = 0;
+                let bestEngine = 'v3'; // Default to v3
+                let bestEnginePerformance = -Infinity;
+
+                // Find the actual best performing engine
+                Object.values(enginesData).forEach(engineData => {
+                    const stats = engineData.stats;
+                    totalPips += stats.totalPips;
+                    totalTrades += stats.totalTrades;
+                    totalWins += Math.round((stats.winRate / 100) * stats.totalTrades);
+                    totalActiveTrades += stats.activeTrades;
+
+                    // Only consider engines that have actually traded
+                    if (stats.totalTrades > 0 && stats.totalPips > bestEnginePerformance) {
+                        bestEnginePerformance = stats.totalPips;
+                        bestEngine = engineData.engine;
+                    }
+                });
+
+                const overallWinRate = totalTrades > 0 ? Math.round((totalWins / totalTrades) * 100) : 0;
+
+                // Update UI with proper formatting
+                this.updateElement('totalPnL', totalPips > 0 ? `+${totalPips.toFixed(2)}` : totalPips.toFixed(2));
+                this.updateElement('overallWinRate', `${overallWinRate}%`);
+                this.updateElement('activeTrades', totalActiveTrades.toString());
+                this.updateElement('bestEngine', bestEngine);
+
+                // Update subtitles based on time filter
+                const timeText = this.getTimeFilterText();
+                this.updateElement('winRateSubtitle', `Success rate ${timeText}`);
+                this.updateElement('bestEngineSubtitle', `Top performer ${timeText}`);
+
+                // Update trend indicators
+                this.updateTrendIndicator('pnlTrend', totalPips);
+                this.updateTrendIndicator('winRateTrend', overallWinRate);
+                this.updateTrendIndicator('activeTradesTrend', totalActiveTrades);
+                this.updateTrendIndicator('bestEngineTrend', bestEngine);
+            }
+
+            updateEngineComparison() {
+                const enginesData = this.dataCache.get('engines');
+                if (!enginesData) return;
+
+                Object.values(enginesData).forEach(engineData => {
+                    const engine = engineData.engine;
+                    const stats = engineData.stats;
+
+                    this.updateElement(`${engine}-pips`, stats.totalPips > 0 ? `+${stats.totalPips.toFixed(2)}` : stats.totalPips.toFixed(2));
+                    this.updateElement(`${engine}-winrate`, `${stats.winRate}%`);
+                    this.updateElement(`${engine}-trades`, stats.totalTrades.toString());
+                    this.updateElement(`${engine}-active`, stats.activeTrades.toString());
+                });
+            }
+
+            updateDetailedMetrics() {
+                const enginesData = this.dataCache.get('engines');
+                const trades = this.dataCache.get('trades');
+                
+                if (!enginesData || !trades) return;
+
+                // Calculate performance timeline
+                const now = new Date();
+                const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+                let pips24h = 0, pips7d = 0, pips30d = 0, pipsAll = 0;
+                let totalTrades = 0, winningTrades = 0, losingTrades = 0;
+                let bestTrade = 0, worstTrade = 0;
+                let totalDuration = 0;
+
+                trades.forEach(trade => {
+                    const tradeDate = new Date(trade.closeTime || trade.openTime);
+                    const pips = trade.pnlPips || 0;
+                    
+                    pipsAll += pips;
+                    totalTrades++;
+                    
+                    if (pips > 0) {
+                        winningTrades++;
+                        if (pips > bestTrade) bestTrade = pips;
+                    } else {
+                        losingTrades++;
+                        if (pips < worstTrade) worstTrade = pips;
+                    }
+                    
+                    // Calculate duration
+                    if (trade.openTime && trade.closeTime) {
+                        const duration = new Date(trade.closeTime) - new Date(trade.openTime);
+                        totalDuration += duration;
+                    }
+                    
+                    // Timeline calculations
+                    if (tradeDate >= oneDayAgo) pips24h += pips;
+                    if (tradeDate >= sevenDaysAgo) pips7d += pips;
+                    if (tradeDate >= thirtyDaysAgo) pips30d += pips;
+                });
+
+                // Update timeline
+                this.updateElement('timeline-24h', `${pips24h > 0 ? '+' : ''}${pips24h.toFixed(2)} pips`);
+                this.updateElement('timeline-7d', `${pips7d > 0 ? '+' : ''}${pips7d.toFixed(2)} pips`);
+                this.updateElement('timeline-30d', `${pips30d > 0 ? '+' : ''}${pips30d.toFixed(2)} pips`);
+                this.updateElement('timeline-all', `${pipsAll > 0 ? '+' : ''}${pipsAll.toFixed(2)} pips`);
+
+                // Update statistics
+                this.updateElement('total-trades', totalTrades.toString());
+                this.updateElement('winning-trades', winningTrades.toString());
+                this.updateElement('losing-trades', losingTrades.toString());
+                this.updateElement('best-trade', `+${bestTrade.toFixed(2)} pips`);
+                this.updateElement('worst-trade', `${worstTrade.toFixed(2)} pips`);
+                
+                // Calculate average duration
+                const avgDuration = totalTrades > 0 ? totalDuration / totalTrades : 0;
+                const avgHours = Math.round(avgDuration / (1000 * 60 * 60));
+                this.updateElement('avg-duration', `${avgHours}h`);
+            }
+
+            updateSymbolAnalysis() {
+                const trades = this.dataCache.get('trades');
+                if (!trades) return;
+
+                const symbols = ['XAUUSD', 'USDJPY', 'BTCUSD'];
+                
+                symbols.forEach(symbol => {
+                    const symbolTrades = trades.filter(trade => trade.symbol === symbol);
+                    
+                    if (symbolTrades.length === 0) {
+                        this.updateElement(`${symbol.toLowerCase()}-status`, 'No Data');
+                        this.updateElement(`${symbol.toLowerCase()}-trades`, '0');
+                        this.updateElement(`${symbol.toLowerCase()}-winrate`, '0%');
+                        this.updateElement(`${symbol.toLowerCase()}-pips`, '0.00');
+                        this.updateElement(`${symbol.toLowerCase()}-avg`, '0.00');
+                        return;
+                    }
+                    
+                    let totalPips = 0;
+                    let wins = 0;
+                    
+                    symbolTrades.forEach(trade => {
+                        totalPips += trade.pnlPips || 0;
+                        if (trade.pnlPips > 0) wins++;
+                    });
+                    
+                    const winRate = Math.round((wins / symbolTrades.length) * 100);
+                    const avgPips = totalPips / symbolTrades.length;
+                    
+                    // Update status
+                    const statusElement = document.getElementById(`${symbol.toLowerCase()}-status`);
+                    if (statusElement) {
+                        if (totalPips > 0) {
+                            statusElement.textContent = 'Profitable';
+                            statusElement.className = 'symbol-status profitable';
+                        } else if (totalPips < 0) {
+                            statusElement.textContent = 'Losing';
+                            statusElement.className = 'symbol-status losing';
+                        } else {
+                            statusElement.textContent = 'Neutral';
+                            statusElement.className = 'symbol-status neutral';
+                        }
+                    }
+                    
+                    // Update metrics
+                    this.updateElement(`${symbol.toLowerCase()}-trades`, symbolTrades.length.toString());
+                    this.updateElement(`${symbol.toLowerCase()}-winrate`, `${winRate}%`);
+                    this.updateElement(`${symbol.toLowerCase()}-pips`, totalPips.toFixed(2));
+                    this.updateElement(`${symbol.toLowerCase()}-avg`, avgPips.toFixed(2));
+                });
+            }
+
+            getTimeFilterText() {
+                switch (this.timeFilter) {
+                    case 'today': return 'today';
+                    case 'week': return 'this week';
+                    case 'month': return 'this month';
+                    case 'all': return 'all time';
+                    default: return 'all time';
+                }
+            }
+
+            startRealTimeUpdates() {
+                // Update every 30 seconds
+                this.updateInterval = setInterval(() => {
+                    if (!this.isLoading) {
+                        this.loadAnalyticsData();
+                    }
+                }, 30000);
+            }
+
+            isWithinTimeFilter(timestamp) {
+                const now = new Date();
+                const tradeDate = new Date(timestamp);
+
+                switch (this.timeFilter) {
+                    case 'today':
+                        return tradeDate.toDateString() === now.toDateString();
+                    case 'week':
+                        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        return tradeDate >= weekAgo;
+                    case 'month':
+                        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        return tradeDate >= monthAgo;
+                    case 'all':
+                        return true;
+                    default:
+                        return true;
+                }
+            }
+
+            updateElement(elementId, value) {
+                const element = document.getElementById(elementId);
                 if (element) {
                     element.textContent = value;
+                }
+            }
+
+            updateTrendIndicator(elementId, value) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                // Simple trend logic
+                if (typeof value === 'number') {
+                    if (value > 0) {
+                        element.className = 'trend-indicator trend-up';
+                        element.innerHTML = '<span>▲</span><span>' + Math.abs(value) + '</span>';
+                    } else if (value < 0) {
+                        element.className = 'trend-indicator trend-down';
+                        element.innerHTML = '<span>▼</span><span>' + Math.abs(value) + '</span>';
+                    } else {
+                        element.className = 'trend-indicator trend-neutral';
+                        element.innerHTML = '<span>→</span><span>0</span>';
+                    }
                 }
             }
 
@@ -475,14 +1361,27 @@
                 document.getElementById('errorState').style.display = 'block';
                 document.getElementById('errorMessage').textContent = message;
             }
+
+            destroy() {
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                }
+            }
         }
 
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📊 Trade Analytics page loaded');
-            
-            const analytics = new TradeAnalytics();
-            analytics.initialize();
+        // Initialize Analytics
+        let analyticsManager;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            analyticsManager = new AnalyticsManager();
+            analyticsManager.initialize();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (analyticsManager) {
+                analyticsManager.destroy();
+            }
         });
     </script>
 </body>
