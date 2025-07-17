@@ -45,7 +45,10 @@ class TradeManagerUI {
     async loadActiveTrades() {
         try {
             const container = document.getElementById('activeTradesContainer');
-            container.innerHTML = '<div class="loading-spinner">Loading active trades...</div>';
+            // ✅ FIXED: Don't show loading spinner on refresh, only on initial load
+            if (this.activeTrades.length === 0) {
+                container.innerHTML = '<div class="loading-spinner">Loading active trades...</div>';
+            }
             
             console.log('📥 Loading active trades from all engines...');
             
@@ -473,12 +476,12 @@ class TradeManagerUI {
     }
 
     startAutoRefresh() {
-        this.updateInterval = setInterval(() => {
-            this.loadActiveTrades();
-        }, 30000);
-        
-        console.log('⏰ Auto-refresh started for active trades');
-    }
+    this.updateInterval = setInterval(() => {
+        this.loadActiveTrades();
+    }, 15000);  // ✅ FIXED: 15 seconds instead of 30
+    
+    console.log('⏰ Enhanced auto-refresh started - 15 second intervals');
+}
 
     // Helper functions
     calculatePnL(trade, currentPrice) {

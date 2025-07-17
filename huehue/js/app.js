@@ -1,4 +1,4 @@
-// app.js - Enhanced HueHue Application with LIVE TRADING DASHBOARD
+// app.js - Enhanced HueHue Application with SMOOTH LIVE TRADING DASHBOARD
 class TripleEngineHueHueApp {
     constructor() {
         if (typeof CONFIG === 'undefined') {
@@ -12,7 +12,10 @@ class TripleEngineHueHueApp {
         
         // Application state
         this.isRunning = false;
-        this.updateIntervals = {};
+        this.updateIntervals = {
+            dashboard: null,
+            liveTrades: null
+        };
         this.unsubscribers = []; // Store Firebase listeners
         
         // TRIPLE ENGINE STATE
@@ -23,7 +26,7 @@ class TripleEngineHueHueApp {
             v3: { analysis: [], signals: [], trades: [] }
         };
         
-        // ✅ NEW: Live Trading State
+        // ✅ ENHANCED: Live Trading State
         this.activeTrades = {
             v1: [],
             v2: [],
@@ -64,7 +67,7 @@ class TripleEngineHueHueApp {
             // Setup real-time listeners for current engine
             await this.setupTripleEngineListeners();
             
-            // ✅ NEW: Setup live trades listeners
+            // ✅ Setup live trades listeners
             await this.setupLiveTradesListeners();
             
             // Setup VPS status monitoring
@@ -73,7 +76,7 @@ class TripleEngineHueHueApp {
             // Load initial data for current engine
             await this.loadInitialData();
             
-            // ✅ NEW: Load initial live trades
+            // ✅ Load initial live trades
             await this.loadInitialTrades();
             
             // Start update loops
@@ -154,6 +157,7 @@ class TripleEngineHueHueApp {
         
         const oldEngine = this.currentEngine;
         this.currentEngine = newEngine;
+        console.log(`🔍 DEBUG: Engine switched! Old: ${oldEngine}, New: ${this.currentEngine}`);
         
         try {
             // Update UI status
@@ -168,7 +172,7 @@ class TripleEngineHueHueApp {
             // Setup new listeners
             await this.setupCurrentEngineListeners();
             
-            // ✅ NEW: Switch live trades view
+            // ✅ Switch live trades view
             await this.switchLiveTradesEngine(newEngine);
             
             // Reload data for new engine
@@ -192,7 +196,7 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // ✅ NEW: Setup Live Trades Listeners
+    // ✅ Setup Live Trades Listeners
     async setupLiveTradesListeners() {
         if (!this.firebaseStorage) return;
         
@@ -215,6 +219,8 @@ class TripleEngineHueHueApp {
                     });
                     
                     this.activeTrades[engine] = trades;
+
+                    console.log(`🔍 Firebase listener: ${engine} has ${trades.length} trades, current engine: ${this.currentEngine}`);
                     
                     // Update display if this is the current engine
                     if (engine === this.currentEngine) {
@@ -237,7 +243,7 @@ class TripleEngineHueHueApp {
         CONFIG.log('info', '✅ Live trades listeners ready for all engines');
     }
 
-    // ✅ NEW: Switch Live Trades Engine View
+    // ✅ Switch Live Trades Engine View
     async switchLiveTradesEngine(engine) {
         CONFIG.log('info', `🔄 Switching live trades view to ${engine}`);
         
@@ -251,41 +257,128 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // ✅ NEW: Update Live Trades Display
     updateLiveTradesDisplay(trades) {
+    console.log(`🔍 DEBUG: updateLiveTradesDisplay called with ${trades.length} trades for ${this.currentEngine}:`, trades);
+    
     const liveTradesList = document.getElementById('liveTradesList');
     const activeTradesCount = document.getElementById('activeTradesCount');
     
     if (!liveTradesList) return;
     
-    // Update active trades count
+    // Update active trades count smoothly
     if (activeTradesCount) {
-        activeTradesCount.textContent = `${trades.length} active`;
+        const newCount = `${trades.length} active`;
+        if (activeTradesCount.textContent !== newCount) {
+            activeTradesCount.style.transform = 'scale(1.1)';
+            activeTradesCount.textContent = newCount;
+            setTimeout(() => {
+                activeTradesCount.style.transform = 'scale(1)';
+            }, 200);
+        }
     }
     
-    if (trades.length === 0) {
-        liveTradesList.innerHTML = `
-            <div class="no-active-trades">
-                <h3>🤖 ${this.getEngineDisplayName(this.currentEngine)} Active</h3>
-                <p>No active trades currently. The system is monitoring market conditions and will open trades when high-quality opportunities are found.</p>
-            </div>
-        `;
+    if (trades.length === 0) {  // ❌ THIS IS THE PROBLEM LINE
+        // Only update if content is different
+        const expectedNoTradesContent = `🤖 ${this.getEngineDisplayName(this.currentEngine)} Active`;
+        if (!liveTradesList.querySelector('.no-active-trades') || 
+            !liveTradesList.textContent.includes(expectedNoTradesContent)) {
+            liveTradesList.innerHTML = `
+                <div class="no-active-trades">
+                    <h3>🤖 ${this.getEngineDisplayName(this.currentEngine)} Active</h3>
+                    <p>No active trades currently. The system is monitoring market conditions and will open trades when high-quality opportunities are found.</p>
+                </div>
+            `;
+        }
         return;
     }
     
-    // FIXED: Sort trades by openTime (newest first)
-    const sortedTrades = [...trades].sort((a, b) => {
-        const timeA = a.openTime || a.timestamp || Date.now();
-        const timeB = b.openTime || b.timestamp || Date.now();
-        return timeB - timeA; // Newest first
-    });
-    
-    liveTradesList.innerHTML = sortedTrades.map(trade => this.createLiveTradeElement(trade)).join('');
-}
+    // ✅ THE ISSUE: This part never runs because trades.length is being checked incorrectly
+        
+        // Sort trades by openTime (newest first)
+        const sortedTrades = [...trades].sort((a, b) => {
+            const timeA = a.openTime || a.timestamp || Date.now();
+            const timeB = b.openTime || b.timestamp || Date.now();
+            return timeB - timeA;
+        });
+        
+        // ✅ SMOOTH UPDATE: Only update what changed
+        this.updateTradesSmoothly(liveTradesList, sortedTrades);
+    }
 
-    // ✅ NEW: Create Live Trade Element
-    createLiveTradeElement(trade) {
-    try {
+    // ✅ SMOOTH: Update trades without rebuilding everything
+    updateTradesSmoothly(container, newTrades) {
+
+        if (newTrades.length > 0) {
+        const noTradesDiv = container.querySelector('.no-active-trades');
+        if (noTradesDiv) {
+            noTradesDiv.remove();
+            console.log('🗑️ Removed no-active-trades div');
+        }
+    }
+        // Get existing trade elements
+        const existingElements = container.querySelectorAll('.live-trade-item[data-trade-id]');
+        const existingTradeIds = new Set();
+        
+        existingElements.forEach(el => {
+            existingTradeIds.add(el.getAttribute('data-trade-id'));
+        });
+        
+        // Get new trade IDs
+        const newTradeIds = new Set(newTrades.map(trade => trade.id));
+        
+        // Remove trades that no longer exist
+        existingElements.forEach(el => {
+            const tradeId = el.getAttribute('data-trade-id');
+            if (!newTradeIds.has(tradeId)) {
+                el.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(-20px)';
+                setTimeout(() => {
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
+                    }
+                }, 300);
+            }
+        });
+        
+        // Update or add trades
+        newTrades.forEach((trade, index) => {
+            const existingElement = container.querySelector(`[data-trade-id="${trade.id}"]`);
+            
+            if (existingElement) {
+                // ✅ UPDATE EXISTING: Only update the parts that changed
+                this.updateExistingTradeElement(existingElement, trade);
+            } else {
+                // ✅ ADD NEW: Create new trade element with animation
+                const newElement = this.createTradeElementWithId(trade);
+                newElement.style.opacity = '0';
+                newElement.style.transform = 'translateX(20px)';
+                
+                // Insert in correct position
+                const nextElement = container.children[index];
+                if (nextElement) {
+                    container.insertBefore(newElement, nextElement);
+                } else {
+                    container.appendChild(newElement);
+                }
+                
+                // Animate in
+                setTimeout(() => {
+                    newElement.style.transition = 'opacity 0.3s ease-in, transform 0.3s ease-in';
+                    newElement.style.opacity = '1';
+                    newElement.style.transform = 'translateX(0)';
+                }, 50);
+            }
+        });
+    }
+
+    // ✅ SMOOTH: Create trade element with unique ID
+    createTradeElementWithId(trade) {
+        const element = document.createElement('div');
+        element.className = 'live-trade-item';
+        element.setAttribute('data-trade-id', trade.id);
+        
+        // Calculate values
         const currentPrice = trade.currentPrice || trade.entry;
         const pnl = this.calculateTradePnL(trade, currentPrice);
         const progress = this.calculateTradeProgress(trade, currentPrice);
@@ -294,37 +387,126 @@ class TripleEngineHueHueApp {
         const pnlClass = pnl.pips > 0 ? 'profit' : pnl.pips < 0 ? 'loss' : 'neutral';
         const pnlSign = pnl.pips > 0 ? '+' : '';
         
-        return `
-            <div class="live-trade-item ${pnlClass}" onclick="this.showTradeDetails('${trade.id}')">
-                <!-- REMOVED: <div class="engine-indicator ${trade.engine}">${trade.engine.toUpperCase()}</div> -->
-                
-                <div class="trade-header">
-                    <div class="trade-symbol-direction">
-                        <span class="trade-symbol">${trade.symbol}</span>
-                        <span class="trade-direction ${trade.direction.toLowerCase()}">${trade.direction}</span>
-                    </div>
-                    <div class="trade-pnl ${pnlClass}">
-                        ${pnlSign}${pnl.pips.toFixed(1)} pips
-                    </div>
+        element.className = `live-trade-item ${pnlClass}`;
+        element.innerHTML = `
+            <div class="trade-header">
+                <div class="trade-symbol-direction">
+                    <span class="trade-symbol">${trade.symbol}</span>
+                    <span class="trade-direction ${trade.direction.toLowerCase()}">${trade.direction}</span>
                 </div>
-                
-                <div class="trade-details">
-                    Entry: ${this.formatPrice(trade.symbol, trade.entry)} → Current: ${this.formatPrice(trade.symbol, currentPrice)}
-                    <br>SL: ${this.formatPrice(trade.symbol, trade.stopLoss)} | TP: ${this.formatPrice(trade.symbol, trade.takeProfit)} | ${duration}
-                </div>
-                
-                <div class="trade-progress">
-                    <div class="trade-progress-bar ${pnlClass}" style="width: ${progress}%"></div>
+                <div class="trade-pnl ${pnlClass}">
+                    ${pnlSign}${pnl.pips.toFixed(1)} pips
                 </div>
             </div>
+            
+            <div class="trade-details">
+                Entry: ${this.formatPrice(trade.symbol, trade.entry)} → Current: ${this.formatPrice(trade.symbol, currentPrice)}
+                <br>SL: ${this.formatPrice(trade.symbol, trade.stopLoss)} | TP: ${this.formatPrice(trade.symbol, trade.takeProfit)} | ${duration}
+            </div>
+            
+            <div class="trade-progress">
+                <div class="trade-progress-bar ${pnlClass}" style="width: ${progress}%"></div>
+            </div>
         `;
-    } catch (error) {
-        CONFIG.log('error', 'Error creating live trade element:', error);
-        return '';
+        
+        return element;
     }
-}
 
-    // ✅ NEW: Calculate Trade P&L
+    // ✅ SMOOTH: Update only the content that changed in existing element
+    updateExistingTradeElement(element, trade) {
+        // Calculate current values
+        const currentPrice = trade.currentPrice || trade.entry;
+        const pnl = this.calculateTradePnL(trade, currentPrice);
+        const progress = this.calculateTradeProgress(trade, currentPrice);
+        const duration = this.formatTradeDuration(Date.now() - trade.openTime);
+        
+        // Update P&L if it changed
+        const pnlElement = element.querySelector('.trade-pnl');
+        if (pnlElement) {
+            const newPnlText = `${pnl.pips > 0 ? '+' : ''}${pnl.pips.toFixed(1)} pips`;
+            const newPnlClass = pnl.pips > 0 ? 'profit' : pnl.pips < 0 ? 'loss' : 'neutral';
+            
+            if (pnlElement.textContent !== newPnlText) {
+                // ✅ SMOOTH P&L UPDATE with flash animation
+                pnlElement.style.transition = 'all 0.2s ease-in-out';
+                pnlElement.style.transform = 'scale(1.1)';
+                pnlElement.textContent = newPnlText;
+                pnlElement.className = `trade-pnl ${newPnlClass}`;
+                
+                // Update trade item class
+                element.className = `live-trade-item ${newPnlClass}`;
+                
+                setTimeout(() => {
+                    pnlElement.style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+        
+        // Update current price in details
+        const detailsElement = element.querySelector('.trade-details');
+        if (detailsElement) {
+            const newDetailsText = `Entry: ${this.formatPrice(trade.symbol, trade.entry)} → Current: ${this.formatPrice(trade.symbol, currentPrice)}<br>SL: ${this.formatPrice(trade.symbol, trade.stopLoss)} | TP: ${this.formatPrice(trade.symbol, trade.takeProfit)} | ${duration}`;
+            
+            if (detailsElement.innerHTML !== newDetailsText) {
+                detailsElement.innerHTML = newDetailsText;
+            }
+        }
+        
+        // Update progress bar smoothly
+        const progressBar = element.querySelector('.trade-progress-bar');
+        if (progressBar) {
+            const newWidth = `${progress}%`;
+            if (progressBar.style.width !== newWidth) {
+                progressBar.style.transition = 'width 0.5s ease-in-out';
+                progressBar.style.width = newWidth;
+                
+                // Update color
+                const newPnlClass = pnl.pips > 0 ? 'profit' : pnl.pips < 0 ? 'loss' : 'neutral';
+                progressBar.className = `trade-progress-bar ${newPnlClass}`;
+            }
+        }
+    }
+
+    // ✅ Create Live Trade Element (Fallback for initial creation)
+    createLiveTradeElement(trade) {
+        try {
+            const currentPrice = trade.currentPrice || trade.entry;
+            const pnl = this.calculateTradePnL(trade, currentPrice);
+            const progress = this.calculateTradeProgress(trade, currentPrice);
+            const duration = this.formatTradeDuration(Date.now() - trade.openTime);
+            
+            const pnlClass = pnl.pips > 0 ? 'profit' : pnl.pips < 0 ? 'loss' : 'neutral';
+            const pnlSign = pnl.pips > 0 ? '+' : '';
+            
+            return `
+                <div class="live-trade-item ${pnlClass}" data-trade-id="${trade.id}" onclick="this.showTradeDetails('${trade.id}')">
+                    <div class="trade-header">
+                        <div class="trade-symbol-direction">
+                            <span class="trade-symbol">${trade.symbol}</span>
+                            <span class="trade-direction ${trade.direction.toLowerCase()}">${trade.direction}</span>
+                        </div>
+                        <div class="trade-pnl ${pnlClass}">
+                            ${pnlSign}${pnl.pips.toFixed(1)} pips
+                        </div>
+                    </div>
+                    
+                    <div class="trade-details">
+                        Entry: ${this.formatPrice(trade.symbol, trade.entry)} → Current: ${this.formatPrice(trade.symbol, currentPrice)}
+                        <br>SL: ${this.formatPrice(trade.symbol, trade.stopLoss)} | TP: ${this.formatPrice(trade.symbol, trade.takeProfit)} | ${duration}
+                    </div>
+                    
+                    <div class="trade-progress">
+                        <div class="trade-progress-bar ${pnlClass}" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            CONFIG.log('error', 'Error creating live trade element:', error);
+            return '';
+        }
+    }
+
+    // ✅ Calculate Trade P&L
     calculateTradePnL(trade, currentPrice) {
         let pips = 0;
         const priceDiff = trade.direction === 'BUY' ? 
@@ -344,7 +526,7 @@ class TripleEngineHueHueApp {
         return { pips, percentage };
     }
 
-    // ✅ NEW: Calculate Trade Progress to TP/SL
+    // ✅ Calculate Trade Progress to TP/SL
     calculateTradeProgress(trade, currentPrice) {
         const entry = trade.entry;
         const stopLoss = trade.stopLoss;
@@ -365,7 +547,7 @@ class TripleEngineHueHueApp {
         return Math.max(0, Math.min(100, progress));
     }
 
-    // ✅ NEW: Update Trade Performance Stats
+    // ✅ Update Trade Performance Stats
     updateTradePerformanceStats(engine, trades) {
         this.performanceStats[engine].activeTrades = trades.length;
         
@@ -385,7 +567,7 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // ✅ NEW: Load Initial Trades
+    // ✅ Load Initial Trades
     async loadInitialTrades() {
         if (!this.firebaseStorage) return;
         
@@ -751,7 +933,7 @@ class TripleEngineHueHueApp {
                 changeElement.className = `price-change ${priceData.change >= 0 ? 'price-up' : 'price-down'}`;
             }
             
-            // ✅ NEW: Update live trades with new prices
+            // ✅ SMOOTH: Update live trades with new prices
             this.updateLiveTradesWithPrice(symbol, priceData.price);
             
         } catch (error) {
@@ -759,7 +941,7 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // ✅ NEW: Update Live Trades with New Price
+    // ✅ SMOOTH: Update Live Trades with New Price (No rebuilding!)
     updateLiveTradesWithPrice(symbol, newPrice) {
         const currentTrades = this.activeTrades[this.currentEngine] || [];
         const symbolTrades = currentTrades.filter(trade => trade.symbol === symbol);
@@ -770,11 +952,25 @@ class TripleEngineHueHueApp {
                 trade.currentPrice = newPrice;
             });
             
-            // Refresh display if we're viewing this engine
-            this.updateLiveTradesDisplay(currentTrades);
+            // ✅ SMOOTH UPDATE: Only update affected trades, not rebuild everything
+            this.updateSpecificTrades(symbolTrades);
         }
     }
 
+    // ✅ SMOOTH: Update only specific trades that changed
+    // ✅ FIXED: Update only specific trades that changed
+updateSpecificTrades(changedTrades) {
+    const liveTradesList = document.getElementById('liveTradesList');
+    if (!liveTradesList) return;
+    
+    // ✅ FIX: Use the parameter changedTrades, not undefined 'trades'
+    changedTrades.forEach(trade => {
+        const existingElement = liveTradesList.querySelector(`[data-trade-id="${trade.id}"]`);
+        if (existingElement) {
+            this.updateExistingTradeElement(existingElement, trade);
+        }
+    });
+}
     // UI UPDATE METHODS
     updateConfidenceDisplay(symbolLower, confidence) {
         const confidenceElement = document.getElementById(`${symbolLower}-confidence`);
@@ -916,7 +1112,7 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // ✅ NEW: Update Performance Display (Enhanced for Trading)
+    // ✅ Update Performance Display (Enhanced for Trading)
     updatePerformanceDisplay() {
         const stats = this.performanceStats[this.currentEngine];
         
@@ -945,13 +1141,59 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // UPDATE LOOPS AND UI MANAGEMENT
+    // ✅ ENHANCED: Update loops with smooth trade refresh
     startUpdateLoops() {
         this.updateIntervals.dashboard = setInterval(() => {
             this.updateDashboard();
         }, 1000);
         
-        CONFIG.log('info', '🔄 Update loops started');
+        // ✅ SMOOTH: Add live trades refresh every 15 seconds (duration updates only)
+        this.updateIntervals.liveTrades = setInterval(() => {
+            this.refreshLiveTrades();
+        }, 15000);
+        
+        CONFIG.log('info', '🔄 Enhanced update loops started with 15s smooth live trades refresh');
+    }
+
+    // ✅ SMOOTH: Only update timestamps, no rebuilding
+    async refreshLiveTrades() {
+        try {
+            if (!this.isRunning) return;
+            
+            // ✅ SMOOTH: Don't reload from Firebase, just update display with current data
+            const currentTrades = this.activeTrades[this.currentEngine] || [];
+            
+            // Only update duration and any calculated fields, don't rebuild everything
+            this.updateTradeTimestamps(currentTrades);
+            
+            CONFIG.log('debug', `🔄 Live trades timestamps refreshed for ${this.currentEngine}: ${currentTrades.length} trades`);
+            
+        } catch (error) {
+            CONFIG.log('error', 'Error refreshing live trades:', error);
+        }
+    }
+
+    // ✅ SMOOTH: Update only timestamps/duration without rebuilding
+    updateTradeTimestamps(trades) {
+        const liveTradesList = document.getElementById('liveTradesList');
+        if (!liveTradesList) return;
+        
+        trades.forEach(trade => {
+            const element = liveTradesList.querySelector(`[data-trade-id="${trade.id}"]`);
+            if (element) {
+                const duration = this.formatTradeDuration(Date.now() - trade.openTime);
+                const detailsElement = element.querySelector('.trade-details');
+                
+                if (detailsElement) {
+                    const currentPrice = trade.currentPrice || trade.entry;
+                    const newText = `Entry: ${this.formatPrice(trade.symbol, trade.entry)} → Current: ${this.formatPrice(trade.symbol, currentPrice)}<br>SL: ${this.formatPrice(trade.symbol, trade.stopLoss)} | TP: ${this.formatPrice(trade.symbol, trade.takeProfit)} | ${duration}`;
+                    
+                    if (detailsElement.innerHTML !== newText) {
+                        detailsElement.innerHTML = newText;
+                    }
+                }
+            }
+        });
     }
 
     updateDashboard() {
@@ -1065,7 +1307,7 @@ class TripleEngineHueHueApp {
         }
     }
 
-    // ✅ NEW: Helper Methods for Trading
+    // ✅ Helper Methods for Trading
     formatPrice(symbol, price) {
         if (!price || price === 0) return '--';
         
