@@ -345,22 +345,30 @@
         .timeline-value {
             color: #ffffff;
             font-weight: 600;
+            font-size: 1.1em;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         /* Trading Statistics */
         .stats-list {
             margin-top: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
 
         .stat-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            margin-bottom: 6px;
+            padding: 12px;
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
+            border-radius: 8px;
+        }
+
+        .stat-item:nth-child(5),
+        .stat-item:nth-child(6) {
+            grid-column: 1 / -1;
         }
 
         .stat-label {
@@ -372,7 +380,13 @@
         .stat-value {
             color: #ffffff;
             font-weight: 600;
+            font-size: 0.95em;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .stat-item:nth-child(5) .stat-value,
+        .stat-item:nth-child(6) .stat-value {
+            font-size: 1.0em;
         }
 
         /* Symbol Analysis */
@@ -557,12 +571,16 @@
             }
 
             .page-navigation {
-                flex-direction: column;
+                flex-direction: row;
+                justify-content: center;
                 gap: 5px;
             }
 
             .nav-btn {
+                flex: 1;
+                max-width: 200px;
                 text-align: center;
+                padding: 10px 16px;
             }
         }
     </style>
@@ -803,16 +821,16 @@
                                 <span class="stat-value" id="total-trades">0</span>
                             </div>
                             <div class="stat-item">
+                                <span class="stat-label">Avg Trade Duration:</span>
+                                <span class="stat-value" id="avg-duration">0h</span>
+                            </div>
+                            <div class="stat-item">
                                 <span class="stat-label">Winning Trades:</span>
                                 <span class="stat-value" id="winning-trades">0</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">Losing Trades:</span>
                                 <span class="stat-value" id="losing-trades">0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Avg Trade Duration:</span>
-                                <span class="stat-value" id="avg-duration">0h</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">Best Trade:</span>
@@ -1219,7 +1237,7 @@
                 this.updateElement('timeline-30d', `${pips30d > 0 ? '+' : ''}${pips30d.toFixed(2)} pips`);
                 this.updateElement('timeline-all', `${pipsAll > 0 ? '+' : ''}${pipsAll.toFixed(2)} pips`);
 
-                // Update statistics
+                // Update statistics in the new order
                 this.updateElement('total-trades', totalTrades.toString());
                 this.updateElement('winning-trades', winningTrades.toString());
                 this.updateElement('losing-trades', losingTrades.toString());
