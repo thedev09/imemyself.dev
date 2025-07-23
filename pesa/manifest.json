@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Pesa",
+  "name": "Pesa - andhaaaaa",
+  "description": "Track your finances with ease. Multi-currency support, transaction management, and real-time analytics.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -18,8 +19,28 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "./",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#f97316",
+  "background_color": "#ffffff",
+  "categories": ["finance", "productivity", "business"],
+  "lang": "en",
+  "orientation": "portrait-primary",
+  "scope": "./",
+  "shortcuts": [
+    {
+      "name": "Add Transaction",
+      "short_name": "Add Transaction",
+      "description": "Quickly add a new transaction",
+      "url": "./transactions",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "View Analytics",
+      "short_name": "Analytics",
+      "description": "View your financial analytics",
+      "url": "./analytics",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    }
+  ]
 }
