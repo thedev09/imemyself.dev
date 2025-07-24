@@ -133,7 +133,7 @@ class ActivityLogger {
                     limit(limitCount)
                 );
             } else {
-                // If limit is 0, get all activities
+                // If limit is 0 or negative, get all activities without limit
                 q = query(
                     collection(db, 'activities'),
                     where('userId', '==', userId),
