@@ -123,12 +123,23 @@ class ActivityLogger {
     // Load activities for user
     async loadActivitiesForUser(userId, limitCount = 50) {
         try {
-            const q = query(
-                collection(db, 'activities'),
-                where('userId', '==', userId),
-                orderBy('timestamp', 'desc'),
-                limit(limitCount)
-            );
+            // Build query based on limit
+            let q;
+            if (limitCount > 0) {
+                q = query(
+                    collection(db, 'activities'),
+                    where('userId', '==', userId),
+                    orderBy('timestamp', 'desc'),
+                    limit(limitCount)
+                );
+            } else {
+                // If limit is 0, get all activities
+                q = query(
+                    collection(db, 'activities'),
+                    where('userId', '==', userId),
+                    orderBy('timestamp', 'desc')
+                );
+            }
 
             const querySnapshot = await getDocs(q);
             this.activities = querySnapshot.docs.map(doc => ({
@@ -136,6 +147,7 @@ class ActivityLogger {
                 ...doc.data()
             }));
 
+            console.log(`Loaded ${this.activities.length} activities for user ${userId}`);
             return { success: true, activities: this.activities };
         } catch (error) {
             console.error('Error loading activities:', error);

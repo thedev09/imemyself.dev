@@ -53,15 +53,7 @@
             <div class="summary-card">
                 <div class="summary-header">
                     <h3>Activity Summary</h3>
-                    <div class="time-period-selector">
-                        <select id="time-period">
-                            <option value="today">Today</option>
-                            <option value="week">This Week</option>
-                            <option value="month" selected>This Month</option>
-                            <option value="year">This Year</option>
-                            <option value="all">All Time</option>
-                        </select>
-                    </div>
+                    <div class="summary-subtitle">All Time Statistics</div>
                 </div>
                 <div class="summary-stats">
                     <div class="summary-stat">
@@ -82,7 +74,7 @@
                         <div class="stat-icon">🎯</div>
                         <div class="stat-content">
                             <div class="stat-value" id="period-accounts">0</div>
-                            <div class="stat-label">Accounts</div>
+                            <div class="stat-label">New Accounts</div>
                         </div>
                     </div>
                     <div class="summary-stat">
@@ -90,6 +82,20 @@
                         <div class="stat-content">
                             <div class="stat-value" id="period-upgrades">0</div>
                             <div class="stat-label">Upgrades</div>
+                        </div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="period-payouts">0</div>
+                            <div class="stat-label">Payouts</div>
+                        </div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="period-breaches">0</div>
+                            <div class="stat-label">Breaches</div>
                         </div>
                     </div>
                 </div>
@@ -104,14 +110,16 @@
                 <button class="filter-pill" data-filter="account_created">Accounts</button>
                 <button class="filter-pill" data-filter="account_upgraded">Upgrades</button>
                 <button class="filter-pill" data-filter="payout_requested">Payouts</button>
+                <button class="filter-pill" data-filter="account_status_changed">Breaches</button>
                 <button class="filter-pill" data-filter="account_edited">Edits</button>
             </div>
             <div class="activity-controls">
-                <select id="activity-limit">
-                    <option value="25">Last 25</option>
-                    <option value="50" selected>Last 50</option>
-                    <option value="100">Last 100</option>
-                    <option value="0">All</option>
+                <select id="time-period">
+                    <option value="today">Today</option>
+                    <option value="week" selected>This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                    <option value="all">All Time</option>
                 </select>
                 <button class="refresh-btn" id="refresh-activities">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -129,6 +137,14 @@
                     <div class="loading-spinner"></div>
                     <p>Loading activities...</p>
                 </div>
+            </div>
+            <div class="load-more-container" id="load-more-container" style="display: none;">
+                <button class="load-more-btn" id="load-more-btn">
+                    <span>Load More Activities</span>
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>

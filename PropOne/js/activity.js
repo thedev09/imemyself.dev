@@ -1,6 +1,12 @@
 // Fixed activity.js - Activity/History page functionality
-import { auth } from './firebase-config.js';
+import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { 
+    collection, 
+    query, 
+    where, 
+    getDocs 
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import activityLogger from './activity-logger.js';
 
 // DOM elements
@@ -9,15 +15,20 @@ const periodTotalEl = document.getElementById('period-total');
 const periodTradesEl = document.getElementById('period-trades');
 const periodAccountsEl = document.getElementById('period-accounts');
 const periodUpgradesEl = document.getElementById('period-upgrades');
+const periodPayoutsEl = document.getElementById('period-payouts');
+const periodBreachesEl = document.getElementById('period-breaches');
 const activityFeedEl = document.getElementById('activity-feed');
-const filterPills = document.querySelectorAll('.filter-pill');
-const activityLimitSelect = document.getElementById('activity-limit');
 const refreshBtn = document.getElementById('refresh-activities');
+const loadMoreContainer = document.getElementById('load-more-container');
+const loadMoreBtn = document.getElementById('load-more-btn');
 
 let currentUser = null;
 let allActivities = [];
+let displayedActivities = [];
 let currentFilter = 'all';
-let currentTimePeriod = 'month';
+let currentTimePeriod = 'week';
+let itemsPerPage = 50;
+let currentPage = 1;
 
 // Initialize page
 onAuthStateChanged(auth, (user) => {
@@ -48,16 +59,14 @@ async function loadActivities() {
         // Show loading state
         showLoadingState();
 
-        const limit = parseInt(activityLimitSelect?.value) || 50;
-        console.log('Loading with limit:', limit);
-        
-        const result = await activityLogger.loadActivitiesForUser(currentUser.uid, limit);
+        // Always load ALL activities
+        const result = await activityLogger.loadActivitiesForUser(currentUser.uid, 0);
         console.log('Activity load result:', result);
 
         if (result.success) {
             allActivities = result.activities;
             console.log('Loaded activities:', allActivities.length);
-            updateSummaryStats();
+            await updateSummaryStats(); // Make this async to load breach count
             displayActivities();
         } else {
             console.error('Error loading activities:', result.error);
@@ -69,16 +78,42 @@ async function loadActivities() {
     }
 }
 
-function updateSummaryStats() {
-    const summary = getTimePeriodSummary(allActivities);
+async function updateSummaryStats() {
+    // Always show all-time stats in the summary
+    const summary = {
+        total: allActivities.length,
+        trades: allActivities.filter(a => a.type === 'trade_added').length,
+        accounts: allActivities.filter(a => a.type === 'account_created').length,
+        upgrades: allActivities.filter(a => a.type === 'account_upgraded').length,
+        payouts: allActivities.filter(a => a.type === 'payout_requested').length,
+        breaches: 0 // Will be loaded from accounts collection
+    };
+
+    // Get actual breach count from accounts collection
+    try {
+        const breachedQuery = query(
+            collection(db, 'accounts'),
+            where('userId', '==', currentUser.uid),
+            where('status', '==', 'breached')
+        );
+        const breachedSnapshot = await getDocs(breachedQuery);
+        summary.breaches = breachedSnapshot.size;
+        console.log(`Found ${summary.breaches} breached accounts`);
+    } catch (error) {
+        console.error('Error loading breach count:', error);
+        // Fallback to activity logs
+        summary.breaches = allActivities.filter(a => a.type === 'account_status_changed' && a.data?.toStatus === 'breached').length;
+    }
     
     if (periodTotalEl) periodTotalEl.textContent = summary.total;
     if (periodTradesEl) periodTradesEl.textContent = summary.trades;
     if (periodAccountsEl) periodAccountsEl.textContent = summary.accounts;
     if (periodUpgradesEl) periodUpgradesEl.textContent = summary.upgrades;
+    if (periodPayoutsEl) periodPayoutsEl.textContent = summary.payouts;
+    if (periodBreachesEl) periodBreachesEl.textContent = summary.breaches;
 
     // Add animation to updated values
-    [periodTotalEl, periodTradesEl, periodAccountsEl, periodUpgradesEl].forEach(el => {
+    [periodTotalEl, periodTradesEl, periodAccountsEl, periodUpgradesEl, periodPayoutsEl, periodBreachesEl].forEach(el => {
         if (el) {
             el.style.transform = 'scale(1.1)';
             el.style.transition = 'transform 0.3s ease';
@@ -129,7 +164,7 @@ function getTimePeriodSummary(activities) {
     return summary;
 }
 
-function displayActivities() {
+function displayActivities(resetPagination = true) {
     if (!activityFeedEl) {
         console.error('Activity feed element not found');
         return;
@@ -137,26 +172,77 @@ function displayActivities() {
 
     if (!allActivities || allActivities.length === 0) {
         showEmptyState();
+        hideLoadMore();
         return;
     }
 
-    // Filter activities
-    const filteredActivities = currentFilter === 'all' 
-        ? allActivities 
-        : allActivities.filter(activity => activity.type === currentFilter);
+    // Filter by time period first
+    let timeFilteredActivities = allActivities;
+    if (currentTimePeriod !== 'all') {
+        const now = new Date();
+        let startDate;
+        
+        switch (currentTimePeriod) {
+            case 'today':
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                break;
+            case 'week':
+                startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case 'month':
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+            case 'year':
+                startDate = new Date(now.getFullYear(), 0, 1);
+                break;
+        }
+        
+        timeFilteredActivities = allActivities.filter(activity => {
+            const activityDate = activity.timestamp?.toDate?.() || new Date(activity.timestamp);
+            return activityDate >= startDate;
+        });
+    }
 
-    console.log('Displaying activities:', filteredActivities.length, 'of', allActivities.length);
+    // Then filter by activity type
+    const filteredActivities = currentFilter === 'all' 
+        ? timeFilteredActivities 
+        : timeFilteredActivities.filter(activity => activity.type === currentFilter);
 
     if (filteredActivities.length === 0) {
-        showEmptyState(`No ${getFilterDisplayName(currentFilter)} activities found.`);
+        const periodText = currentTimePeriod === 'all' ? '' : ` for ${currentTimePeriod}`;
+        showEmptyState(`No ${getFilterDisplayName(currentFilter)} activities found${periodText}.`);
+        hideLoadMore();
         return;
     }
 
-    // Generate HTML
-    const limit = currentFilter === 'all' ? 0 : 50; // Show all for filtered views
-    const activityHTML = activityLogger.generateActivityFeedHTML(filteredActivities, limit);
+    // Handle pagination
+    if (resetPagination) {
+        currentPage = 1;
+        displayedActivities = [];
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const newActivities = filteredActivities.slice(startIndex, endIndex);
     
+    if (resetPagination) {
+        displayedActivities = newActivities;
+    } else {
+        displayedActivities = [...displayedActivities, ...newActivities];
+    }
+
+    console.log(`Displaying ${displayedActivities.length} of ${filteredActivities.length} activities`);
+
+    // Generate HTML
+    const activityHTML = activityLogger.generateActivityFeedHTML(displayedActivities, 0);
     activityFeedEl.innerHTML = activityHTML;
+
+    // Show/hide load more button
+    if (displayedActivities.length < filteredActivities.length) {
+        showLoadMore();
+    } else {
+        hideLoadMore();
+    }
 
     // Add fade-in animation
     const items = activityFeedEl.querySelectorAll('.activity-item');
@@ -207,6 +293,23 @@ function showErrorState(message) {
     }
 }
 
+function showLoadMore() {
+    if (loadMoreContainer) {
+        loadMoreContainer.style.display = 'flex';
+    }
+}
+
+function hideLoadMore() {
+    if (loadMoreContainer) {
+        loadMoreContainer.style.display = 'none';
+    }
+}
+
+function loadMoreActivities() {
+    currentPage++;
+    displayActivities(false); // Don't reset pagination
+}
+
 function getFilterDisplayName(filter) {
     const filterNames = {
         'trade_added': 'trade',
@@ -214,7 +317,7 @@ function getFilterDisplayName(filter) {
         'account_upgraded': 'upgrade',
         'payout_requested': 'payout',
         'account_edited': 'edit',
-        'account_status_changed': 'status change'
+        'account_status_changed': 'breach'
     };
     return filterNames[filter] || filter;
 }
@@ -227,34 +330,32 @@ function setupEventListeners() {
         timePeriodSelect.addEventListener('change', (e) => {
             currentTimePeriod = e.target.value;
             console.log('Time period changed to:', currentTimePeriod);
-            updateSummaryStats();
             displayActivities();
         });
     }
     
-    // Filter pills
-    if (filterPills) {
-        filterPills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                // Update active state
-                filterPills.forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                
-                // Update current filter
-                currentFilter = pill.dataset.filter;
-                console.log('Filter changed to:', currentFilter);
-                
-                // Display filtered activities
-                displayActivities();
-            });
+    // Activity type filter pills
+    const filterPills = document.querySelectorAll('.filter-pill');
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            // Update active state
+            filterPills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            
+            // Update current filter
+            currentFilter = pill.dataset.filter;
+            console.log('Filter changed to:', currentFilter);
+            
+            // Display filtered activities
+            displayActivities();
         });
-    }
+    });
 
-    // Activity limit selector
-    if (activityLimitSelect) {
-        activityLimitSelect.addEventListener('change', () => {
-            console.log('Activity limit changed');
-            loadActivities();
+    // Load more button
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => {
+            console.log('Load more clicked');
+            loadMoreActivities();
         });
     }
 
@@ -262,11 +363,12 @@ function setupEventListeners() {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
             console.log('Refresh clicked');
-            refreshBtn.style.transform = 'rotate(180deg)';
+            refreshBtn.style.transform = 'rotate(360deg)';
+            refreshBtn.style.transition = 'transform 0.5s ease';
             await loadActivities();
             setTimeout(() => {
                 refreshBtn.style.transform = 'rotate(0deg)';
-            }, 300);
+            }, 500);
         });
     }
 }

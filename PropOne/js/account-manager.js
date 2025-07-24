@@ -180,13 +180,32 @@ class AccountManager {
     }
 
     // Mark account as breached
-    async markAccountAsBreached(accountId) {
+    async markAccountAsBreached(accountId, userId = null, reason = 'System detected breach') {
         try {
+            // Get account data before updating for logging
+            const accountDoc = await getDoc(doc(db, 'accounts', accountId));
+            const accountData = accountDoc.data();
+            
             await updateDoc(doc(db, 'accounts', accountId), {
                 status: 'breached',
                 breachedAt: new Date(),
                 updatedAt: new Date()
             });
+            
+            // Log the breach activity if userId is provided
+            if (userId) {
+                const activityLogger = (await import('./activity-logger.js')).default;
+                await activityLogger.logAccountStatusChanged(
+                    userId,
+                    accountId,
+                    accountData.firmName,
+                    accountData.alias,
+                    accountData.status || 'active',
+                    'breached',
+                    reason
+                );
+            }
+            
             return { success: true };
         } catch (error) {
             console.error('Error marking account as breached:', error);

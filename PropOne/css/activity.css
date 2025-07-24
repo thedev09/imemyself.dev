@@ -107,8 +107,8 @@
 
 .summary-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
 }
 
 .summary-stat {
@@ -151,10 +151,14 @@
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #888;
     text-transform: uppercase;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 /* Activity Filters */
@@ -164,6 +168,12 @@
     align-items: center;
     margin-bottom: 25px;
     gap: 20px;
+}
+
+.summary-subtitle {
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: 500;
 }
 
 .filter-pills {
@@ -195,6 +205,44 @@
     background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-color: transparent;
+}
+
+/* Load More Button */
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    margin-top: 20px;
+}
+
+.load-more-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.load-more-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.load-more-btn svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.3s ease;
+}
+
+.load-more-btn:hover svg {
+    transform: translateY(2px);
 }
 
 .activity-controls {

@@ -1478,11 +1478,27 @@ window.deleteAccount = async function(accountId) {
     
     deleteModal.querySelector('#mark-breached-btn').addEventListener('click', async () => {
         try {
+            // Get account data before updating for logging
+            const accountDoc = await getDoc(doc(db, 'accounts', accountId));
+            const accountData = accountDoc.data();
+            
             await updateDoc(doc(db, 'accounts', accountId), {
                 status: 'breached',
                 breachedAt: new Date(),
                 updatedAt: new Date()
             });
+            
+            // Log the breach activity
+            await activityLogger.logAccountStatusChanged(
+                currentUser.uid,
+                accountId,
+                accountData.firmName,
+                accountData.alias,
+                accountData.status || 'active',
+                'breached',
+                'Manual breach marking'
+            );
+            
             console.log('Account marked as breached!');
             debouncedLoadAccounts();
             deleteModal.remove();
