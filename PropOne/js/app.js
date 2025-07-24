@@ -62,7 +62,7 @@ let loadAccountsTimeout = null;
 
 // Prop firm templates - OPTIMIZED: Moved to readonly constant
 const PROP_FIRM_TEMPLATES = Object.freeze({
-    'FundingPips': { accountSizes: [10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 10, phase2Target: 5, platform: 'MT5' },
+    'FundingPips': { accountSizes: [10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 8, phase2Target: 5, platform: 'MT5' },
     'The5%ers': { accountSizes: [100000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 8, phase2Target: 5, platform: 'MT5' },
     'Alpha Capital': { accountSizes: [25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 10, phase2Target: 5, platform: 'MT5' },
     'FunderPro': { accountSizes: [10000, 25000, 50000, 100000, 200000], dailyDrawdown: 5, maxDrawdown: 10, phase1Target: 10, phase2Target: 8, platform: 'TradeLocker' },
@@ -236,6 +236,51 @@ function showAuth() {
     if (DOM.appSection) DOM.appSection.classList.add('hidden');
 }
 
+// Migration function to add breachedAt to existing breached accounts
+async function migrateBreachedAccounts() {
+    if (!currentUser) return;
+    
+    try {
+        // Check if migration has already been done for this user
+        const migrationKey = `breach_migration_${currentUser.uid}`;
+        if (localStorage.getItem(migrationKey)) {
+            return; // Migration already done
+        }
+        
+        const q = query(
+            collection(db, 'accounts'),
+            where('userId', '==', currentUser.uid),
+            where('status', '==', 'breached')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const batch = [];
+        
+        for (const docRef of querySnapshot.docs) {
+            const account = docRef.data();
+            // Only update if breachedAt is missing
+            if (!account.breachedAt) {
+                batch.push(
+                    updateDoc(doc(db, 'accounts', docRef.id), {
+                        breachedAt: account.updatedAt || account.createdAt || new Date()
+                    })
+                );
+            }
+        }
+        
+        if (batch.length > 0) {
+            await Promise.all(batch);
+            console.log(`Migrated ${batch.length} breached accounts with breach timestamps`);
+        }
+        
+        // Mark migration as complete
+        localStorage.setItem(migrationKey, 'true');
+        
+    } catch (error) {
+        console.error('Error migrating breached accounts:', error);
+    }
+}
+
 // PRODUCTION-OPTIMIZED: Main loadAccounts function with enhanced error handling
 async function loadAccounts() {
     if (!currentUser) return;
@@ -246,6 +291,9 @@ async function loadAccounts() {
     }
     
     try {
+        // Run migration for existing breached accounts (one-time)
+        await migrateBreachedAccounts();
+        
         // Show loading state
         if (DOM.accountsList) {
             DOM.accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Loading accounts...</div>';
@@ -330,11 +378,37 @@ async function loadAccounts() {
         
         allAccounts = processedAccounts;
         
-        // OPTIMIZED: Efficient sorting
+        // OPTIMIZED: Efficient sorting with breach date handling
         allAccounts.sort((a, b) => {
             const accountA = a.data();
             const accountB = b.data();
             
+            // Check if accounts are breached
+            const isBreachedA = accountA.status === 'breached' || 
+                (accountA.currentBalance - accountA.accountSize) < -(accountA.accountSize * (accountA.maxDrawdown / 100));
+            const isBreachedB = accountB.status === 'breached' || 
+                (accountB.currentBalance - accountB.accountSize) < -(accountB.accountSize * (accountB.maxDrawdown / 100));
+            
+            // If both are breached, sort by breach date (most recent first)
+            if (isBreachedA && isBreachedB) {
+                // Get breach timestamps
+                const breachDateA = accountA.breachedAt?.toDate?.() || accountA.breachedAt || accountA.updatedAt?.toDate?.() || accountA.updatedAt || new Date(0);
+                const breachDateB = accountB.breachedAt?.toDate?.() || accountB.breachedAt || accountB.updatedAt?.toDate?.() || accountB.updatedAt || new Date(0);
+                
+                // Convert to timestamps for comparison
+                const timestampA = breachDateA instanceof Date ? breachDateA.getTime() : new Date(breachDateA).getTime();
+                const timestampB = breachDateB instanceof Date ? breachDateB.getTime() : new Date(breachDateB).getTime();
+                
+                // Sort by most recent breach first
+                return timestampB - timestampA;
+            }
+            
+            // If only one is breached, non-breached comes first
+            if (isBreachedA !== isBreachedB) {
+                return isBreachedA ? 1 : -1;
+            }
+            
+            // For non-breached accounts, use existing logic
             const phaseOrder = { 'Funded': 0, 'Challenge Phase 2': 1, 'Challenge Phase 1': 2 };
             const orderA = phaseOrder[accountA.phase] ?? 3;
             const orderB = phaseOrder[accountB.phase] ?? 3;
@@ -951,7 +1025,7 @@ function displayAccounts(accounts) {
             stat4Value = `${remainingTarget.toLocaleString()}`;
             
             if (account.profitTargetAmount > 0 && totalPnL >= account.profitTargetAmount && !isBreached && account.status === 'active') {
-                upgradeButtonHtml = `<button class="action-btn upgrade-btn" onclick="upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}')">Upgrade</button>`;
+                upgradeButtonHtml = `<button class="action-btn upgrade-btn" onclick="upgradeAccount('${accountId}', '${account.firmName}', ${account.accountSize}, '${account.phase}', '${account.alias || ''}')">Upgrade</button>`;
             }
         }
         
@@ -1018,9 +1092,29 @@ function displayAccounts(accounts) {
 
 function getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml) {
     if (account.status === 'breached' || isBreached) {
+        // Get breach date for display
+        let breachDateText = '';
+        if (account.breachedAt) {
+            const breachDate = account.breachedAt?.toDate?.() || account.breachedAt;
+            const date = breachDate instanceof Date ? breachDate : new Date(breachDate);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) {
+                breachDateText = ' - Today';
+            } else if (diffDays === 1) {
+                breachDateText = ' - Yesterday';
+            } else if (diffDays < 7) {
+                breachDateText = ` - ${diffDays} days ago`;
+            } else {
+                breachDateText = ` - ${date.toLocaleDateString()}`;
+            }
+        }
+        
         return `
             <div class="bottom-row" onclick="event.stopPropagation()">
-                <div class="breach-warning">⚠️ BREACHED</div>
+                <div class="breach-warning">⚠️ BREACHED${breachDateText}</div>
                 <div class="account-actions">
                     <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
                     <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
@@ -1386,6 +1480,7 @@ window.deleteAccount = async function(accountId) {
         try {
             await updateDoc(doc(db, 'accounts', accountId), {
                 status: 'breached',
+                breachedAt: new Date(),
                 updatedAt: new Date()
             });
             console.log('Account marked as breached!');
@@ -1412,7 +1507,7 @@ window.deleteAccount = async function(accountId) {
     });
 };
 
-window.upgradeAccount = async function(accountId, firmName, accountSize, currentPhase) {
+window.upgradeAccount = async function(accountId, firmName, accountSize, currentPhase, alias = '') {
     resetModal();
     DOM.addAccountModal.style.display = 'block';
     
@@ -1425,6 +1520,9 @@ window.upgradeAccount = async function(accountId, firmName, accountSize, current
     
     DOM.accountSizeSelect.value = accountSize.toString();
     document.getElementById('current-balance').value = accountSize;
+    
+    // Prefill the alias field
+    document.getElementById('alias').value = alias;
     
     let nextPhase;
     if (currentPhase === 'Challenge Phase 1') {
@@ -1522,6 +1620,17 @@ function initializeApp() {
             };
             window.SmartCache = SmartCache;
         }
+        
+        // Add manual migration trigger (available in production for admins)
+        window.runBreachMigration = async () => {
+            if (currentUser) {
+                const migrationKey = `breach_migration_${currentUser.uid}`;
+                localStorage.removeItem(migrationKey);
+                await migrateBreachedAccounts();
+                debouncedLoadAccounts();
+                console.log('Breach migration completed');
+            }
+        };
         
         console.log('PropOne initialized successfully');
     } catch (error) {

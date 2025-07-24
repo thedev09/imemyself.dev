@@ -184,6 +184,7 @@ class AccountManager {
         try {
             await updateDoc(doc(db, 'accounts', accountId), {
                 status: 'breached',
+                breachedAt: new Date(),
                 updatedAt: new Date()
             });
             return { success: true };

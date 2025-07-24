@@ -5,14 +5,60 @@
   <title>Trade Management</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    /* Theme variables */
+    :root {
+      /* Dark theme (default) */
+      --bg-gradient-start: #1a2236;
+      --bg-gradient-end: #252e47;
+      --text-primary: #eaeaea;
+      --text-secondary: #a6b6ce;
+      --text-highlight: #ace3e9;
+      --bg-card: #222840;
+      --bg-card-header: #28304c;
+      --bg-button: #223567;
+      --bg-button-hover: #20e59d;
+      --text-button-hover: #222;
+      --bg-secondary: #252e47;
+      --border-color: #323c5f;
+      --border-table: #31385c;
+      --bg-progress: #373e5a;
+      --color-win: #23e6b9;
+      --color-loss: #fd2b49;
+      --color-warning: #ffd500;
+      --shadow-color: rgba(38, 52, 90, 0.14);
+    }
+    
+    /* Light theme */
+    body.light-theme {
+      --bg-gradient-start: #f0f4f8;
+      --bg-gradient-end: #e2e8f0;
+      --text-primary: #1a202c;
+      --text-secondary: #4a5568;
+      --text-highlight: #2b6cb0;
+      --bg-card: #ffffff;
+      --bg-card-header: #e2e8f0;
+      --bg-button: #e2e8f0;
+      --bg-button-hover: #10b981;
+      --text-button-hover: #ffffff;
+      --bg-secondary: #f7fafc;
+      --border-color: #cbd5e0;
+      --border-table: #e2e8f0;
+      --bg-progress: #e2e8f0;
+      --color-win: #10b981;
+      --color-loss: #ef4444;
+      --color-warning: #f59e0b;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+    
     /* Reset and base */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: linear-gradient(135deg, #1a2236 0%, #252e47 100%);
-      color: #eaeaea;
+      background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+      color: var(--text-primary);
       font-family: 'Segoe UI', Arial, sans-serif;
       padding: 30px;
       min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
     }
     h1, h2, h3 { font-weight: 700; margin-bottom: 12px; }
     .container {
@@ -31,31 +77,40 @@
       gap: 18px;
     }
     .nav button, .back-btn {
-      background: #223567;
+      background: var(--bg-button);
       border: none;
-      color: #fff;
+      color: var(--text-primary);
       padding: 8px 18px;
       border-radius: 24px;
       cursor: pointer;
       font-size: 15px;
+      transition: all 0.3s ease;
     }
     .nav button.active, .back-btn:hover {
-      background: #20e59d;
-      color: #222;
+      background: var(--bg-button-hover);
+      color: var(--text-button-hover);
       font-weight: bold;
     }
     .back-btn {
       font-size: 13px;
       margin-right: 15px;
-      background: #252e47;
+      background: var(--bg-secondary);
+    }
+    .theme-toggle {
+      background: var(--bg-secondary) !important;
+      padding: 8px 12px !important;
+      font-size: 18px !important;
+    }
+    .theme-toggle:hover {
+      background: var(--bg-button) !important;
     }
     /* Card styles */
     .card {
-      background: #222840;
+      background: var(--bg-card);
       border-radius: 15px;
       padding: 24px 24px 18px 24px;
       margin-bottom: 32px;
-      box-shadow: 0 2px 16px rgba(38, 52, 90, 0.14);
+      box-shadow: 0 2px 16px var(--shadow-color);
     }
     /* Active trades section */
     .trade-status {
@@ -68,8 +123,8 @@
       padding: 6px 16px;
       border-radius: 14px;
       font-weight: bold;
-      color: #d9fce0;
-      background: #154c33;
+      color: var(--color-win);
+      background: var(--bg-card-header);
       margin-right: 10px;
       font-size: 16px;
     }
@@ -81,16 +136,16 @@
     }
     .trade-info-label {
       font-size: 13px;
-      color: #a6b6ce;
+      color: var(--text-secondary);
     }
     .trade-info-value {
       font-size: 15px;
       font-weight: 500;
-      color: #23e6b9;
+      color: var(--color-win);
     }
     .progress-bar-wrap {
       width: 100%;
-      background: #373e5a;
+      background: var(--bg-progress);
       border-radius: 10px;
       height: 11px;
       margin-bottom: 10px;
@@ -107,7 +162,7 @@
       top: -5px;
       width: 2px;
       height: 21px;
-      background: #20e59d;
+      background: var(--bg-button-hover);
       left: 0;
       transform: translateX(-1px);
     }
@@ -118,9 +173,9 @@
       margin-bottom: 14px;
     }
     select {
-      background: #222840;
-      border: 1px solid #323c5f;
-      color: #eaeaea;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
       border-radius: 8px;
       padding: 5px 10px;
       font-size: 14px;
@@ -136,20 +191,20 @@
       text-align: left;
     }
     .history-table th {
-      background: #28304c;
-      color: #ace3e9;
+      background: var(--bg-card-header);
+      color: var(--text-highlight);
       font-weight: bold;
       font-size: 14px;
     }
     .history-table tr {
-      border-bottom: 1px solid #31385c;
+      border-bottom: 1px solid var(--border-table);
     }
-    .history-table td.win { color: #23e6b9; font-weight: 600; }
-    .history-table td.loss { color: #fd2b49; font-weight: 600; }
+    .history-table td.win { color: var(--color-win); font-weight: 600; }
+    .history-table td.loss { color: var(--color-loss); font-weight: 600; }
     .reason-badge {
       font-size: 12px;
-      color: #ffd500;
-      background: #373e5a;
+      color: var(--color-warning);
+      background: var(--bg-progress);
       border-radius: 6px;
       padding: 3px 8px;
       margin-left: 7px;
@@ -165,14 +220,14 @@
       padding: 9px 14px;
     }
     .stats-table th {
-      background: #28304c;
-      color: #ace3e9;
+      background: var(--bg-card-header);
+      color: var(--text-highlight);
     }
     .stats-table td {
       text-align: center;
     }
     .stats-table tr {
-      border-bottom: 1px solid #31385c;
+      border-bottom: 1px solid var(--border-table);
     }
     /* Responsive */
     @media (max-width: 900px) {
@@ -205,6 +260,9 @@
       <div class="nav">
         <button class="active">Live Trades</button>
         <button onclick="alert('Analytics under development!')">Analytics</button>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+          <span class="theme-icon">🌙</span>
+        </button>
       </div>
     </div>
     <!-- Active Trades -->
@@ -213,7 +271,7 @@
       <div class="trade-status">
         <span class="trade-direction">BUY</span>
         <span><b>USD/JPY</b></span>
-        <span style="color:#23e6b9;font-size:16px;margin-left:18px;">+20.7 pips (+0.14%)</span>
+        <span style="color:var(--color-win);font-size:16px;margin-left:18px;">+20.7 pips (+0.14%)</span>
       </div>
       <div class="trade-info-grid">
         <div>
@@ -230,7 +288,7 @@
         </div>
         <div>
           <div class="trade-info-label">Confidence</div>
-          <div class="trade-info-value" style="color:#FFD500;">60%</div>
+          <div class="trade-info-value" style="color:var(--color-warning);">60%</div>
         </div>
         <div>
           <div class="trade-info-label">Stop Loss</div>
@@ -245,7 +303,7 @@
         <div id="progressBar" class="progress-bar" style="width:40%;"></div>
         <div id="progressIndicator" class="progress-indicator"></div>
       </div>
-      <div style="display: flex; justify-content: space-between; font-size:13px; color:#7fabd8;">
+      <div style="display: flex; justify-content: space-between; font-size:13px; color:var(--text-secondary);">
         <span>SL: ¥147.707</span>
         <span>TP: ¥149.649</span>
       </div>
@@ -368,14 +426,41 @@
           <tr>
             <td>Simple &amp; Effective (V3)</td>
             <td>5</td>
-            <td style="color:#fd2b49;font-weight:600;">-17.8</td>
-            <td style="color:#23e6b9;font-weight:600;">20.0%</td>
+            <td style="color:var(--color-loss);font-weight:600;">-17.8</td>
+            <td style="color:var(--color-win);font-weight:600;">20.0%</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
   <script>
+    // Theme toggle functionality
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.querySelector('.theme-icon');
+      
+      if (body.classList.contains('light-theme')) {
+        body.classList.remove('light-theme');
+        themeIcon.textContent = '🌙';
+        localStorage.setItem('theme', 'dark');
+      } else {
+        body.classList.add('light-theme');
+        themeIcon.textContent = '☀️';
+        localStorage.setItem('theme', 'light');
+      }
+    }
+    
+    // Apply saved theme on load
+    window.addEventListener('DOMContentLoaded', function() {
+      const savedTheme = localStorage.getItem('theme');
+      const themeIcon = document.querySelector('.theme-icon');
+      
+      if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        themeIcon.textContent = '☀️';
+      }
+    });
+    
     // Update the Progress Bar and Indicator Position for Active Trades
     const entry = 148.449;
     const current = 148.656;
