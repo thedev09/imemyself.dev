@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Plus, MoreVertical, Eye, EyeOff, Edit, Trash2, 
@@ -10,8 +10,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../services/firebase';
 import { 
-  collection, addDoc, updateDoc, doc, serverTimestamp,
-  query, where, orderBy, getDocs, writeBatch 
+  collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
+  query, where, orderBy, getDocs, writeBatch, increment
 } from 'firebase/firestore';
 
 const USD_TO_INR = 84.0;
@@ -35,6 +35,18 @@ const ACCOUNT_SUBTYPES = {
   crypto: ['Crypto Wallet', 'Investment', 'Trading', 'Staking']
 };
 
+const TRANSACTION_CATEGORIES = {
+  income: ['Salary', 'Gift', 'Payouts', 'Gambling', 'Investments', 'Business', 'Freelance', 'Rental Income', 'Interest', 'Dividends', 'Bonus', 'Commission', 'Refunds', 'Other Income'],
+  expense: ['Food & Dining', 'Travel', 'Entertainment', 'Friends & Family', 'Shopping', 'Utilities', 'Healthcare', 'Personal Care', 'Gifts & Donations', 'Bills', 'Groceries', 'Vehicle', 'Subscriptions', 'Hobbies', 'Eval', 'Other Expenses'],
+  transfer: ['Self Transfer', 'Account Transfer', 'Wallet Transfer'],
+  adjustment: ['Balance Reconciliation', 'Bank Interest', 'Bank Charges', 'Missed Transaction', 'Other Adjustment']
+};
+
+const PAYMENT_MODES = {
+  bank: ['UPI', 'Bank Transfer', 'Debit Card', 'Credit Card', 'Cash', 'Net Banking'],
+  crypto: ['Crypto Transfer', 'Crypto Card', 'Exchange Transfer', 'DeFi Transaction']
+};
+
 function Accounts({ accounts, transactions }) {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -48,6 +60,13 @@ function Accounts({ accounts, transactions }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [draggedAccount, setDraggedAccount] = useState(null);
   const [dragOver, setDragOver] = useState(null);
+  
+  // Transaction management states
+  const [showAddTransactionModal, setShowAddTransactionModal] = useState(false);
+  const [showEditTransactionModal, setShowEditTransactionModal] = useState(false);
+  const [showDeleteTransactionModal, setShowDeleteTransactionModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [transactionLoading, setTransactionLoading] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -61,6 +80,31 @@ function Accounts({ accounts, transactions }) {
 
   const [deleteOptions, setDeleteOptions] = useState({
     deleteTransactions: false
+  });
+
+  // Transaction form data
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [transactionFormData, setTransactionFormData] = useState({
+    type: 'expense',
+    amount: '',
+    currency: 'INR',
+    accountId: '',
+    toAccountId: '',
+    category: '',
+    paymentMode: '',
+    notes: '',
+    date: getCurrentDateTime(),
+    isIncrease: true,
+    newBalance: ''
   });
 
   const formatCurrency = (amount, currency = 'INR') => {
@@ -105,6 +149,24 @@ function Accounts({ accounts, transactions }) {
     }
   };
 
+  // Memoized transaction filtering for performance
+  const filteredAccountTransactions = useMemo(() => {
+    if (!selectedAccount) return [];
+    return transactions
+      .filter(t => t.accountId === selectedAccount.id || t.toAccountId === selectedAccount.id)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [transactions, selectedAccount]);
+
+  const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-IN', { 
+    day: 'numeric', month: 'short', year: 'numeric' 
+  });
+  
+  const formatTime = (dateString) => new Date(dateString).toLocaleTimeString('en-IN', { 
+    hour: '2-digit', minute: '2-digit' 
+  });
+
+  const getAccountById = (id) => accounts.find(acc => acc.id === id);
+
   const openDetailsModal = (account) => {
     setSelectedAccount(account);
     setShowDetailsModal(true);
@@ -120,6 +182,55 @@ function Accounts({ accounts, transactions }) {
       balance: '',
       description: ''
     });
+  };
+
+  const resetTransactionForm = () => {
+    setTransactionFormData({
+      type: 'expense',
+      amount: '',
+      currency: selectedAccount?.currency || 'INR',
+      accountId: selectedAccount?.id || '',
+      toAccountId: '',
+      category: '',
+      paymentMode: '',
+      notes: '',
+      date: getCurrentDateTime(),
+      isIncrease: true,
+      newBalance: ''
+    });
+  };
+
+  const openAddTransactionModal = () => {
+    resetTransactionForm();
+    setTransactionFormData(prev => ({
+      ...prev,
+      accountId: selectedAccount?.id || '',
+      currency: selectedAccount?.currency || 'INR'
+    }));
+    setShowAddTransactionModal(true);
+  };
+
+  const openEditTransactionModal = (transaction) => {
+    setSelectedTransaction(transaction);
+    setTransactionFormData({
+      type: transaction.type,
+      amount: transaction.amount.toString(),
+      currency: transaction.currency,
+      accountId: transaction.accountId,
+      toAccountId: transaction.toAccountId || '',
+      category: transaction.category || '',
+      paymentMode: transaction.paymentMode || '',
+      notes: transaction.notes || '',
+      date: transaction.date,
+      isIncrease: transaction.isIncrease ?? true,
+      newBalance: ''
+    });
+    setShowEditTransactionModal(true);
+  };
+
+  const openDeleteTransactionModal = (transaction) => {
+    setSelectedTransaction(transaction);
+    setShowDeleteTransactionModal(true);
   };
 
   const handleAddAccount = async (e) => {
@@ -310,6 +421,212 @@ function Accounts({ accounts, transactions }) {
     setSelectedAccount(account);
     setShowDeleteModal(true);
     setActiveDropdown(null);
+  };
+
+  // Transaction CRUD functions
+  const handleAddTransaction = async (e) => {
+    e.preventDefault();
+    
+    if (!currentUser || transactionLoading || !transactionFormData.accountId) return;
+    
+    if (transactionFormData.type === 'transfer' && (!transactionFormData.amount || !transactionFormData.toAccountId)) return;
+    if (transactionFormData.type === 'adjustment' && !transactionFormData.newBalance) return;
+    if (['income', 'expense'].includes(transactionFormData.type) && (!transactionFormData.amount || !transactionFormData.category)) return;
+
+    try {
+      setTransactionLoading(true);
+      const batch = writeBatch(db);
+      const account = getAccountById(transactionFormData.accountId);
+      if (!account) throw new Error('Account not found');
+      
+      let amount;
+      let transactionData = {
+        userId: currentUser.uid,
+        accountId: transactionFormData.accountId,
+        accountName: account.name,
+        currency: account.currency,
+        date: transactionFormData.date,
+        notes: transactionFormData.notes,
+        createdAt: new Date().toISOString()
+      };
+
+      if (transactionFormData.type === 'adjustment') {
+        const newBalance = parseFloat(transactionFormData.newBalance);
+        const currentBalance = account.balance;
+        amount = newBalance - currentBalance;
+        
+        transactionData = {
+          ...transactionData,
+          type: 'adjustment',
+          amount: Math.abs(amount),
+          amountInINR: convertToINR(Math.abs(amount), account.currency),
+          exchangeRate: account.currency === 'USD' ? USD_TO_INR : 1,
+          isIncrease: amount >= 0,
+          category: 'Balance Reconciliation',
+          paymentMode: 'Account Adjustment',
+          newBalance: newBalance,
+          previousBalance: currentBalance
+        };
+
+        const accountRef = doc(db, 'users', currentUser.uid, 'accounts', transactionFormData.accountId);
+        batch.update(accountRef, {
+          balance: newBalance,
+          lastActivityAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        amount = parseFloat(transactionFormData.amount);
+        const amountInINR = convertToINR(amount, account.currency);
+        
+        transactionData = {
+          ...transactionData,
+          type: transactionFormData.type,
+          amount: amount,
+          amountInINR: amountInINR,
+          exchangeRate: account.currency === 'USD' ? USD_TO_INR : 1
+        };
+
+        if (transactionFormData.type === 'transfer') {
+          const toAccount = getAccountById(transactionFormData.toAccountId);
+          if (!toAccount) throw new Error('Destination account not found');
+          if (transactionFormData.accountId === transactionFormData.toAccountId) throw new Error('Cannot transfer to same account');
+          
+          transactionData.toAccountId = transactionFormData.toAccountId;
+          transactionData.toAccountName = toAccount.name;
+          transactionData.fromAccountId = transactionFormData.accountId;
+          transactionData.category = 'Self Transfer';
+          transactionData.paymentMode = 'Account Transfer';
+          
+          const fromAccountRef = doc(db, 'users', currentUser.uid, 'accounts', transactionFormData.accountId);
+          const toAccountRef = doc(db, 'users', currentUser.uid, 'accounts', transactionFormData.toAccountId);
+          
+          batch.update(fromAccountRef, {
+            balance: increment(-amount),
+            lastActivityAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          
+          const convertedAmount = account.currency !== toAccount.currency 
+            ? (account.currency === 'USD' ? amount * USD_TO_INR : amount / USD_TO_INR) : amount;
+            
+          batch.update(toAccountRef, {
+            balance: increment(convertedAmount),
+            lastActivityAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+
+          if (account.currency !== toAccount.currency) {
+            transactionData.convertedAmount = convertedAmount;
+            transactionData.toCurrency = toAccount.currency;
+          }
+        } else {
+          transactionData.category = transactionFormData.category;
+          transactionData.paymentMode = transactionFormData.paymentMode;
+          
+          const accountRef = doc(db, 'users', currentUser.uid, 'accounts', transactionFormData.accountId);
+          const balanceChange = transactionFormData.type === 'income' ? amount : -amount;
+          
+          batch.update(accountRef, {
+            balance: increment(balanceChange),
+            lastActivityAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
+      
+      const transactionRef = doc(collection(db, 'users', currentUser.uid, 'transactions'));
+      batch.set(transactionRef, transactionData);
+      await batch.commit();
+      
+      setShowAddTransactionModal(false);
+      resetTransactionForm();
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert('Error adding transaction. Please try again.');
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
+
+  const handleEditTransaction = async (e) => {
+    e.preventDefault();
+    if (!currentUser || !selectedTransaction || transactionLoading) return;
+
+    try {
+      setTransactionLoading(true);
+      const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', selectedTransaction.id);
+      await updateDoc(transactionRef, {
+        category: transactionFormData.category,
+        paymentMode: transactionFormData.paymentMode,
+        notes: transactionFormData.notes,
+        updatedAt: new Date().toISOString()
+      });
+      
+      setShowEditTransactionModal(false);
+      setSelectedTransaction(null);
+      resetTransactionForm();
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      alert('Error updating transaction. Please try again.');
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (!currentUser || !selectedTransaction || transactionLoading) return;
+
+    try {
+      setTransactionLoading(true);
+      const batch = writeBatch(db);
+      const account = getAccountById(selectedTransaction.accountId);
+      
+      if (account) {
+        const accountRef = doc(db, 'users', currentUser.uid, 'accounts', selectedTransaction.accountId);
+        let balanceChange = 0;
+        
+        switch (selectedTransaction.type) {
+          case 'income': balanceChange = -selectedTransaction.amount; break;
+          case 'expense': balanceChange = selectedTransaction.amount; break;
+          case 'adjustment': 
+            balanceChange = selectedTransaction.isIncrease ? -selectedTransaction.amount : selectedTransaction.amount; 
+            break;
+          case 'transfer':
+            balanceChange = selectedTransaction.amount;
+            if (selectedTransaction.toAccountId) {
+              const toAccountRef = doc(db, 'users', currentUser.uid, 'accounts', selectedTransaction.toAccountId);
+              const toAccount = getAccountById(selectedTransaction.toAccountId);
+              if (toAccount) {
+                const convertedAmount = selectedTransaction.convertedAmount || selectedTransaction.amount;
+                batch.update(toAccountRef, {
+                  balance: increment(-convertedAmount), 
+                  updatedAt: new Date().toISOString()
+                });
+              }
+            }
+            break;
+        }
+        
+        if (balanceChange !== 0) {
+          batch.update(accountRef, {
+            balance: increment(balanceChange), 
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
+      
+      const transactionRef = doc(db, 'users', currentUser.uid, 'transactions', selectedTransaction.id);
+      batch.delete(transactionRef);
+      await batch.commit();
+      
+      setShowDeleteTransactionModal(false);
+      setSelectedTransaction(null);
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      alert('Error deleting transaction. Please try again.');
+    } finally {
+      setTransactionLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -1023,93 +1340,575 @@ function Accounts({ accounts, transactions }) {
 
               {/* Transactions Panel */}
               <div className="flex-1 flex flex-col">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                     <Receipt className="w-5 h-5 mr-2" />
-                    Transactions
+                    Transactions ({filteredAccountTransactions.length})
                   </h3>
+                  <button
+                    onClick={openAddTransactionModal}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg flex items-center space-x-1 transition-all duration-300 text-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add</span>
+                  </button>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-6">
-                  {(() => {
-                    const accountTransactions = transactions
-                      .filter(t => t.accountId === selectedAccount.id || t.toAccountId === selectedAccount.id)
-                      .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                    if (accountTransactions.length === 0) {
-                      return (
-                        <div className="text-center py-12">
-                          <Receipt className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            No transactions yet
-                          </h4>
-                          <p className="text-gray-600 dark:text-gray-400">
-                            Transactions for this account will appear here
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-3">
-                        {accountTransactions.map((transaction) => {
-                          const TransactionIcon = getTransactionIcon(transaction.type);
-                          const isNegativeForAccount = (
-                            (transaction.type === 'expense') ||
-                            (transaction.type === 'transfer' && transaction.accountId === selectedAccount.id) ||
-                            (transaction.type === 'adjustment' && !transaction.isIncrease)
-                          );
-                          
-                          return (
-                            <div key={transaction.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center space-x-3">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                    transaction.type === 'income' ? 'bg-green-100 dark:bg-green-500/20' :
-                                    transaction.type === 'expense' ? 'bg-red-100 dark:bg-red-500/20' :
-                                    transaction.type === 'transfer' ? 'bg-blue-100 dark:bg-blue-500/20' :
-                                    'bg-orange-100 dark:bg-orange-500/20'
-                                  }`}>
-                                    <TransactionIcon className={`w-4 h-4 ${getTransactionTypeColor(transaction.type)}`} />
+                  {filteredAccountTransactions.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Receipt className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        No transactions yet
+                      </h4>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Start tracking transactions for this account
+                      </p>
+                      <button
+                        onClick={openAddTransactionModal}
+                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 mx-auto transition-all duration-300"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add First Transaction</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredAccountTransactions.map((transaction) => {
+                        const TransactionIcon = getTransactionIcon(transaction.type);
+                        const isNegativeForAccount = (
+                          (transaction.type === 'expense') ||
+                          (transaction.type === 'transfer' && transaction.accountId === selectedAccount.id) ||
+                          (transaction.type === 'adjustment' && !transaction.isIncrease)
+                        );
+                        
+                        return (
+                          <div key={transaction.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-300 group">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                  transaction.type === 'income' ? 'bg-green-100 dark:bg-green-500/20' :
+                                  transaction.type === 'expense' ? 'bg-red-100 dark:bg-red-500/20' :
+                                  transaction.type === 'transfer' ? 'bg-blue-100 dark:bg-blue-500/20' :
+                                  'bg-orange-100 dark:bg-orange-500/20'
+                                }`}>
+                                  <TransactionIcon className={`w-4 h-4 ${getTransactionTypeColor(transaction.type)}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                      {transaction.category}
+                                    </span>
+                                    <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${
+                                      transaction.type === 'income' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300' :
+                                      transaction.type === 'expense' ? 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300' :
+                                      transaction.type === 'transfer' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                                      'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300'
+                                    }`}>
+                                      {transaction.type}
+                                    </span>
                                   </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                        {transaction.category}
-                                      </span>
-                                      <span className={`text-xs px-2 py-1 rounded-full ${
-                                        transaction.type === 'income' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300' :
-                                        transaction.type === 'expense' ? 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300' :
-                                        transaction.type === 'transfer' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
-                                        'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300'
-                                      }`}>
-                                        {transaction.type}
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                      {transaction.paymentMode} • {new Date(transaction.date).toLocaleDateString('en-IN')}
-                                    </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center space-x-2">
+                                    <span>{transaction.paymentMode}</span>
+                                    <span>•</span>
+                                    <span>{formatDate(transaction.date)}</span>
+                                    <span>•</span>
+                                    <span>{formatTime(transaction.date)}</span>
                                   </div>
                                 </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
                                 <div className={`text-right font-semibold ${
                                   isNegativeForAccount ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                                 }`}>
                                   {isNegativeForAccount ? '-' : '+'}{formatCurrency(transaction.amount, transaction.currency)}
                                 </div>
-                              </div>
-                              {transaction.notes && (
-                                <div className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded p-2 mt-2">
-                                  {transaction.notes}
+                                <div className="relative opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveDropdown(activeDropdown === transaction.id ? null : transaction.id);
+                                    }}
+                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-300"
+                                  >
+                                    <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                  </button>
+                                  
+                                  {activeDropdown === transaction.id && (
+                                    <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
+                                      {['income', 'expense'].includes(transaction.type) && (
+                                        <button
+                                          onClick={() => {
+                                            openEditTransactionModal(transaction);
+                                            setActiveDropdown(null);
+                                          }}
+                                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                                        >
+                                          <Edit className="w-4 h-4" />
+                                          <span>Edit</span>
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() => {
+                                          openDeleteTransactionModal(transaction);
+                                          setActiveDropdown(null);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        <span>Delete</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                              </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                            {transaction.notes && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded p-2 mt-2">
+                                {transaction.notes}
+                              </div>
+                            )}
+                            {transaction.type === 'transfer' && transaction.toAccountName && (
+                              <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                Transfer to: {transaction.toAccountName}
+                                {transaction.convertedAmount && transaction.currency !== transaction.toCurrency && (
+                                  <span className="ml-1">
+                                    (→ {formatCurrency(transaction.convertedAmount, transaction.toCurrency)})
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Transaction Modal */}
+      {showAddTransactionModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddTransactionModal(false);
+              resetTransactionForm();
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-2xl max-h-[95vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                Add Transaction - {selectedAccount?.name}
+              </h2>
+              <button 
+                onClick={() => {
+                  setShowAddTransactionModal(false);
+                  resetTransactionForm();
+                }} 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-300"
+              >
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddTransaction} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction Type</label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { value: 'income', label: 'Income', icon: ArrowDownRight, color: 'green' },
+                    { value: 'expense', label: 'Expense', icon: ArrowUpRight, color: 'red' },
+                    { value: 'transfer', label: 'Transfer', icon: Send, color: 'blue' },
+                    { value: 'adjustment', label: 'Adjustment', icon: Wallet, color: 'orange' }
+                  ].map(type => {
+                    const IconComponent = type.icon;
+                    const isSelected = transactionFormData.type === type.value;
+                    return (
+                      <button
+                        key={type.value} 
+                        type="button"
+                        onClick={() => setTransactionFormData({...transactionFormData, type: type.value, category: '', paymentMode: ''})}
+                        className={`p-2 rounded-lg border-2 transition-all duration-300 flex flex-col items-center space-y-1 ${
+                          isSelected ? `border-${type.color}-500 bg-${type.color}-50 dark:bg-${type.color}-500/10` : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <IconComponent className={`w-4 h-4 ${isSelected ? `text-${type.color}-600 dark:text-${type.color}-400` : 'text-gray-600 dark:text-gray-400'}`} />
+                        <span className={`text-xs font-medium ${isSelected ? `text-${type.color}-700 dark:text-${type.color}-300` : 'text-gray-700 dark:text-gray-300'}`}>
+                          {type.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Amount Field - Hide for Adjustment */}
+                {transactionFormData.type !== 'adjustment' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Amount ({selectedAccount?.currency})</label>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      value={transactionFormData.amount} 
+                      onChange={(e) => setTransactionFormData({...transactionFormData, amount: e.target.value})} 
+                      placeholder="0.00" 
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" 
+                      required 
+                    />
+                  </div>
+                )}
+
+                {/* New Balance Field - Only for Adjustment */}
+                {transactionFormData.type === 'adjustment' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      New Balance ({selectedAccount?.currency})
+                    </label>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      value={transactionFormData.newBalance} 
+                      onChange={(e) => setTransactionFormData({...transactionFormData, newBalance: e.target.value})} 
+                      placeholder={`Current: ${formatCurrency(selectedAccount?.balance || 0, selectedAccount?.currency)}`}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" 
+                      required 
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* To Account - Only for Transfer */}
+              {transactionFormData.type === 'transfer' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To Account</label>
+                  <select 
+                    value={transactionFormData.toAccountId} 
+                    onChange={(e) => setTransactionFormData({...transactionFormData, toAccountId: e.target.value})} 
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" 
+                    required
+                  >
+                    <option value="">Select destination account</option>
+                    {accounts.filter(acc => acc.id !== selectedAccount?.id).map(account => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} ({account.currency}) - {formatCurrency(account.balance, account.currency)}
+                      </option>
+                    ))}
+                  </select>
+                  {transactionFormData.toAccountId && (() => {
+                    const fromAccount = selectedAccount;
+                    const toAccount = getAccountById(transactionFormData.toAccountId);
+                    if (fromAccount && toAccount && fromAccount.currency !== toAccount.currency && transactionFormData.amount) {
+                      const convertedAmount = fromAccount.currency === 'USD' ? parseFloat(transactionFormData.amount) * USD_TO_INR : parseFloat(transactionFormData.amount) / USD_TO_INR;
+                      return (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          Will receive: {formatCurrency(convertedAmount, toAccount.currency)}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
+
+              {/* Category and Payment Mode - Only for Income/Expense */}
+              {['income', 'expense'].includes(transactionFormData.type) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                    <select 
+                      value={transactionFormData.category} 
+                      onChange={(e) => setTransactionFormData({...transactionFormData, category: e.target.value})} 
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" 
+                      required
+                    >
+                      <option value="">Select category</option>
+                      {TRANSACTION_CATEGORIES[transactionFormData.type]?.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment Mode</label>
+                    <select 
+                      value={transactionFormData.paymentMode} 
+                      onChange={(e) => setTransactionFormData({...transactionFormData, paymentMode: e.target.value})} 
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm"
+                    >
+                      <option value="">Select payment mode</option>
+                      {selectedAccount && PAYMENT_MODES[selectedAccount.type]?.map(mode => (
+                        <option key={mode} value={mode}>{mode}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date & Time</label>
+                <input 
+                  type="datetime-local" 
+                  value={transactionFormData.date} 
+                  onChange={(e) => setTransactionFormData({...transactionFormData, date: e.target.value})} 
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" 
+                  required 
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes (Optional)</label>
+                <textarea 
+                  value={transactionFormData.notes} 
+                  onChange={(e) => setTransactionFormData({...transactionFormData, notes: e.target.value})} 
+                  placeholder="Add any additional notes..." 
+                  rows={2} 
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" 
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowAddTransactionModal(false);
+                    resetTransactionForm();
+                  }} 
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300 text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={transactionLoading || 
+                    (transactionFormData.type === 'transfer' && (!transactionFormData.amount || !transactionFormData.toAccountId)) ||
+                    (transactionFormData.type === 'adjustment' && !transactionFormData.newBalance) ||
+                    (['income', 'expense'].includes(transactionFormData.type) && (!transactionFormData.amount || !transactionFormData.category))
+                  } 
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                >
+                  {transactionLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>Add Transaction</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Transaction Modal */}
+      {showEditTransactionModal && selectedTransaction && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEditTransactionModal(false);
+              setSelectedTransaction(null);
+              resetTransactionForm();
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-lg backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Transaction</h2>
+              <button 
+                onClick={() => {
+                  setShowEditTransactionModal(false);
+                  setSelectedTransaction(null);
+                  resetTransactionForm();
+                }} 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-300"
+              >
+                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditTransaction} className="space-y-4">
+              <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">Limited Edit Mode</h3>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-400">You can only edit category, payment mode, and notes. Amount and account changes affect balances and require deletion + re-creation.</p>
+                  </div>
+                </div>
+              </div>
+
+              {['income', 'expense'].includes(selectedTransaction.type) && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                    <select 
+                      value={transactionFormData.category} 
+                      onChange={(e) => setTransactionFormData({...transactionFormData, category: e.target.value})} 
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300" 
+                      required
+                    >
+                      <option value="">Select category</option>
+                      {TRANSACTION_CATEGORIES[transactionFormData.type]?.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment Mode</label>
+                    <select 
+                      value={transactionFormData.paymentMode} 
+                      onChange={(e) => setTransactionFormData({...transactionFormData, paymentMode: e.target.value})} 
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    >
+                      <option value="">Select payment mode</option>
+                      {(() => {
+                        const account = getAccountById(transactionFormData.accountId);
+                        return account ? PAYMENT_MODES[account.type]?.map(mode => (
+                          <option key={mode} value={mode}>{mode}</option>
+                        )) : null;
+                      })()}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                <textarea 
+                  value={transactionFormData.notes} 
+                  onChange={(e) => setTransactionFormData({...transactionFormData, notes: e.target.value})} 
+                  placeholder="Add any additional notes..." 
+                  rows={2} 
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300" 
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowEditTransactionModal(false);
+                    setSelectedTransaction(null);
+                    resetTransactionForm();
+                  }} 
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={transactionLoading || (['income', 'expense'].includes(selectedTransaction.type) && !transactionFormData.category)} 
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {transactionLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4" />
+                      <span>Update Transaction</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Transaction Modal */}
+      {showDeleteTransactionModal && selectedTransaction && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeleteTransactionModal(false);
+              setSelectedTransaction(null);
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Delete Transaction</h2>
+            </div>
+            
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Are you sure you want to delete this transaction? This action will also reverse any balance changes.
+            </p>
+            
+            <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 mb-6">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  selectedTransaction.type === 'income' ? 'bg-green-100 dark:bg-green-500/20' :
+                  selectedTransaction.type === 'expense' ? 'bg-red-100 dark:bg-red-500/20' :
+                  selectedTransaction.type === 'transfer' ? 'bg-blue-100 dark:bg-blue-500/20' :
+                  'bg-orange-100 dark:bg-orange-500/20'
+                }`}>
+                  {getTransactionIcon(selectedTransaction.type)}
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {selectedTransaction.type === 'adjustment' && (selectedTransaction.isIncrease ? '+' : '-')}
+                    {formatCurrency(selectedTransaction.amount, selectedTransaction.currency)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedTransaction.category} • {formatDate(selectedTransaction.date)}
+                  </p>
+                </div>
+              </div>
+              {selectedTransaction.notes && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  "{selectedTransaction.notes}"
+                </p>
+              )}
+            </div>
+
+            <div className="flex space-x-3">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setShowDeleteTransactionModal(false);
+                  setSelectedTransaction(null);
+                }} 
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteTransaction} 
+                disabled={transactionLoading} 
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              >
+                {transactionLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Transaction</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
