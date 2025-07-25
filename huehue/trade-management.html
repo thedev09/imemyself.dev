@@ -364,118 +364,213 @@
         }
 
         /* =================================
-           TRADE HISTORY TABLE - FIXED FONT & WIDTH
+           COMPLETELY REBUILT TRADE HISTORY TABLE
            ================================= */
 
-        .history-table {
+        .trade-history-table {
             width: 100%;
             background: rgba(255, 255, 255, 0.03);
             border-radius: 12px;
-            overflow-x: auto;
+            overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 600px;
+            display: flex;
+            flex-direction: column;
         }
 
-        .history-table-inner {
+        .trade-history-scroll {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Custom Scrollbar Styling */
+        .trade-history-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .trade-history-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .trade-history-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .trade-history-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .trade-history-scroll::-webkit-scrollbar-corner {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Firefox Scrollbar */
+        .trade-history-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+        }
+
+        .trade-history-content {
             width: 100%;
-            min-width: 900px;
+            min-width: 100%;
         }
 
-        .history-header-row {
+        /* Table Header */
+        .trade-history-header {
             background: rgba(255, 255, 255, 0.1);
-            display: grid;
-            grid-template-columns: 1fr 2fr 1.5fr 1.5fr 1.2fr 1.2fr 1fr 1.5fr;
-            gap: 12px;
-            padding: 16px 12px;
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             font-weight: 600;
             font-size: 0.8em;
             color: #a0a0a0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            align-items: center;
+            flex-shrink: 0;
         }
 
-        .history-trade-row {
-            display: grid;
-            grid-template-columns: 1fr 2fr 1.5fr 1.5fr 1.2fr 1.2fr 1fr 1.5fr;
-            gap: 12px;
-            padding: 16px 12px;
-            font-size: 0.85em;
+        .trade-history-header > div {
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* Flexible Column Widths - Total: 100% */
+        .col-symbol { width: 8%; justify-content: flex-start !important; min-width: 80px; }
+        .col-direction { width: 7%; min-width: 70px; }
+        .col-time { width: 13%; min-width: 130px; }
+        .col-open-price { width: 12%; min-width: 110px; }
+        .col-close-price { width: 12%; min-width: 110px; }
+        .col-pips { width: 8%; min-width: 70px; }
+        .col-tp { width: 12%; min-width: 110px; }
+        .col-sl { width: 12%; min-width: 110px; }
+        .col-duration { width: 9%; min-width: 90px; }
+        .col-reason { width: 7%; min-width: 100px; }
+
+        /* Trade Rows */
+        .trade-history-row {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
             cursor: pointer;
-            align-items: center;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.85em;
         }
 
-        .history-trade-row:hover {
+        .trade-history-row:hover {
             background: rgba(255, 255, 255, 0.08);
         }
 
-        .history-trade-row.profit {
+        .trade-history-row.profit {
             border-left: 4px solid #00ff88;
         }
 
-        .history-trade-row.loss {
+        .trade-history-row.loss {
             border-left: 4px solid #ff4757;
         }
 
-        .history-cell {
-            color: #ffffff;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .trade-history-row > div {
+            padding: 0 8px;
             display: flex;
             align-items: center;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 500;
         }
 
-        .history-cell.symbol {
+        /* Symbol Column */
+        .trade-symbol {
             font-weight: 700;
             font-size: 0.9em;
+            justify-content: flex-start !important;
         }
 
-        .history-cell.date-time {
-            font-size: 0.75em;
-            color: #d0d0d0;
-            display: flex;
-            flex-direction: column;
+        /* Direction Column */
+        .trade-direction-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            min-width: 40px;
+        }
+
+        .trade-direction-badge.buy {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000;
+        }
+
+        .trade-direction-badge.sell {
+            background: linear-gradient(135deg, #ff4757, #ff3742);
+            color: #fff;
+        }
+
+        /* Time Column */
+        .trade-time {
+            flex-direction: column !important;
+            align-items: center !important;
             gap: 2px;
+            line-height: 1.2;
         }
 
-        .history-cell.price {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        .trade-date {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 0.85em;
+        }
+
+        .trade-time-value {
+            font-weight: 400;
+            color: #a0a0a0;
+            font-size: 0.75em;
+        }
+
+        /* Price Columns */
+        .trade-price {
             font-size: 0.8em;
+            font-weight: 500;
         }
 
-        .history-cell.pips {
+        /* Pips Column */
+        .trade-pips {
             font-weight: 700;
             font-size: 0.9em;
+            text-align: center;
         }
 
-        .history-cell.pips.profit {
+        .trade-pips.profit {
             color: #00ff88;
         }
 
-        .history-cell.pips.loss {
+        .trade-pips.loss {
             color: #ff4757;
         }
 
-        .history-cell.duration {
+        /* Duration Column */
+        .trade-duration {
             font-size: 0.8em;
             color: #d0d0d0;
         }
 
-        .history-cell.reason {
-            font-size: 0.75em;
-            color: #a0a0a0;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 4px 8px;
-            border-radius: 6px;
+        /* Reason Column */
+        .trade-reason {
+            font-size: 0.8em;
+            color: #ffffff;
+            font-weight: 500;
             text-align: center;
-            max-width: fit-content;
         }
 
         /* Enhanced Filters */
@@ -708,26 +803,27 @@
                 grid-template-columns: 1fr !important;
             }
 
-            /* ✅ MOBILE: Horizontal scroll for trade history */
-            .history-table {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
+            /* ✅ MOBILE: Flexible table with horizontal scroll */
+            .trade-history-table {
+                height: 500px !important;
+            }
+            
+            .trade-history-content {
+                min-width: 900px !important;
             }
 
-            .history-table-inner {
-                min-width: 800px !important;
+            .trade-history-header,
+            .trade-history-row {
+                padding: 12px 15px !important;
             }
 
-            .history-header-row,
-            .history-trade-row {
-                grid-template-columns: 70px 140px 90px 90px 80px 80px 60px 100px !important;
-                gap: 8px !important;
-                padding: 12px 8px !important;
-            }
-
-            .history-cell {
+            .trade-history-header > div,
+            .trade-history-row > div {
+                padding: 0 6px !important;
                 font-size: 0.75em !important;
             }
+
+            /* Mobile maintains percentage but with smaller container */
 
             /* ✅ MOBILE: Stack engine stats vertically */
             .stats-grid {
@@ -776,7 +872,7 @@
                 <select id="timeFilter">
                     <option value="all">All Time</option>
                     <option value="today">Today</option>
-                    <option value="week">This Week</option>
+                    <option value="week" selected>This Week</option>
                     <option value="month">This Month</option>
                 </select>
                 <select id="symbolFilter">
@@ -787,21 +883,25 @@
                 </select>
             </div>
             
-            <!-- ✅ FIXED: Trade History Table with proper width and font -->
-            <div class="history-table" id="tradeHistoryTable">
-                <div class="history-table-inner">
-                    <div class="history-header-row">
-                        <div>Symbol</div>
-                        <div>Open Date/Time</div>
-                        <div>Open Price</div>
-                        <div>Close Price</div>
-                        <div>Take Profit</div>
-                        <div>Stop Loss</div>
-                        <div>Duration</div>
-                        <div>Reason</div>
-                    </div>
-                    <div id="tradeHistoryContainer">
-                        <div class="loading-spinner">Loading trade history...</div>
+            <!-- ✅ COMPLETELY REBUILT: Clean Trade History Table -->
+            <div class="trade-history-table">
+                <div class="trade-history-scroll">
+                    <div class="trade-history-content">
+                        <div class="trade-history-header">
+                            <div class="col-symbol">Symbol</div>
+                            <div class="col-direction">Direction</div>
+                            <div class="col-time">Open Time</div>
+                            <div class="col-open-price">Open Price</div>
+                            <div class="col-close-price">Close Price</div>
+                            <div class="col-pips">Pips</div>
+                            <div class="col-tp">Take Profit</div>
+                            <div class="col-sl">Stop Loss</div>
+                            <div class="col-duration">Duration</div>
+                            <div class="col-reason">Reason</div>
+                        </div>
+                        <div id="tradeHistoryContainer">
+                            <div class="loading-spinner">Loading trade history...</div>
+                        </div>
                     </div>
                 </div>
             </div>

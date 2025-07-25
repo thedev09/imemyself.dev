@@ -5,6 +5,9 @@ class TradeManagerUI {
         this.firebaseStorage = null;
         this.activeTrades = [];
         this.tradeHistory = [];
+        this.filteredHistory = [];
+        this.currentPage = 1;
+        this.tradesPerPage = 50;
         this.updateInterval = null;
         this.engineStats = {
             v1: { trades: 0, totalPips: 0, winRate: 0 },
@@ -22,6 +25,7 @@ class TradeManagerUI {
         await this.loadPerformanceStats();
         
         this.setupFilters();
+        this.applyFilters(); // Apply default filters on load
         this.startAutoRefresh();
         
         console.log('✅ Trade Manager UI ready');
@@ -355,17 +359,25 @@ class TradeManagerUI {
         }
     }
 
-    renderTradeHistory(filteredTrades = null) {
+    renderTradeHistory() {
         const container = document.getElementById('tradeHistoryContainer');
-        const trades = filteredTrades || this.tradeHistory;
+        const allTrades = this.filteredHistory.length > 0 ? this.filteredHistory : this.tradeHistory;
         
-        if (trades.length === 0) {
+        if (allTrades.length === 0) {
             container.innerHTML = '<div class="no-trades">No trade history found</div>';
             return;
         }
+
+        // Calculate pagination
+        const totalPages = Math.ceil(allTrades.length / this.tradesPerPage);
+        const startIndex = (this.currentPage - 1) * this.tradesPerPage;
+        const endIndex = startIndex + this.tradesPerPage;
+        const trades = allTrades.slice(startIndex, endIndex);
         
         container.innerHTML = trades.map(trade => {
-            const isProfit = (trade.finalPnLPips || 0) > 0;
+            const pips = trade.finalPnLPips || 0;
+            const isProfit = pips > 0;
+            const direction = (trade.direction || trade.action || 'BUY').toLowerCase();
             const openDate = new Date(trade.openTime || Date.now());
             
             // Calculate duration
@@ -373,39 +385,79 @@ class TradeManagerUI {
                 this.formatDuration(trade.closeTime - trade.openTime) : 
                 'N/A';
             
-            const formatDateTime = (date) => {
-                const dateStr = date.toLocaleDateString('en-US', { 
-                    month: '2-digit', 
-                    day: '2-digit', 
-                    year: 'numeric' 
-                });
-                const timeStr = date.toLocaleTimeString('en-US', { 
+            // Format date and time separately in Indian format
+            const formatDate = (date) => {
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            };
+            
+            const formatTime = (date) => {
+                return date.toLocaleTimeString('en-US', { 
                     hour: '2-digit', 
                     minute: '2-digit',
                     hour12: true 
                 });
-                return `${dateStr} ${timeStr}`;
             };
             
-            const openDateTime = formatDateTime(openDate);
+            const dateStr = formatDate(openDate);
+            const timeStr = formatTime(openDate);
             
             return `
-                <div class="history-trade-row ${isProfit ? 'profit' : 'loss'}">
-                    <div class="history-cell symbol">${trade.symbol || 'N/A'}</div>
-                    <div class="history-cell date-time">
-                        <div>${openDateTime}</div>
+                <div class="trade-history-row ${isProfit ? 'profit' : 'loss'}">
+                    <div class="col-symbol trade-symbol">${trade.symbol || 'N/A'}</div>
+                    <div class="col-direction">
+                        <span class="trade-direction-badge ${direction}">${direction.toUpperCase()}</span>
                     </div>
-                    <div class="history-cell price">${this.formatPrice(trade.symbol, trade.entry || 0)}</div>
-                    <div class="history-cell price">${this.formatPrice(trade.symbol, trade.closePrice || 0)}</div>
-                    <div class="history-cell price">${this.formatPrice(trade.symbol, trade.takeProfit || 0)}</div>
-                    <div class="history-cell price">${this.formatPrice(trade.symbol, trade.stopLoss || 0)}</div>
-                    <div class="history-cell duration">${duration}</div>
-                    <div class="history-cell reason">${this.formatExitReason(trade.exitReason || trade.status)}</div>
+                    <div class="col-time trade-time">
+                        <div class="trade-date">${dateStr}</div>
+                        <div class="trade-time-value">${timeStr}</div>
+                    </div>
+                    <div class="col-open-price trade-price">${this.formatPrice(trade.symbol, trade.entry || 0)}</div>
+                    <div class="col-close-price trade-price">${this.formatPrice(trade.symbol, trade.closePrice || 0)}</div>
+                    <div class="col-pips trade-pips ${isProfit ? 'profit' : 'loss'}">
+                        ${pips >= 0 ? '+' : ''}${pips.toFixed(1)}
+                    </div>
+                    <div class="col-tp trade-price">${this.formatPrice(trade.symbol, trade.takeProfit || 0)}</div>
+                    <div class="col-sl trade-price">${this.formatPrice(trade.symbol, trade.stopLoss || 0)}</div>
+                    <div class="col-duration trade-duration">${duration}</div>
+                    <div class="col-reason trade-reason">${this.formatExitReason(trade.exitReason || trade.status)}</div>
                 </div>
             `;
         }).join('');
+
+        // Add pagination info
+        if (totalPages > 1) {
+            container.innerHTML += `
+                <div style="padding: 20px; text-align: center; color: #a0a0a0; font-size: 0.9em; border-top: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.02);">
+                    Showing ${startIndex + 1}-${Math.min(endIndex, allTrades.length)} of ${allTrades.length} trades
+                    ${this.currentPage > 1 ? `<span style="margin-left: 20px; color: #00d4ff; cursor: pointer;" onclick="window.tradeManager.loadMoreTrades('prev')">← Previous</span>` : ''}
+                    ${this.currentPage < totalPages ? `<span style="margin-left: 10px; color: #00d4ff; cursor: pointer;" onclick="window.tradeManager.loadMoreTrades('next')">Next →</span>` : ''}
+                </div>
+            `;
+        }
         
-        console.log('✅ Trade history rendered successfully');
+        console.log(`✅ Trade history rendered: Page ${this.currentPage}/${totalPages}, ${trades.length} trades shown`);
+    }
+
+    loadMoreTrades(direction) {
+        const allTrades = this.filteredHistory.length > 0 ? this.filteredHistory : this.tradeHistory;
+        const totalPages = Math.ceil(allTrades.length / this.tradesPerPage);
+        
+        if (direction === 'next' && this.currentPage < totalPages) {
+            this.currentPage++;
+        } else if (direction === 'prev' && this.currentPage > 1) {
+            this.currentPage--;
+        }
+        
+        this.renderTradeHistory();
+        
+        // Scroll to top of trade history
+        const container = document.querySelector('.trade-history-scroll');
+        if (container) {
+            container.scrollTop = 0;
+        }
     }
 
     // ✅ NEW: Load performance stats for ALL THREE engines
@@ -453,28 +505,74 @@ class TradeManagerUI {
     setupFilters() {
         const engineFilter = document.getElementById('engineFilter');
         const resultFilter = document.getElementById('resultFilter');
+        const timeFilter = document.getElementById('timeFilter');
+        const symbolFilter = document.getElementById('symbolFilter');
         
         if (engineFilter) engineFilter.addEventListener('change', () => this.applyFilters());
         if (resultFilter) resultFilter.addEventListener('change', () => this.applyFilters());
+        if (timeFilter) timeFilter.addEventListener('change', () => this.applyFilters());
+        if (symbolFilter) symbolFilter.addEventListener('change', () => this.applyFilters());
     }
 
     applyFilters() {
         const engine = document.getElementById('engineFilter')?.value;
         const result = document.getElementById('resultFilter')?.value;
+        const time = document.getElementById('timeFilter')?.value;
+        const symbol = document.getElementById('symbolFilter')?.value;
         
         let filtered = [...this.tradeHistory];
         
+        // Engine filter
         if (engine && engine !== 'all') {
             filtered = filtered.filter(t => t.engine === engine);
         }
         
+        // Result filter
         if (result === 'profit') {
             filtered = filtered.filter(t => (t.finalPnLPips || 0) > 0);
         } else if (result === 'loss') {
             filtered = filtered.filter(t => (t.finalPnLPips || 0) < 0);
         }
         
-        this.renderTradeHistory(filtered);
+        // Time filter
+        if (time && time !== 'all') {
+            const now = new Date();
+            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            // Calculate Monday to Friday week
+            const startOfWeek = new Date(startOfToday);
+            const dayOfWeek = startOfToday.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // If Sunday, go back 6 days to Monday
+            startOfWeek.setDate(startOfToday.getDate() - daysToMonday);
+            
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            
+            filtered = filtered.filter(t => {
+                const tradeDate = new Date(t.closeTime || t.timestamp || 0);
+                switch (time) {
+                    case 'today':
+                        return tradeDate >= startOfToday;
+                    case 'week':
+                        // Monday to Friday only
+                        const tradeDayOfWeek = tradeDate.getDay();
+                        return tradeDate >= startOfWeek && tradeDayOfWeek >= 1 && tradeDayOfWeek <= 5;
+                    case 'month':
+                        return tradeDate >= startOfMonth;
+                    default:
+                        return true;
+                }
+            });
+        }
+        
+        // Symbol filter
+        if (symbol && symbol !== 'all') {
+            filtered = filtered.filter(t => t.symbol === symbol);
+        }
+        
+        this.filteredHistory = filtered;
+        this.currentPage = 1; // Reset to first page when filters change
+        console.log(`🔍 Applied filters: ${filtered.length} trades found out of ${this.tradeHistory.length}`);
+        this.renderTradeHistory();
     }
 
     startAutoRefresh() {
@@ -565,10 +663,10 @@ class TradeManagerUI {
 
     formatExitReason(status) {
         const reasons = {
-            'CLOSED_TP': 'Take Profit ✅',
-            'CLOSED_SL': 'Stop Loss ❌',
-            'TIME_EXPIRY': 'Time Expiry ⏰',
-            'FLIPPED': 'Flipped 🔄'
+            'CLOSED_TP': 'Take Profit',
+            'CLOSED_SL': 'Stop Loss',
+            'TIME_EXPIRY': 'Time Expiry',
+            'FLIPPED': 'Flipped'
         };
         return reasons[status] || status || 'Unknown';
     }
@@ -584,6 +682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     try {
         const tradeManager = new TradeManagerUI();
+        window.tradeManager = tradeManager; // Make globally accessible
         await tradeManager.initialize();
     } catch (error) {
         console.error('❌ Failed to initialize Trade Manager:', error);
