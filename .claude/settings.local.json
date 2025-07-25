@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(start index.html)"
+      "Bash(start index.html)",
+      "Bash(npm run build:*)",
+      "Bash(xcopy:*)",
+      "Bash(cp:*)",
+      "Bash(npm start)"
     ],
     "deny": []
   }

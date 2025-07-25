@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/pesa/static/css/main.0f3e7985.css",
-    "main.js": "/pesa/static/js/main.9e78803a.js",
+    "main.css": "/pesa/static/css/main.886f52c4.css",
+    "main.js": "/pesa/static/js/main.6918b501.js",
     "index.html": "/pesa/index.html",
-    "main.0f3e7985.css.map": "/pesa/static/css/main.0f3e7985.css.map",
-    "main.9e78803a.js.map": "/pesa/static/js/main.9e78803a.js.map"
+    "main.886f52c4.css.map": "/pesa/static/css/main.886f52c4.css.map",
+    "main.6918b501.js.map": "/pesa/static/js/main.6918b501.js.map"
   },
   "entrypoints": [
-    "static/css/main.0f3e7985.css",
-    "static/js/main.9e78803a.js"
+    "static/css/main.886f52c4.css",
+    "static/js/main.6918b501.js"
   ]
 }
