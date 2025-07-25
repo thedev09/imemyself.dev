@@ -48,7 +48,7 @@ class CompactView {
         } else if (e.target.closest('.compact-upgrade-btn')) {
             const account = this.accounts.find(doc => doc.id === accountId)?.data();
             if (account && typeof window.upgradeAccount === 'function') {
-                window.upgradeAccount(accountId, account.firmName, account.accountSize, account.phase);
+                window.upgradeAccount(accountId, account.firmName, account.accountSize, account.phase, account.alias);
             }
         }
     }
