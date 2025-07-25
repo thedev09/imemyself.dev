@@ -1,0 +1,343 @@
+/* Premium Seamless Dark Mode Styles */
+
+/* Root dark mode variables - Elegant & Seamless */
+:root.dark {
+  --bg-primary: #0a0a0a;           /* Deep black with slight warmth */
+  --bg-secondary: #151515;         /* Subtle elevation */
+  --bg-tertiary: #1f1f1f;          /* Card backgrounds */
+  --bg-elevated: #252525;          /* Elevated surfaces */
+  --bg-hover: #2a2a2a;             /* Hover states */
+  --bg-subtle: #121212;            /* Very subtle backgrounds */
+  
+  --text-primary: #ffffff;         /* Pure white */
+  --text-secondary: #e8e8e8;       /* Light gray */
+  --text-tertiary: #b8b8b8;        /* Medium gray */
+  --text-muted: #888888;           /* Muted gray */
+  
+  --border-subtle: rgba(255, 255, 255, 0.06);    /* Very subtle borders */
+  --border-light: rgba(255, 255, 255, 0.1);      /* Light borders */
+  --border-medium: rgba(255, 255, 255, 0.15);    /* Medium borders */
+  
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+/* Main backgrounds - Seamless approach */
+.dark {
+  background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%);
+  color: var(--text-primary);
+}
+
+.dark .bg-gray-50 {
+  background: var(--bg-primary) !important;
+}
+
+.dark .bg-gray-100 {
+  background: var(--bg-subtle) !important;
+}
+
+.dark .bg-white {
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+.dark .bg-gray-900 {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+.dark .bg-gray-800 {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+.dark .bg-gray-950 {
+  background: var(--bg-primary) !important;
+}
+
+/* Navigation - Seamless glass effect */
+.dark nav {
+  background: rgba(10, 10, 10, 0.8) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+/* Text colors - Better hierarchy */
+.dark .text-white,
+.dark .text-gray-900 {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-gray-700,
+.dark .text-gray-300 {
+  color: var(--text-secondary) !important;
+}
+
+.dark .text-gray-600,
+.dark .text-gray-400 {
+  color: var(--text-tertiary) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--text-muted) !important;
+}
+
+/* Cards - Seamless glass morphism */
+.dark .rounded-2xl {
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-subtle) !important;
+}
+
+.dark .rounded-xl {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+.dark .rounded-lg {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+/* Remove harsh borders on specific elements */
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-gray-700,
+.dark .border-gray-800 {
+  border-color: var(--border-subtle) !important;
+}
+
+/* Buttons - Maintain identity but seamless */
+.dark .bg-gray-900:not(.rounded-2xl):not(.rounded-xl) {
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a) !important;
+  border: 1px solid var(--border-light) !important;
+  box-shadow: var(--shadow-subtle) !important;
+}
+
+.dark .bg-orange-500 {
+  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+  border: none !important;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.25) !important;
+}
+
+.dark .hover\:bg-gray-800:hover {
+  background: linear-gradient(135deg, #3a3a3a, #2a2a2a) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium) !important;
+}
+
+.dark .hover\:bg-orange-600:hover {
+  background: linear-gradient(135deg, #ea580c, #dc2626) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px rgba(249, 115, 22, 0.35) !important;
+}
+
+/* Form elements - Seamless integration */
+.dark input,
+.dark select,
+.dark textarea {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: rgba(249, 115, 22, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Table improvements - Seamless rows */
+.dark table {
+  background: transparent !important;
+}
+
+.dark table thead tr {
+  border-bottom: 1px solid var(--border-subtle) !important;
+  background: rgba(255, 255, 255, 0.01) !important;
+}
+
+.dark table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02) !important;
+  transition: all 0.2s ease;
+}
+
+.dark table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+  transform: translateY(-1px);
+}
+
+/* Hover effects - Subtle and smooth */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark .hover\:bg-gray-700:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Color accents - Maintain vibrancy */
+.dark .text-green-600 { color: #22c55e !important; }
+.dark .text-green-400 { color: #4ade80 !important; }
+.dark .text-red-600 { color: #ef4444 !important; }
+.dark .text-red-400 { color: #f87171 !important; }
+.dark .text-blue-600 { color: #3b82f6 !important; }
+.dark .text-blue-400 { color: #60a5fa !important; }
+.dark .text-orange-500 { color: #f97316 !important; }
+.dark .text-orange-600 { color: #ea580c !important; }
+
+/* Transaction type backgrounds - Subtle glass effect */
+.dark .bg-green-100 {
+  background: rgba(34, 197, 94, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+}
+
+.dark .bg-red-100 {
+  background: rgba(239, 68, 68, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+.dark .bg-blue-100 {
+  background: rgba(59, 130, 246, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark .bg-orange-100 {
+  background: rgba(249, 115, 22, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Floating button - Premium glow */
+.dark .fixed.bottom-6.right-6 {
+  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+  box-shadow: 0 8px 32px rgba(249, 115, 22, 0.3) !important;
+  border: none !important;
+}
+
+.dark .fixed.bottom-6.right-6:hover {
+  background: linear-gradient(135deg, #ea580c, #dc2626) !important;
+  box-shadow: 0 12px 40px rgba(249, 115, 22, 0.4) !important;
+}
+
+/* Scrollbar - Elegant and minimal */
+.dark ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Loading spinner */
+.dark .animate-spin {
+  border-color: transparent !important;
+  border-bottom-color: #f97316 !important;
+}
+
+/* Dropdown and modal shadows */
+.dark .shadow-lg,
+.dark .shadow-xl {
+  box-shadow: var(--shadow-large) !important;
+}
+
+.dark .shadow-md {
+  box-shadow: var(--shadow-medium) !important;
+}
+
+/* Chart improvements */
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .recharts-text {
+  fill: var(--text-tertiary) !important;
+}
+
+/* Selection styling */
+.dark ::selection {
+  background-color: rgba(249, 115, 22, 0.2);
+  color: var(--text-primary);
+}
+
+/* Smooth transitions for everything */
+.dark * {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease !important;
+}
+
+/* Custom fade-in animation for dark mode */
+.dark .animate-fade-in {
+  animation: darkFadeInSeamless 0.4s ease-out;
+}
+
+@keyframes darkFadeInSeamless {
+  from { 
+    opacity: 0; 
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+/* Remove any remaining harsh borders */
+.dark .border {
+  border-color: var(--border-subtle) !important;
+}
+
+.dark .border-b {
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+/* Ensure seamless background everywhere */
+.dark body,
+.dark #root,
+.dark .min-h-screen {
+  background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%) !important;
+}
+
+/* Premium glass effect for main content areas */
+.dark .p-6 > .space-y-6 > div,
+.dark .grid > div {
+  position: relative;
+}
+
+.dark .grid > div::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+}
