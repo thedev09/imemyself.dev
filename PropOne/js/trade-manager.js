@@ -108,12 +108,51 @@ class TradeManager {
     // Update account balance
     async updateAccountBalance(accountId, newBalance) {
         try {
-            await updateDoc(doc(db, 'accounts', accountId), {
+            // Get account details to check for breach
+            const accountDoc = await getDoc(doc(db, 'accounts', accountId));
+            if (!accountDoc.exists()) {
+                throw new Error('Account not found');
+            }
+            
+            const account = accountDoc.data();
+            const currentPnL = newBalance - account.accountSize;
+            const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
+            const isBreached = currentPnL < -maxDrawdownAmount;
+            
+            // Prepare update data
+            const updateData = {
                 currentBalance: newBalance,
                 updatedAt: new Date()
-            });
+            };
             
-            return { success: true };
+            // If account is breached and not already marked as breached, update status
+            if (isBreached && account.status !== 'breached') {
+                updateData.status = 'breached';
+                updateData.breachedAt = new Date();
+                console.log(`Account ${accountId} has been breached. Updating status.`);
+                
+                // Import activity logger if available
+                if (typeof activityLogger !== 'undefined') {
+                    try {
+                        const { default: activityLogger } = await import('./activity-logger.js');
+                        await activityLogger.logAccountStatusChanged(
+                            account.userId,
+                            accountId,
+                            account.firmName,
+                            account.alias,
+                            'active',
+                            'breached',
+                            `Automatic breach detection - Balance: ${newBalance}, Max DD: ${-maxDrawdownAmount}`
+                        );
+                    } catch (logError) {
+                        console.warn('Could not log breach activity:', logError);
+                    }
+                }
+            }
+            
+            await updateDoc(doc(db, 'accounts', accountId), updateData);
+            
+            return { success: true, wasBreached: isBreached };
         } catch (error) {
             console.error('Error updating account balance:', error);
             return { success: false, error: error.message };

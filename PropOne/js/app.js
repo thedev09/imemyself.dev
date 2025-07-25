@@ -236,41 +236,66 @@ function showAuth() {
     if (DOM.appSection) DOM.appSection.classList.add('hidden');
 }
 
-// Migration function to add breachedAt to existing breached accounts
+// Migration function to properly mark all breached accounts
 async function migrateBreachedAccounts() {
     if (!currentUser) return;
     
     try {
-        // Check if migration has already been done for this user
-        const migrationKey = `breach_migration_${currentUser.uid}`;
+        // Check if migration has already been done for this user - v2 to force re-run
+        const migrationKey = `breach_migration_v2_${currentUser.uid}`;
         if (localStorage.getItem(migrationKey)) {
             return; // Migration already done
         }
         
+        console.log('Starting comprehensive breach migration...');
+        
+        // Get ALL accounts for this user
         const q = query(
             collection(db, 'accounts'),
-            where('userId', '==', currentUser.uid),
-            where('status', '==', 'breached')
+            where('userId', '==', currentUser.uid)
         );
         
         const querySnapshot = await getDocs(q);
-        const batch = [];
+        const updates = [];
+        let breachedCount = 0;
+        let alreadyBreachedCount = 0;
         
         for (const docRef of querySnapshot.docs) {
             const account = docRef.data();
-            // Only update if breachedAt is missing
-            if (!account.breachedAt) {
-                batch.push(
-                    updateDoc(doc(db, 'accounts', docRef.id), {
+            const accountId = docRef.id;
+            
+            // Calculate if account is breached
+            const currentPnL = account.currentBalance - account.accountSize;
+            const maxDrawdownAmount = account.accountSize * (account.maxDrawdown / 100);
+            const isBreached = currentPnL < -maxDrawdownAmount;
+            
+            // If account is breached but not marked as breached
+            if (isBreached && account.status !== 'breached') {
+                updates.push(
+                    updateDoc(doc(db, 'accounts', accountId), {
+                        status: 'breached',
+                        breachedAt: account.updatedAt || account.createdAt || new Date(),
+                        updatedAt: new Date()
+                    })
+                );
+                breachedCount++;
+                console.log(`Marking account ${accountId} (${account.firmName}${account.alias ? '-' + account.alias : ''}) as breached. Balance: ${account.currentBalance}, Max DD: ${-maxDrawdownAmount}`);
+            } else if (account.status === 'breached' && !account.breachedAt) {
+                // Add breachedAt to already breached accounts that don't have it
+                updates.push(
+                    updateDoc(doc(db, 'accounts', accountId), {
                         breachedAt: account.updatedAt || account.createdAt || new Date()
                     })
                 );
+                alreadyBreachedCount++;
             }
         }
         
-        if (batch.length > 0) {
-            await Promise.all(batch);
-            console.log(`Migrated ${batch.length} breached accounts with breach timestamps`);
+        if (updates.length > 0) {
+            await Promise.all(updates);
+            console.log(`Migration complete: ${breachedCount} accounts newly marked as breached, ${alreadyBreachedCount} breached accounts updated with breachedAt`);
+        } else {
+            console.log('No accounts needed migration');
         }
         
         // Mark migration as complete
@@ -299,11 +324,24 @@ async function loadAccounts() {
             DOM.accountsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Loading accounts...</div>';
         }
 
-        const q = query(
-            collection(db, 'accounts'),
-            where('userId', '==', currentUser.uid),
-            orderBy('createdAt', 'desc')
-        );
+        // Only load active accounts by default to improve performance
+        let q;
+        if (currentFilter === 'all' || currentFilter === 'breached' || currentFilter === 'upgraded') {
+            // Load all accounts only when specifically needed
+            q = query(
+                collection(db, 'accounts'),
+                where('userId', '==', currentUser.uid),
+                orderBy('createdAt', 'desc')
+            );
+        } else {
+            // For active, funded, phase1, phase2 filters - only load active accounts
+            q = query(
+                collection(db, 'accounts'),
+                where('userId', '==', currentUser.uid),
+                where('status', '==', 'active'),
+                orderBy('createdAt', 'desc')
+            );
+        }
         
         const querySnapshot = await getDocs(q);
         allAccounts = querySnapshot.docs;
@@ -322,6 +360,12 @@ async function loadAccounts() {
         allAccounts.forEach(docRef => {
             const accountId = docRef.id;
             const accountData = docRef.data();
+            
+            // Skip daily P&L calculation for breached accounts to save resources
+            if (accountData.status === 'breached') {
+                return;
+            }
+            
             const cached = SmartCache.getCachedData(accountId);
             
             if (cached && SmartCache.isCacheValid(accountId, cached)) {
@@ -427,8 +471,8 @@ async function loadAccounts() {
         });
         
         // Update UI efficiently
-        const summaryStats = generateSummaryStatsOptimized(allAccounts);
-        displaySummaryStats(summaryStats);
+        // Load summary stats separately to include all accounts
+        loadAndDisplaySummaryStats();
         displayAccounts(getFilteredAccounts());
         setupFilters();
         
@@ -727,6 +771,27 @@ function generateSummaryStatsOptimized(accounts) {
     return stats;
 }
 
+// Load summary stats with a separate query to include all accounts
+async function loadAndDisplaySummaryStats() {
+    if (!currentUser) return;
+    
+    try {
+        // Always load ALL accounts for summary stats
+        const allAccountsQuery = query(
+            collection(db, 'accounts'),
+            where('userId', '==', currentUser.uid)
+        );
+        
+        const querySnapshot = await getDocs(allAccountsQuery);
+        const allAccountsForStats = querySnapshot.docs;
+        
+        const summaryStats = generateSummaryStatsOptimized(allAccountsForStats);
+        displaySummaryStats(summaryStats);
+    } catch (error) {
+        console.error('Error loading summary stats:', error);
+    }
+}
+
 function displaySummaryStats(stats) {
     const summaryContainer = document.getElementById('summary-stats');
     if (!summaryContainer) return;
@@ -819,14 +884,27 @@ function setupFilters() {
     const filterPills = document.querySelectorAll('.filter-pill');
     
     filterPills.forEach(pill => {
-        pill.addEventListener('click', () => {
+        pill.addEventListener('click', async () => {
+            const previousFilter = currentFilter;
             filterPills.forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
             currentFilter = pill.dataset.filter;
             
-            displayAccounts(getFilteredAccounts());
-            if (compactView?.updateAccounts) {
-                compactView.updateAccounts(getFilteredAccounts());
+            // Check if we need to reload accounts from database
+            const needsAllAccounts = ['all', 'breached', 'upgraded'].includes(currentFilter);
+            const hadAllAccounts = ['all', 'breached', 'upgraded'].includes(previousFilter);
+            
+            if (needsAllAccounts !== hadAllAccounts) {
+                // Need to reload accounts with different query
+                await loadAccounts();
+            } else {
+                // Just filter existing accounts
+                displayAccounts(getFilteredAccounts());
+                if (compactView?.updateAccounts) {
+                    compactView.updateAccounts(getFilteredAccounts());
+                }
+                // Update summary stats when filter changes
+                loadAndDisplaySummaryStats();
             }
         });
     });
@@ -1651,8 +1729,11 @@ function initializeApp() {
         // Add manual migration trigger (available in production for admins)
         window.runBreachMigration = async () => {
             if (currentUser) {
-                const migrationKey = `breach_migration_${currentUser.uid}`;
-                localStorage.removeItem(migrationKey);
+                // Remove both old and new migration keys to force re-run
+                const oldKey = `breach_migration_${currentUser.uid}`;
+                const newKey = `breach_migration_v2_${currentUser.uid}`;
+                localStorage.removeItem(oldKey);
+                localStorage.removeItem(newKey);
                 await migrateBreachedAccounts();
                 debouncedLoadAccounts();
                 console.log('Breach migration completed');
