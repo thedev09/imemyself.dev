@@ -41,9 +41,10 @@ class CompactView {
         const accountId = card.dataset.accountId;
         const currentBalance = parseFloat(card.dataset.currentBalance);
         const firmName = card.dataset.firmName;
+        const alias = card.dataset.alias || '';
         
         if (e.target.closest('.compact-trade-btn') && typeof window.showTradeModal === 'function') {
-            window.showTradeModal(accountId, currentBalance, firmName);
+            window.showTradeModal(accountId, currentBalance, firmName, alias);
         } else if (e.target.closest('.compact-upgrade-btn')) {
             const account = this.accounts.find(doc => doc.id === accountId)?.data();
             if (account && typeof window.upgradeAccount === 'function') {
@@ -261,7 +262,8 @@ class CompactView {
             <div class="compact-account-card" 
                  data-account-id="${accountId}"
                  data-current-balance="${account.currentBalance}"
-                 data-firm-name="${account.firmName}">
+                 data-firm-name="${account.firmName}"
+                 data-alias="${account.alias || ''}">
                 
                 <div class="compact-header">
                     <div class="compact-firm-info">

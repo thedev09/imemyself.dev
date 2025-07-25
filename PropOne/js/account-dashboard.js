@@ -584,7 +584,8 @@ function showTradeModal() {
     const modalTitle = document.querySelector('#trade-modal h2');
     const currentBalanceDisplayModal = document.getElementById('current-balance-display-modal');
     
-    if (modalTitle) modalTitle.textContent = `Add Trade - ${currentAccount.firmName}`;
+    const displayName = currentAccount.alias ? `${currentAccount.alias}-${currentAccount.firmName}` : currentAccount.firmName;
+    if (modalTitle) modalTitle.textContent = `Add Trade - ${displayName}`;
     if (currentBalanceDisplayModal) {
         currentBalanceDisplayModal.textContent = `Current: $${currentAccount.currentBalance.toLocaleString()}`;
     }

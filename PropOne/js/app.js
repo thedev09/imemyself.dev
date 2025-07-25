@@ -444,7 +444,7 @@ async function loadAccounts() {
 }
 
 // Trade modal functions - OPTIMIZED with null checks
-function showTradeModal(accountId, currentBalance, firmName) {
+function showTradeModal(accountId, currentBalance, firmName, alias) {
     if (!DOM.tradeModal) return;
     
     DOM.tradeForm?.reset();
@@ -452,7 +452,8 @@ function showTradeModal(accountId, currentBalance, firmName) {
     const modalTitle = document.querySelector('#trade-modal h2');
     const currentBalanceDisplay = document.getElementById('current-balance-display');
     
-    if (modalTitle) modalTitle.textContent = `Add Trade - ${firmName}`;
+    const displayName = alias ? `${alias}-${firmName}` : firmName;
+    if (modalTitle) modalTitle.textContent = `Add Trade - ${displayName}`;
     if (currentBalanceDisplay) currentBalanceDisplay.textContent = `Current: $${currentBalance.toLocaleString()}`;
     
     const accountIdInput = document.getElementById('trade-account-id');
@@ -1142,7 +1143,7 @@ function getBottomRowHtml(account, accountId, isBreached, upgradeButtonHtml) {
             <div class="account-actions" onclick="event.stopPropagation()">
                 ${upgradeButtonHtml}
                 ${payoutButtonHtml}
-                <button class="action-btn trade-btn" onclick="showTradeModal('${accountId}', ${account.currentBalance}, '${account.firmName}')">Trade</button>
+                <button class="action-btn trade-btn" onclick="showTradeModal('${accountId}', ${account.currentBalance}, '${account.firmName}', '${account.alias || ''}')">Trade</button>
                 <button class="action-btn edit-btn" onclick="editAccount('${accountId}')">Edit</button>
                 <button class="action-btn delete-btn" onclick="deleteAccount('${accountId}')">Delete</button>
             </div>
