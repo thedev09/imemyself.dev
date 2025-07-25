@@ -90,7 +90,7 @@ function Dashboard() {
           <Route path="/" element={<Overview accounts={accounts} transactions={transactions} />} />
           <Route path="/transactions" element={<Transactions accounts={accounts} transactions={transactions} />} />
           <Route path="/analytics" element={<Analytics accounts={accounts} transactions={transactions} />} />
-          <Route path="/accounts" element={<Accounts accounts={accounts} />} />
+          <Route path="/accounts" element={<Accounts accounts={accounts} transactions={transactions} />} />
           <Route path="/activity" element={<Activity />} />
           <Route path="/subscriptions" element={<Subscriptions accounts={accounts} />} />
           <Route path="/settings" element={<Settings />} />

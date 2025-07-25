@@ -4,7 +4,8 @@ import {
   Plus, MoreVertical, Eye, EyeOff, Edit, Trash2, 
   Wallet, CreditCard, Building, Bitcoin, PiggyBank, 
   Landmark, AlertTriangle, ArrowUpRight, ArrowDownRight,
-  GripVertical
+  GripVertical, X, Calendar, Clock, Info, Receipt,
+  Send, DollarSign
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../services/firebase';
@@ -34,12 +35,13 @@ const ACCOUNT_SUBTYPES = {
   crypto: ['Crypto Wallet', 'Investment', 'Trading', 'Staking']
 };
 
-function Accounts({ accounts }) {
+function Accounts({ accounts, transactions }) {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [showBalances, setShowBalances] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -81,6 +83,32 @@ function Accounts({ accounts }) {
     if (subtype === 'Credit Card') return CreditCard;
     if (subtype === 'Fixed Deposit') return PiggyBank;
     return Landmark;
+  };
+
+  const getTransactionIcon = (type) => {
+    switch (type) {
+      case 'income': return ArrowDownRight;
+      case 'expense': return ArrowUpRight;
+      case 'transfer': return Send;
+      case 'adjustment': return DollarSign;
+      default: return Receipt;
+    }
+  };
+
+  const getTransactionTypeColor = (type) => {
+    switch (type) {
+      case 'income': return 'text-green-600 dark:text-green-400';
+      case 'expense': return 'text-red-600 dark:text-red-400';
+      case 'transfer': return 'text-blue-600 dark:text-blue-400';
+      case 'adjustment': return 'text-orange-600 dark:text-orange-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  const openDetailsModal = (account) => {
+    setSelectedAccount(account);
+    setShowDetailsModal(true);
+    setActiveDropdown(null);
   };
 
   const resetForm = () => {
@@ -395,7 +423,8 @@ function Accounts({ accounts }) {
                 onDragOver={(e) => handleDragOver(e, account)}
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, account)}
-                className={`bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-3xl relative cursor-move ${
+                onClick={() => openDetailsModal(account)}
+                className={`bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl dark:hover:shadow-3xl relative cursor-pointer ${
                   dragOver === account.id ? 'ring-2 ring-orange-500 ring-opacity-50' : ''
                 } ${draggedAccount?.id === account.id ? 'opacity-50' : ''}`}
               >
@@ -436,6 +465,13 @@ function Accounts({ accounts }) {
                     
                     {activeDropdown === account.id && (
                       <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10 backdrop-blur-sm">
+                        <button
+                          onClick={() => openDetailsModal(account)}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                        >
+                          <Info className="w-4 h-4" />
+                          <span>View Details</span>
+                        </button>
                         <button
                           onClick={() => openEditModal(account)}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
@@ -852,6 +888,228 @@ function Accounts({ accounts }) {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Details Modal */}
+      {showDetailsModal && selectedAccount && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDetailsModal(false);
+              setSelectedAccount(null);
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 ${
+                  selectedAccount.type === 'bank' ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-orange-100 dark:bg-orange-500/20'
+                }`}>
+                  {React.createElement(getAccountIcon(selectedAccount.type, selectedAccount.subtype), {
+                    className: `w-6 h-6 ${
+                      selectedAccount.type === 'bank' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'
+                    }`
+                  })}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+                    {selectedAccount.name}
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 transition-colors duration-300">
+                    {selectedAccount.subtype || (selectedAccount.type === 'crypto' ? 'USD Account' : 'Bank Account')} • {selectedAccount.currency}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setSelectedAccount(null);
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-300"
+              >
+                <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              </button>
+            </div>
+
+            <div className="flex flex-col lg:flex-row max-h-[calc(90vh-100px)]">
+              {/* Account Information Panel */}
+              <div className="w-full lg:w-1/3 p-6 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Information</h3>
+                
+                <div className="space-y-4">
+                  {/* Current Balance */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Balance</div>
+                    <div className={`text-2xl font-bold ${
+                      selectedAccount.balance < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'
+                    }`}>
+                      {formatCurrency(selectedAccount.balance, selectedAccount.currency)}
+                    </div>
+                    {selectedAccount.currency === 'USD' && (
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        ≈ {formatCurrency(convertToINR(selectedAccount.balance, 'USD'), 'INR')}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Account Details */}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Account Type</div>
+                      <div className="text-gray-900 dark:text-white">
+                        {selectedAccount.type === 'bank' ? 'Bank Account' : 'USD Account'}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Subtype</div>
+                      <div className="text-gray-900 dark:text-white">
+                        {selectedAccount.subtype || 'N/A'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Currency</div>
+                      <div className="text-gray-900 dark:text-white">
+                        {selectedAccount.currency}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        Created
+                      </div>
+                      <div className="text-gray-900 dark:text-white">
+                        {new Date(selectedAccount.createdAt).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mb-1 flex items-center">
+                        <Clock className="w-4 h-4 mr-1" />
+                        Last Updated
+                      </div>
+                      <div className="text-gray-900 dark:text-white">
+                        {new Date(selectedAccount.updatedAt).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+
+                    {selectedAccount.description && (
+                      <div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Description</div>
+                        <div className="text-sm text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 rounded p-2">
+                          {selectedAccount.description}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Transactions Panel */}
+              <div className="flex-1 flex flex-col">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <Receipt className="w-5 h-5 mr-2" />
+                    Transactions
+                  </h3>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6">
+                  {(() => {
+                    const accountTransactions = transactions
+                      .filter(t => t.accountId === selectedAccount.id || t.toAccountId === selectedAccount.id)
+                      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    if (accountTransactions.length === 0) {
+                      return (
+                        <div className="text-center py-12">
+                          <Receipt className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            No transactions yet
+                          </h4>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            Transactions for this account will appear here
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-3">
+                        {accountTransactions.map((transaction) => {
+                          const TransactionIcon = getTransactionIcon(transaction.type);
+                          const isNegativeForAccount = (
+                            (transaction.type === 'expense') ||
+                            (transaction.type === 'transfer' && transaction.accountId === selectedAccount.id) ||
+                            (transaction.type === 'adjustment' && !transaction.isIncrease)
+                          );
+                          
+                          return (
+                            <div key={transaction.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center space-x-3">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                    transaction.type === 'income' ? 'bg-green-100 dark:bg-green-500/20' :
+                                    transaction.type === 'expense' ? 'bg-red-100 dark:bg-red-500/20' :
+                                    transaction.type === 'transfer' ? 'bg-blue-100 dark:bg-blue-500/20' :
+                                    'bg-orange-100 dark:bg-orange-500/20'
+                                  }`}>
+                                    <TransactionIcon className={`w-4 h-4 ${getTransactionTypeColor(transaction.type)}`} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                        {transaction.category}
+                                      </span>
+                                      <span className={`text-xs px-2 py-1 rounded-full ${
+                                        transaction.type === 'income' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300' :
+                                        transaction.type === 'expense' ? 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300' :
+                                        transaction.type === 'transfer' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                                        'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300'
+                                      }`}>
+                                        {transaction.type}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      {transaction.paymentMode} • {new Date(transaction.date).toLocaleDateString('en-IN')}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className={`text-right font-semibold ${
+                                  isNegativeForAccount ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                                }`}>
+                                  {isNegativeForAccount ? '-' : '+'}{formatCurrency(transaction.amount, transaction.currency)}
+                                </div>
+                              </div>
+                              {transaction.notes && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded p-2 mt-2">
+                                  {transaction.notes}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
           </div>
         </div>
