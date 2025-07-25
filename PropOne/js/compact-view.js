@@ -113,9 +113,24 @@ class CompactView {
     switchViewDisplay() {
         const normalContainer = document.getElementById('accounts-list');
         const compactContainer = document.querySelector('.compact-accounts-container');
+        const allFilterPills = document.querySelectorAll('.filter-pill');
         
         if (this.isCompactView) {
             if (normalContainer) normalContainer.style.display = 'none';
+            
+            // Hide all filter pills except "Active"
+            allFilterPills.forEach(pill => {
+                if (pill.dataset.filter === 'active') {
+                    pill.style.display = 'inline-block';
+                    pill.classList.add('active');
+                    pill.style.pointerEvents = 'none';
+                    pill.style.opacity = '1';
+                } else {
+                    pill.style.display = 'none';
+                    pill.classList.remove('active');
+                }
+            });
+            
             if (compactContainer) {
                 compactContainer.classList.add('active');
                 this.renderCompactView();
@@ -124,6 +139,14 @@ class CompactView {
             }
         } else {
             if (normalContainer) normalContainer.style.display = 'block';
+            
+            // Show all filter pills and restore interactivity
+            allFilterPills.forEach(pill => {
+                pill.style.display = 'inline-block';
+                pill.style.pointerEvents = 'auto';
+                pill.style.opacity = '1';
+            });
+            
             if (compactContainer) compactContainer.classList.remove('active');
         }
     }
@@ -133,10 +156,25 @@ class CompactView {
         container.className = 'compact-accounts-container active';
         
         const accountsList = document.getElementById('accounts-list');
+        const allFilterPills = document.querySelectorAll('.filter-pill');
+        
         if (accountsList) {
             accountsList.parentNode.insertBefore(container, accountsList.nextSibling);
             this.renderCompactView();
         }
+        
+        // Hide all filter pills except "Active"
+        allFilterPills.forEach(pill => {
+            if (pill.dataset.filter === 'active') {
+                pill.style.display = 'inline-block';
+                pill.classList.add('active');
+                pill.style.pointerEvents = 'none';
+                pill.style.opacity = '1';
+            } else {
+                pill.style.display = 'none';
+                pill.classList.remove('active');
+            }
+        });
     }
 
     // PERFORMANCE: Check if re-render is needed
