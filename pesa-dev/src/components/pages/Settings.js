@@ -20,9 +20,20 @@ import { updateProfile } from 'firebase/auth';
 const USD_TO_INR = 84.0;
 
 // Avatar generation utilities
-const generateGravatarUrl = (email) => {
-  const hash = btoa(email.toLowerCase().trim()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
-  return `https://www.gravatar.com/avatar/${hash}?d=mp&s=200`;
+const getProfilePictureUrl = (user) => {
+  // Check if user signed in with Google (has photoURL)
+  if (user?.photoURL) {
+    return user.photoURL;
+  }
+  
+  // For email/password users, return null to use initials by default
+  return null;
+};
+
+const generateFallbackAvatar = (email) => {
+  // Generate a fallback avatar for non-Google users if they specifically choose profile picture
+  const emailHash = btoa(email?.toLowerCase().trim() || 'user').replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(email?.split('@')[0] || 'User')}&size=200&background=f97316&color=fff&bold=true`;
 };
 
 const generateInitialsAvatar = (name, colorIndex = 0) => {
@@ -81,13 +92,14 @@ function Settings() {
   const [saveStatus, setSaveStatus] = useState('');
   const [editingName, setEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState('');
+  const [profilePictureFallback, setProfilePictureFallback] = useState(false);
 
   // User preferences state
   const [preferences, setPreferences] = useState({
     // Profile & Display
     displayName: '',
     email: '',
-    avatarType: 'initials', // 'initials', 'gravatar', 'predefined'
+    avatarType: 'initials', // 'initials', 'profile', 'predefined'
     avatarData: { colorIndex: 0, emojiId: 'cat' }, // Store avatar customization
     
     // Privacy & Security
@@ -143,7 +155,14 @@ function Settings() {
   useEffect(() => {
     loadUserData();
     loadUserPreferences();
+    // Reset profile picture fallback when user changes
+    setProfilePictureFallback(false);
   }, [currentUser]);
+
+  // Reset fallback when avatar type changes
+  useEffect(() => {
+    setProfilePictureFallback(false);
+  }, [preferences.avatarType]);
 
   const loadUserData = async () => {
     if (!currentUser) return;
@@ -277,25 +296,38 @@ function Settings() {
     const { avatarType, avatarData } = preferences;
     
     switch (avatarType) {
-      case 'gravatar':
-        return (
-          <img
-            src={generateGravatarUrl(preferences.email)}
-            alt="Profile"
-            className={`${size} rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-lg`}
-            onError={(e) => {
-              // Fallback to initials if Gravatar fails
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-          />
-        );
+      case 'profile':
+        const profileUrl = getProfilePictureUrl(currentUser);
+        if (profileUrl && !profilePictureFallback) {
+          return (
+            <img
+              src={profileUrl}
+              alt="Profile"
+              className={`${size} rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-lg`}
+              onError={() => setProfilePictureFallback(true)}
+            />
+          );
+        } else {
+          // Fallback to initials for failed profile pictures or email/password users
+          const { initials, color } = generateInitialsAvatar(preferences.displayName, avatarData.colorIndex);
+          return (
+            <div className={`${size} rounded-full bg-gradient-to-br ${color.bg} flex items-center justify-center ${color.text} font-bold ${textSize} border-2 border-white dark:border-gray-700 shadow-lg`}>
+              {initials}
+            </div>
+          );
+        }
       
       case 'predefined':
         const selectedEmoji = predefinedAvatars.find(a => a.id === avatarData.emojiId) || predefinedAvatars[0];
+        // Calculate larger emoji size based on container size
+        const emojiSize = size.includes('w-8') ? 'text-xl' : 
+                         size.includes('w-12') ? 'text-2xl' : 
+                         size.includes('w-16') ? 'text-3xl' : 
+                         size.includes('w-20') ? 'text-4xl' : 
+                         size.includes('w-24') ? 'text-5xl' : 'text-4xl';
         return (
-          <div className={`${size} rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-white dark:border-gray-700 shadow-lg ${textSize}`}>
-            {selectedEmoji.emoji}
+          <div className={`${size} rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center border-2 border-white dark:border-gray-700 shadow-lg ${emojiSize}`}>
+            <span className="leading-none">{selectedEmoji.emoji}</span>
           </div>
         );
       
@@ -550,19 +582,28 @@ function Settings() {
                   </button>
 
                   <button
-                    onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'gravatar' }))}
+                    onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'profile' }))}
                     className={`p-4 border-2 rounded-lg transition-all duration-300 ${
-                      preferences.avatarType === 'gravatar' 
+                      preferences.avatarType === 'profile' 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' 
                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                    }`}
+                    } ${!getProfilePictureUrl(currentUser) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={!getProfilePictureUrl(currentUser)}
                   >
-                    <img
-                      src={generateGravatarUrl(preferences.email)}
-                      alt="Gravatar"
-                      className="w-12 h-12 rounded-full mx-auto mb-2 object-cover"
-                    />
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">Gravatar</span>
+                    {getProfilePictureUrl(currentUser) ? (
+                      <img
+                        src={getProfilePictureUrl(currentUser)}
+                        alt="Profile Picture"
+                        className="w-12 h-12 rounded-full mx-auto mb-2 object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-gray-600 text-lg font-bold mx-auto mb-2">
+                        ?
+                      </div>
+                    )}
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      {getProfilePictureUrl(currentUser) ? 'Profile Picture' : 'Profile Picture (Google Only)'}
+                    </span>
                   </button>
 
                   <button
@@ -573,8 +614,8 @@ function Settings() {
                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                     }`}
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-2xl mx-auto mb-2">
-                      {predefinedAvatars.find(a => a.id === preferences.avatarData.emojiId)?.emoji || '🐱'}
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-3xl mx-auto mb-2">
+                      <span className="leading-none">{predefinedAvatars.find(a => a.id === preferences.avatarData.emojiId)?.emoji || '🐱'}</span>
                     </div>
                     <span className="text-sm font-medium text-gray-900 dark:text-white">Characters</span>
                   </button>
@@ -621,38 +662,32 @@ function Settings() {
                           ...prev,
                           avatarData: { ...prev.avatarData, emojiId: avatar.id }
                         }))}
-                        className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-2xl border-4 transition-all duration-300 hover:scale-105 ${
+                        className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-3xl border-4 transition-all duration-300 hover:scale-105 ${
                           preferences.avatarData.emojiId === avatar.id 
                             ? 'border-orange-500 scale-110' 
                             : 'border-gray-300 dark:border-gray-600'
                         }`}
                         title={avatar.name}
                       >
-                        {avatar.emoji}
+                        <span className="leading-none">{avatar.emoji}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Gravatar Info */}
-              {preferences.avatarType === 'gravatar' && (
+              {/* Profile Picture Info */}
+              {preferences.avatarType === 'profile' && (
                 <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4">
                   <div className="flex items-start space-x-3">
                     <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">About Gravatar</h4>
+                      <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">About Profile Pictures</h4>
                       <p className="text-xs text-blue-700 dark:text-blue-400">
-                        Gravatar uses your email to fetch your globally recognized avatar. If you don't have a Gravatar account, a default pattern will be shown.
+                        {getProfilePictureUrl(currentUser) 
+                          ? 'Using your Google account profile picture. If it fails to load, your initials will be shown as fallback.'
+                          : 'Profile pictures are only available when signed in with Google. For email/password accounts, initials will be used instead.'}
                       </p>
-                      <a 
-                        href="https://gravatar.com" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"
-                      >
-                        Set up your Gravatar →
-                      </a>
                     </div>
                   </div>
                 </div>
@@ -669,6 +704,8 @@ function Settings() {
                   onClick={() => {
                     savePreferences();
                     setShowAvatarModal(false);
+                    // Trigger navigation bar update
+                    window.dispatchEvent(new CustomEvent('avatarUpdate'));
                   }}
                   className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-300 flex items-center justify-center space-x-2"
                 >
