@@ -54,6 +54,7 @@ class CascadingHedgingCalculator {
             }
         };
     }
+    
 
     // Get active accounts by phase (not breached)
     getActiveAccountsByPhase(accounts, phase) {

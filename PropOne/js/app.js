@@ -23,6 +23,7 @@ import payoutManager from './payout-manager.js';
 import compactView from './compact-view.js';
 import cascadingHedging from './sequential-hedging.js';
 
+
 // DOM elements - OPTIMIZED: Cache all DOM queries once
 const DOM = {
     authSection: document.getElementById('auth-section'),

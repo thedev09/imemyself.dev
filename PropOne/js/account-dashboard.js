@@ -11,6 +11,7 @@ let balanceChart = null;
 let trades = [];
 let currentDailyDDLevel = null;
 
+
 // DOM elements
 const accountInitials = document.getElementById('account-initials');
 const accountTitle = document.getElementById('account-title');

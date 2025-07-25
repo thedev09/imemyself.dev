@@ -4,6 +4,7 @@ import dailyTracker from './daily-tracker.js';
 import { doc, updateDoc, addDoc, collection, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import activityLogger from './activity-logger.js';
 
+
 class PayoutManager {
     constructor() {
         this.payouts = [];

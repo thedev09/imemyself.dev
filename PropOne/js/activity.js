@@ -9,6 +9,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import activityLogger from './activity-logger.js';
 
+
 // DOM elements
 const timePeriodSelect = document.getElementById('time-period');
 const periodTotalEl = document.getElementById('period-total');

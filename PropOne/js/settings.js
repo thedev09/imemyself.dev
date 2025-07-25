@@ -9,6 +9,7 @@ import dataValidator from './data-validator.js';
 // Initialize auth manager
 authManager.init();
 
+
 // DOM elements
 const userEmailEl = document.getElementById('user-email');
 const authMethodEl = document.getElementById('auth-method');

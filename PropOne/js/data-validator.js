@@ -19,6 +19,7 @@ class DataValidator {
         };
     }
 
+    
     // Validate account data
     validateAccount(accountData) {
         const errors = [];
