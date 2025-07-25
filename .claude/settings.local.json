@@ -5,7 +5,9 @@
       "Bash(npm run build:*)",
       "Bash(xcopy:*)",
       "Bash(cp:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(find:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

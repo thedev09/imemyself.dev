@@ -13,7 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { db } from '../../services/firebase';
 import { 
   doc, updateDoc, collection, getDocs, writeBatch,
-  query, orderBy, deleteDoc, addDoc
+  query, orderBy, deleteDoc, addDoc, getDoc, setDoc
 } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 
@@ -211,25 +211,73 @@ function Settings() {
     }
   };
 
-  const loadUserPreferences = () => {
-    const saved = localStorage.getItem(`pesa_preferences_${currentUser?.uid}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setPreferences(prev => ({ ...prev, ...parsed }));
-      } catch (error) {
-        console.error('Error loading preferences:', error);
-      }
-    }
+  const loadUserPreferences = async () => {
+    if (!currentUser) return;
     
-    // Set initial values from Firebase Auth
-    if (currentUser) {
-      setPreferences(prev => ({
-        ...prev,
-        displayName: currentUser.displayName || '',
-        email: currentUser.email || ''
-      }));
+    try {
+      // Try to load from Firestore first
+      const prefsDoc = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
+      const prefsSnapshot = await getDoc(prefsDoc);
+      
+      if (prefsSnapshot.exists()) {
+        const firestorePrefs = prefsSnapshot.data();
+        setPreferences(prev => ({ 
+          ...prev, 
+          ...firestorePrefs,
+          displayName: currentUser.displayName || '',
+          email: currentUser.email || ''
+        }));
+      } else {
+        // Fallback to localStorage for migration
+        const saved = localStorage.getItem(`pesa_preferences_${currentUser.uid}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            setPreferences(prev => ({ ...prev, ...parsed }));
+            
+            // Migrate to Firestore
+            await setDoc(prefsDoc, parsed);
+            console.log('Migrated preferences from localStorage to Firestore');
+            
+            // Clean up localStorage after successful migration
+            localStorage.removeItem(`pesa_preferences_${currentUser.uid}`);
+          } catch (error) {
+            console.error('Error migrating preferences:', error);
+          }
+        }
+        
+        // Set initial values from Firebase Auth
+        setPreferences(prev => ({
+          ...prev,
+          displayName: currentUser.displayName || '',
+          email: currentUser.email || ''
+        }));
+      }
+      
       setNewDisplayName(currentUser.displayName || '');
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      
+      // Fallback to localStorage if Firestore fails
+      const saved = localStorage.getItem(`pesa_preferences_${currentUser.uid}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setPreferences(prev => ({ ...prev, ...parsed }));
+        } catch (parseError) {
+          console.error('Error parsing localStorage preferences:', parseError);
+        }
+      }
+      
+      // Set initial values from Firebase Auth
+      if (currentUser) {
+        setPreferences(prev => ({
+          ...prev,
+          displayName: currentUser.displayName || '',
+          email: currentUser.email || ''
+        }));
+        setNewDisplayName(currentUser.displayName || '');
+      }
     }
   };
 
@@ -240,8 +288,15 @@ function Settings() {
       setLoading(true);
       setSaveStatus('saving');
       
-      // Save to localStorage
-      localStorage.setItem(`pesa_preferences_${currentUser.uid}`, JSON.stringify(preferences));
+      // Save to Firestore
+      const prefsDoc = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
+      await setDoc(prefsDoc, {
+        ...preferences,
+        updatedAt: new Date().toISOString()
+      });
+      
+      // Keep theme in localStorage for immediate application
+      localStorage.setItem('theme', preferences.theme);
       
       // Apply theme immediately
       if (preferences.theme === 'dark') {
@@ -249,7 +304,6 @@ function Settings() {
       } else {
         document.documentElement.classList.remove('dark');
       }
-      localStorage.setItem('theme', preferences.theme);
       
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(''), 2000);
@@ -429,7 +483,15 @@ function Settings() {
       
       await batch.commit();
       
-      // Clear local preferences
+      // Clear preferences from Firestore
+      const prefsDoc = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
+      try {
+        await deleteDoc(prefsDoc);
+      } catch (prefError) {
+        console.error('Error deleting preferences:', prefError);
+      }
+      
+      // Clear legacy localStorage preferences
       localStorage.removeItem(`pesa_preferences_${currentUser.uid}`);
       
       // Reload data

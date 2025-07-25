@@ -6,6 +6,8 @@ import {
   Settings, Sun, Moon, ChevronDown, LogOut, BarChart
 } from 'lucide-react';
 import Logo from './Logo'; // Import your custom logo component
+import { db } from '../services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 // Avatar generation utilities (shared with Settings)
 const getProfilePictureUrl = (user) => {
@@ -99,8 +101,50 @@ function Navigation({ theme, toggleTheme }) {
   };
 
   // Load user preferences for avatar
-  const loadPreferences = React.useCallback(() => {
-    if (currentUser) {
+  const loadPreferences = React.useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      // Try to load from Firestore first
+      const prefsDoc = doc(db, 'users', currentUser.uid, 'settings', 'preferences');
+      const prefsSnapshot = await getDoc(prefsDoc);
+      
+      if (prefsSnapshot.exists()) {
+        const firestorePrefs = prefsSnapshot.data();
+        setPreferences(prev => ({ 
+          ...prev, 
+          ...firestorePrefs,
+          displayName: currentUser.displayName || '',
+          email: currentUser.email || ''
+        }));
+      } else {
+        // Fallback to localStorage for compatibility
+        const saved = localStorage.getItem(`pesa_preferences_${currentUser.uid}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            setPreferences(prev => ({ 
+              ...prev, 
+              ...parsed,
+              displayName: currentUser.displayName || '',
+              email: currentUser.email || ''
+            }));
+          } catch (error) {
+            console.error('Error loading preferences from localStorage:', error);
+          }
+        } else {
+          // Set default values
+          setPreferences(prev => ({
+            ...prev,
+            displayName: currentUser.displayName || '',
+            email: currentUser.email || ''
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading preferences from Firestore:', error);
+      
+      // Fallback to localStorage if Firestore fails
       const saved = localStorage.getItem(`pesa_preferences_${currentUser.uid}`);
       if (saved) {
         try {
@@ -111,8 +155,8 @@ function Navigation({ theme, toggleTheme }) {
             displayName: currentUser.displayName || '',
             email: currentUser.email || ''
           }));
-        } catch (error) {
-          console.error('Error loading preferences:', error);
+        } catch (parseError) {
+          console.error('Error parsing localStorage preferences:', parseError);
         }
       } else {
         // Set default values
