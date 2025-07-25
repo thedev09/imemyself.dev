@@ -315,66 +315,76 @@ async function loadAccounts() {
         }
 
         // PRODUCTION: Optimized batch processing with smart caching
-        const processedAccounts = await Promise.all(
-            allAccounts.map(async (docRef) => {
-                const accountId = docRef.id;
-                const accountData = docRef.data();
-                
-                try {
-                    const cached = SmartCache.getCachedData(accountId);
-                    let dailyPnL = 0;
-                    let currentDailyDDLevel = accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100));
-                    
-                    if (cached && SmartCache.isCacheValid(accountId, cached)) {
-                        // Use cached data
-                        dailyPnL = cached.dailyPnL;
-                        currentDailyDDLevel = cached.currentDailyDDLevel;
-                    } else {
-                        // Calculate fresh data with fallback
-                        try {
-                            dailyPnL = await dailyTracker.calculateDailyPnL(accountId, accountData.currentBalance);
-                            currentDailyDDLevel = await dailyTracker.getCurrentDailyDDLevel(
-                                accountId,
-                                accountData.currentBalance,
-                                accountData.accountSize,
-                                accountData.dailyDrawdown
-                            );
-                            
-                            SmartCache.setCachedData(accountId, { dailyPnL, currentDailyDDLevel });
-                        } catch (dailyError) {
-                            console.warn(`Daily P&L calculation failed for ${accountId}:`, dailyError);
-                            // Continue with fallback values
-                        }
-                    }
-                    
-                    return {
-                        id: accountId,
-                        data: () => ({
-                            ...accountData,
-                            _dailyPnL: dailyPnL,
-                            _currentDailyDDLevel: currentDailyDDLevel
-                        }),
-                        exists: docRef.exists,
-                        metadata: docRef.metadata,
-                        ref: docRef.ref
-                    };
-                    
-                } catch (error) {
-                    console.warn(`Error processing account ${accountId}:`, error);
-                    return {
-                        id: accountId,
-                        data: () => ({
-                            ...accountData,
-                            _dailyPnL: 0,
-                            _currentDailyDDLevel: accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100))
-                        }),
-                        exists: docRef.exists,
-                        metadata: docRef.metadata,
-                        ref: docRef.ref
-                    };
+        // First, collect all uncached accounts that need daily P&L calculation
+        const uncachedAccounts = [];
+        const cachedResults = new Map();
+        
+        allAccounts.forEach(docRef => {
+            const accountId = docRef.id;
+            const accountData = docRef.data();
+            const cached = SmartCache.getCachedData(accountId);
+            
+            if (cached && SmartCache.isCacheValid(accountId, cached)) {
+                cachedResults.set(accountId, cached);
+            } else {
+                uncachedAccounts.push({ 
+                    accountId, 
+                    currentBalance: accountData.currentBalance,
+                    accountSize: accountData.accountSize,
+                    dailyDrawdown: accountData.dailyDrawdown
+                });
+            }
+        });
+        
+        // Batch calculate P&L for all uncached accounts at once
+        let batchPnLResults = new Map();
+        if (uncachedAccounts.length > 0) {
+            console.log(`Batch calculating P&L for ${uncachedAccounts.length} accounts...`);
+            const startTime = Date.now();
+            
+            try {
+                const result = await dailyTracker.batchCalculateDailyPnL(uncachedAccounts);
+                if (result.success) {
+                    batchPnLResults = result.pnlResults;
                 }
-            })
-        );
+                
+                console.log(`Batch P&L calculation completed in ${Date.now() - startTime}ms`);
+            } catch (error) {
+                console.error('Batch P&L calculation failed:', error);
+            }
+        }
+        
+        // Process all accounts with calculated or cached data
+        const processedAccounts = allAccounts.map(docRef => {
+            const accountId = docRef.id;
+            const accountData = docRef.data();
+            
+            let dailyPnL = 0;
+            let currentDailyDDLevel = accountData.currentBalance - (accountData.accountSize * (accountData.dailyDrawdown / 100));
+            
+            // Use cached data if available
+            if (cachedResults.has(accountId)) {
+                const cached = cachedResults.get(accountId);
+                dailyPnL = cached.dailyPnL;
+                currentDailyDDLevel = cached.currentDailyDDLevel;
+            } else if (batchPnLResults.has(accountId)) {
+                // Use batch calculated data
+                dailyPnL = batchPnLResults.get(accountId);
+                SmartCache.setCachedData(accountId, { dailyPnL, currentDailyDDLevel });
+            }
+            
+            return {
+                id: accountId,
+                data: () => ({
+                    ...accountData,
+                    _dailyPnL: dailyPnL,
+                    _currentDailyDDLevel: currentDailyDDLevel
+                }),
+                exists: docRef.exists,
+                metadata: docRef.metadata,
+                ref: docRef.ref
+            };
+        });
         
         allAccounts = processedAccounts;
         

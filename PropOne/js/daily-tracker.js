@@ -16,6 +16,9 @@ import {
 class DailyTracker {
     constructor() {
         this.dailySnapshots = [];
+        this.snapshotCache = new Map(); // Cache snapshots by accountId
+        this.cacheTimestamp = null;
+        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
     }
 
     // Get current IST date string (YYYY-MM-DD)
@@ -110,9 +113,19 @@ class DailyTracker {
         }
     }
 
-    // Load daily snapshots for an account
+    // Load daily snapshots for an account with caching
     async loadSnapshotsForAccount(accountId) {
         try {
+            // Check cache first
+            const now = Date.now();
+            if (this.snapshotCache.has(accountId) && 
+                this.cacheTimestamp && 
+                (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+                this.dailySnapshots = this.snapshotCache.get(accountId);
+                console.log(`Using cached snapshots for account ${accountId}`);
+                return { success: true, snapshots: this.dailySnapshots, fromCache: true };
+            }
+            
             const q = query(
                 collection(db, 'dailySnapshots'),
                 where('accountId', '==', accountId),
@@ -125,11 +138,56 @@ class DailyTracker {
                 ...doc.data()
             }));
             
+            // Update cache
+            this.snapshotCache.set(accountId, this.dailySnapshots);
+            this.cacheTimestamp = now;
+            
             console.log(`Loaded ${this.dailySnapshots.length} snapshots for account ${accountId}`);
             
             return { success: true, snapshots: this.dailySnapshots };
         } catch (error) {
             console.error('Error loading daily snapshots:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    // Batch load snapshots for multiple accounts
+    async batchLoadSnapshots(accountIds) {
+        try {
+            const tradingDay = this.getTradingDay();
+            
+            // Single query to get all snapshots for all accounts for today
+            const q = query(
+                collection(db, 'dailySnapshots'),
+                where('accountId', 'in', accountIds),
+                where('date', '==', tradingDay)
+            );
+            
+            const querySnapshot = await getDocs(q);
+            const snapshotsByAccount = new Map();
+            
+            querySnapshot.docs.forEach(doc => {
+                const data = { id: doc.id, ...doc.data() };
+                const accountId = data.accountId;
+                
+                if (!snapshotsByAccount.has(accountId)) {
+                    snapshotsByAccount.set(accountId, []);
+                }
+                snapshotsByAccount.get(accountId).push(data);
+            });
+            
+            // Update cache for all accounts
+            const now = Date.now();
+            accountIds.forEach(accountId => {
+                const snapshots = snapshotsByAccount.get(accountId) || [];
+                this.snapshotCache.set(accountId, snapshots);
+            });
+            this.cacheTimestamp = now;
+            
+            console.log(`Batch loaded snapshots for ${accountIds.length} accounts`);
+            return { success: true, snapshotsByAccount };
+        } catch (error) {
+            console.error('Error batch loading snapshots:', error);
             return { success: false, error: error.message };
         }
     }
@@ -225,6 +283,35 @@ class DailyTracker {
         }
     }
 
+    // Batch calculate daily P&L for multiple accounts
+    async batchCalculateDailyPnL(accountsData) {
+        try {
+            const accountIds = accountsData.map(a => a.accountId);
+            const result = await this.batchLoadSnapshots(accountIds);
+            
+            const pnlResults = new Map();
+            const tradingDay = this.getTradingDay();
+            
+            accountsData.forEach(({ accountId, currentBalance }) => {
+                const snapshots = result.snapshotsByAccount?.get(accountId) || [];
+                const todaySnapshot = snapshots.find(s => s.date === tradingDay);
+                
+                if (todaySnapshot) {
+                    const dailyPnL = currentBalance - todaySnapshot.startingBalance;
+                    pnlResults.set(accountId, dailyPnL);
+                } else {
+                    pnlResults.set(accountId, 0);
+                }
+            });
+            
+            console.log(`Batch calculated P&L for ${accountIds.length} accounts`);
+            return { success: true, pnlResults };
+        } catch (error) {
+            console.error('Error batch calculating daily P&L:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
     // Calculate daily P&L for an account
     async calculateDailyPnL(accountId, currentBalance) {
         try {
