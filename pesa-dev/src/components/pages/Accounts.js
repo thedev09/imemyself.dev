@@ -31,8 +31,8 @@ const ACCOUNT_TYPES = {
 };
 
 const ACCOUNT_SUBTYPES = {
-  bank: ['Savings', 'Current', 'Credit Card', 'Fixed Deposit'],
-  crypto: ['Crypto Wallet', 'Investment', 'Trading', 'Staking']
+  INR: ['Savings', 'Current', 'PrePaid Wallet', 'Investment', 'Fixed Deposit'],
+  USD: ['Crypto Wallet', 'Crypto Exchange', 'Crypto Card', 'Staking']
 };
 
 const TRANSACTION_CATEGORIES = {
@@ -124,8 +124,9 @@ function Accounts({ accounts, transactions }) {
 
   const getAccountIcon = (type, subtype) => {
     if (type === 'crypto') return Bitcoin;
-    if (subtype === 'Credit Card') return CreditCard;
     if (subtype === 'Fixed Deposit') return PiggyBank;
+    if (subtype === 'PrePaid Wallet') return CreditCard;
+    if (subtype === 'Crypto Card') return CreditCard;
     return Landmark;
   };
 
@@ -781,16 +782,12 @@ function Accounts({ accounts, transactions }) {
                     </button>
                     
                     {activeDropdown === account.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10 backdrop-blur-sm">
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 backdrop-blur-sm">
                         <button
-                          onClick={() => openDetailsModal(account)}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
-                        >
-                          <Info className="w-4 h-4" />
-                          <span>View Details</span>
-                        </button>
-                        <button
-                          onClick={() => openEditModal(account)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(account);
+                          }}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
                         >
                           <Edit className="w-4 h-4" />
@@ -798,7 +795,10 @@ function Accounts({ accounts, transactions }) {
                         </button>
                         <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                         <button
-                          onClick={() => openDeleteModal(account)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteModal(account);
+                          }}
                           className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -820,7 +820,7 @@ function Accounts({ accounts, transactions }) {
                       ≈ {formatCurrency(convertToINR(account.balance, 'USD'), 'INR')}
                     </div>
                   )}
-                  {isNegative && account.subtype === 'Credit Card' && (
+                  {isNegative && account.subtype === 'Crypto Card' && (
                     <div className="flex items-center space-x-1 text-xs text-orange-600 dark:text-orange-400 mt-1">
                       <AlertTriangle className="w-3 h-3" />
                       <span>Outstanding</span>
@@ -919,7 +919,7 @@ function Accounts({ accounts, transactions }) {
                     required
                   >
                     <option value="">Select subtype</option>
-                    {ACCOUNT_SUBTYPES[formData.type].map(subtype => (
+                    {ACCOUNT_SUBTYPES[formData.currency].map(subtype => (
                       <option key={subtype} value={subtype}>{subtype}</option>
                     ))}
                   </select>
@@ -931,7 +931,7 @@ function Accounts({ accounts, transactions }) {
                   </label>
                   <select
                     value={formData.currency}
-                    onChange={(e) => setFormData({...formData, currency: e.target.value})}
+                    onChange={(e) => setFormData({...formData, currency: e.target.value, subtype: ''})}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
                   >
                     {ACCOUNT_TYPES[formData.type].currencies.map(currency => (
@@ -1050,7 +1050,7 @@ function Accounts({ accounts, transactions }) {
                     required
                   >
                     <option value="">Select subtype</option>
-                    {ACCOUNT_SUBTYPES[formData.type].map(subtype => (
+                    {ACCOUNT_SUBTYPES[formData.currency].map(subtype => (
                       <option key={subtype} value={subtype}>{subtype}</option>
                     ))}
                   </select>
@@ -1062,7 +1062,7 @@ function Accounts({ accounts, transactions }) {
                   </label>
                   <select
                     value={formData.currency}
-                    onChange={(e) => setFormData({...formData, currency: e.target.value})}
+                    onChange={(e) => setFormData({...formData, currency: e.target.value, subtype: ''})}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
                   >
                     {ACCOUNT_TYPES[formData.type].currencies.map(currency => (
