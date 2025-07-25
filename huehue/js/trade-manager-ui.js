@@ -273,49 +273,51 @@ class TradeManagerUI {
         console.log('✅ Active trades rendered successfully');
     }
 
-    // ✅ FIXED: Simplified progress bar positions
+    // ✅ FIXED: Corrected progress bar positions for both BUY and SELL trades
     calculateProgressPositions(trade, currentPrice) {
         const entry = trade.entry || 0;
         const sl = trade.stopLoss || 0;
         const tp = trade.takeProfit || 0;
         const direction = trade.direction || trade.action || 'BUY';
         
-        let minPrice, maxPrice, entryPos, currentPos;
+        let minPrice, maxPrice, entryPos, currentPos, progressWidth;
         
         if (direction === 'BUY') {
-            // For BUY: SL < Entry < TP
+            // For BUY: SL (0%) < Entry < TP (100%)
             minPrice = sl;
             maxPrice = tp;
             
             entryPos = ((entry - sl) / (tp - sl)) * 100;
             currentPos = ((currentPrice - sl) / (tp - sl)) * 100;
+            
+            // Progress starts from SL (0%) and moves towards TP (100%)
+            progressWidth = Math.max(0, currentPos);
         } else {
-            // For SELL: TP < Entry < SL
+            // For SELL: TP (0%) < Entry < SL (100%)
+            // But visually: SL is on left (0%), TP is on right (100%)
             minPrice = tp;
             maxPrice = sl;
             
-            entryPos = ((entry - tp) / (sl - tp)) * 100;
-            currentPos = ((currentPrice - tp) / (sl - tp)) * 100;
+            // Calculate positions in the visual space (SL=0%, TP=100%)
+            entryPos = ((sl - entry) / (sl - tp)) * 100;
+            currentPos = ((sl - currentPrice) / (sl - tp)) * 100;
+            
+            // For SELL, progress moves from entry towards TP (right side)
+            // When current price goes DOWN (towards TP), progress should increase
+            progressWidth = Math.max(0, currentPos);
         }
         
-        // Clamp positions
+        // Clamp positions to 0-100%
         entryPos = Math.max(0, Math.min(100, entryPos));
         currentPos = Math.max(0, Math.min(100, currentPos));
-        
-        // Calculate progress bar width
-        let progressWidth;
-        if (direction === 'BUY') {
-            progressWidth = currentPos;
-        } else {
-            progressWidth = currentPos;
-        }
+        progressWidth = Math.max(0, Math.min(100, progressWidth));
         
         return {
             slPosition: 0,
             entryPosition: entryPos,
             currentPosition: currentPos,
             tpPosition: 100,
-            currentProgress: Math.abs(currentPos)
+            currentProgress: progressWidth
         };
     }
 
