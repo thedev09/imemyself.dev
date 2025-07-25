@@ -1355,18 +1355,49 @@
                 const element = document.getElementById(elementId);
                 if (!element) return;
 
-                // Simple trend logic
-                if (typeof value === 'number') {
-                    if (value > 0) {
-                        element.className = 'trend-indicator trend-up';
-                        element.innerHTML = '<span>▲</span><span>' + Math.abs(value) + '</span>';
-                    } else if (value < 0) {
-                        element.className = 'trend-indicator trend-down';
-                        element.innerHTML = '<span>▼</span><span>' + Math.abs(value) + '</span>';
-                    } else {
-                        element.className = 'trend-indicator trend-neutral';
-                        element.innerHTML = '<span>→</span><span>0</span>';
+                // Show simplified trend indicators without duplicating values
+                if (elementId === 'pnlTrend') {
+                    if (typeof value === 'number') {
+                        if (value > 0) {
+                            element.className = 'trend-indicator trend-up';
+                            element.innerHTML = '<span>▲</span><span>Positive</span>';
+                        } else if (value < 0) {
+                            element.className = 'trend-indicator trend-down';
+                            element.innerHTML = '<span>▼</span><span>Negative</span>';
+                        } else {
+                            element.className = 'trend-indicator trend-neutral';
+                            element.innerHTML = '<span>→</span><span>Neutral</span>';
+                        }
                     }
+                } else if (elementId === 'winRateTrend') {
+                    if (typeof value === 'number') {
+                        if (value >= 60) {
+                            element.className = 'trend-indicator trend-up';
+                            element.innerHTML = '<span>▲</span><span>Good</span>';
+                        } else if (value >= 40) {
+                            element.className = 'trend-indicator trend-neutral';
+                            element.innerHTML = '<span>→</span><span>Average</span>';
+                        } else {
+                            element.className = 'trend-indicator trend-down';
+                            element.innerHTML = '<span>▼</span><span>Poor</span>';
+                        }
+                    }
+                } else if (elementId === 'activeTradesTrend') {
+                    if (typeof value === 'number') {
+                        if (value > 3) {
+                            element.className = 'trend-indicator trend-up';
+                            element.innerHTML = '<span>▲</span><span>High</span>';
+                        } else if (value > 0) {
+                            element.className = 'trend-indicator trend-neutral';
+                            element.innerHTML = '<span>→</span><span>Active</span>';
+                        } else {
+                            element.className = 'trend-indicator trend-neutral';
+                            element.innerHTML = '<span>→</span><span>Idle</span>';
+                        }
+                    }
+                } else if (elementId === 'bestEngineTrend') {
+                    element.className = 'trend-indicator trend-up';
+                    element.innerHTML = '<span>▲</span><span>Leading</span>';
                 }
             }
 
