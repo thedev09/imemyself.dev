@@ -19,15 +19,16 @@ class DailyTracker {
         this.snapshotCache = new Map(); // Cache snapshots by accountId
         this.cacheTimestamp = null;
         this.CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+        this.istOffset = 5.5 * 60 * 60 * 1000; // IST offset from UTC in milliseconds
     }
 
     // Get current IST date string (YYYY-MM-DD)
     getCurrentISTDateString() {
-    const now = new Date();
-    // Convert to IST (UTC+5:30)
-    const istTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-    return istTime.toISOString().split('T')[0];
-}
+        const now = new Date();
+        // Convert to IST (UTC+5:30) using direct offset calculation
+        const istTime = new Date(now.getTime() + this.istOffset);
+        return istTime.toISOString().split('T')[0];
+    }
 
     // Get IST reset time for a given date (2:30 AM IST)
     getISTResetTime(dateString) {
@@ -39,26 +40,26 @@ class DailyTracker {
 
     // Get the trading day for a given timestamp
     getTradingDay(timestamp = new Date()) {
-    // Convert to IST timezone
-    const istTime = new Date(timestamp.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-    const istHour = istTime.getHours();
-    const istMinute = istTime.getMinutes();
-    
-    console.log(`IST Time: ${istTime.toLocaleString()}, Hour: ${istHour}, Minute: ${istMinute}`);
-    
-    // If it's before 2:30 AM IST, it belongs to the previous trading day
-    if (istHour < 2 || (istHour === 2 && istMinute < 30)) {
-        const previousDay = new Date(istTime);
-        previousDay.setDate(previousDay.getDate() - 1);
-        const tradingDay = previousDay.toISOString().split('T')[0];
-        console.log(`Before 2:30 AM IST - Trading day: ${tradingDay}`);
-        return tradingDay;
-    } else {
-        const tradingDay = istTime.toISOString().split('T')[0];
-        console.log(`After 2:30 AM IST - Trading day: ${tradingDay}`);
-        return tradingDay;
+        // Convert to IST timezone using direct offset calculation
+        const istTime = new Date(timestamp.getTime() + this.istOffset);
+        const istHour = istTime.getUTCHours();
+        const istMinute = istTime.getUTCMinutes();
+        
+        console.log(`IST Time: ${istTime.toISOString()}, Hour: ${istHour}, Minute: ${istMinute}`);
+        
+        // If it's before 2:30 AM IST, it belongs to the previous trading day
+        if (istHour < 2 || (istHour === 2 && istMinute < 30)) {
+            const previousDay = new Date(istTime);
+            previousDay.setUTCDate(previousDay.getUTCDate() - 1);
+            const tradingDay = previousDay.toISOString().split('T')[0];
+            console.log(`Before 2:30 AM IST - Trading day: ${tradingDay}`);
+            return tradingDay;
+        } else {
+            const tradingDay = istTime.toISOString().split('T')[0];
+            console.log(`After 2:30 AM IST - Trading day: ${tradingDay}`);
+            return tradingDay;
+        }
     }
-}
 
     // Check if we need to create a new daily snapshot
     async shouldCreateSnapshot(accountId, currentBalance) {
@@ -292,17 +293,40 @@ class DailyTracker {
             const pnlResults = new Map();
             const tradingDay = this.getTradingDay();
             
-            accountsData.forEach(({ accountId, currentBalance }) => {
+            // Create snapshots for accounts that don't have them and calculate P&L
+            for (const { accountId, currentBalance, accountSize, dailyDrawdown } of accountsData) {
                 const snapshots = result.snapshotsByAccount?.get(accountId) || [];
-                const todaySnapshot = snapshots.find(s => s.date === tradingDay);
+                let todaySnapshot = snapshots.find(s => s.date === tradingDay);
                 
                 if (todaySnapshot) {
                     const dailyPnL = currentBalance - todaySnapshot.startingBalance;
                     pnlResults.set(accountId, dailyPnL);
+                    console.log(`Account ${accountId}: Daily P&L = ${dailyPnL} (Current: ${currentBalance}, Starting: ${todaySnapshot.startingBalance})`);
                 } else {
-                    pnlResults.set(accountId, 0);
+                    // No snapshot exists for today - create one
+                    console.log(`Creating missing daily snapshot for account ${accountId} on ${tradingDay}`);
+                    const snapshotResult = await this.createDailySnapshot(accountId, currentBalance, accountSize, dailyDrawdown);
+                    
+                    if (snapshotResult.success) {
+                        // Since we just created the snapshot with current balance as starting balance, daily P&L is 0
+                        pnlResults.set(accountId, 0);
+                        console.log(`Account ${accountId}: Created new snapshot, Daily P&L = 0`);
+                        
+                        // Update cache to include the new snapshot
+                        if (this.snapshotCache.has(accountId)) {
+                            const cachedSnapshots = this.snapshotCache.get(accountId);
+                            cachedSnapshots.push({ 
+                                id: snapshotResult.id, 
+                                ...snapshotResult.snapshot 
+                            });
+                        }
+                    } else {
+                        // Fallback to 0 if snapshot creation fails
+                        pnlResults.set(accountId, 0);
+                        console.warn(`Failed to create snapshot for account ${accountId}, defaulting Daily P&L to 0`);
+                    }
                 }
-            });
+            }
             
             console.log(`Batch calculated P&L for ${accountIds.length} accounts`);
             return { success: true, pnlResults };
@@ -313,12 +337,12 @@ class DailyTracker {
     }
     
     // Calculate daily P&L for an account
-    async calculateDailyPnL(accountId, currentBalance) {
+    async calculateDailyPnL(accountId, currentBalance, accountSize = null, dailyDrawdown = null) {
         try {
             await this.loadSnapshotsForAccount(accountId);
             
             const tradingDay = this.getTradingDay();
-            const todaySnapshot = this.dailySnapshots.find(
+            let todaySnapshot = this.dailySnapshots.find(
                 snapshot => snapshot.accountId === accountId && snapshot.date === tradingDay
             );
             
@@ -327,7 +351,18 @@ class DailyTracker {
                 console.log(`Daily P&L for ${accountId}: ${dailyPnL} (Current: ${currentBalance}, Starting: ${todaySnapshot.startingBalance})`);
                 return dailyPnL;
             } else {
-                // No snapshot means no trading activity today
+                // No snapshot exists for today - attempt to create one if account data is provided
+                if (accountSize && dailyDrawdown) {
+                    console.log(`Creating missing daily snapshot for account ${accountId} on ${tradingDay}`);
+                    const snapshotResult = await this.createDailySnapshot(accountId, currentBalance, accountSize, dailyDrawdown);
+                    
+                    if (snapshotResult.success) {
+                        console.log(`Account ${accountId}: Created new snapshot, Daily P&L = 0`);
+                        return 0;
+                    }
+                }
+                
+                // No snapshot and can't create one - default to 0
                 console.log(`No snapshot for ${accountId} on ${tradingDay}, daily P&L = 0`);
                 return 0;
             }
@@ -479,65 +514,64 @@ class DailyTracker {
 
     // Get next reset time for display
     getNextResetTime() {
-    // Get current IST time
-    const now = new Date();
-    const currentIST = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-    
-    // Calculate next 2:30 AM IST
-    const nextReset = new Date(currentIST);
-    nextReset.setHours(2, 30, 0, 0);
-    
-    // If it's already past 2:30 AM today, move to tomorrow
-    if (currentIST.getHours() > 2 || (currentIST.getHours() === 2 && currentIST.getMinutes() >= 30)) {
-        nextReset.setDate(nextReset.getDate() + 1);
+        // Get current IST time using direct offset calculation
+        const now = new Date();
+        const currentIST = new Date(now.getTime() + this.istOffset);
+        
+        // Calculate next 2:30 AM IST
+        const nextReset = new Date(currentIST);
+        nextReset.setUTCHours(2, 30, 0, 0);
+        
+        // If it's already past 2:30 AM today, move to tomorrow
+        if (currentIST.getUTCHours() > 2 || (currentIST.getUTCHours() === 2 && currentIST.getUTCMinutes() >= 30)) {
+            nextReset.setUTCDate(nextReset.getUTCDate() + 1);
+        }
+        
+        return nextReset;
     }
-    
-    return nextReset;
-}
 
     // Get time until next reset
     getTimeUntilReset() {
-    const now = new Date();
-    const currentIST = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-    const nextReset = this.getNextResetTime();
-    
-    const timeDiff = nextReset.getTime() - currentIST.getTime();
-    
-    if (timeDiff <= 0) return { hours: 0, minutes: 0 };
-    
-    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-    
-    return { hours, minutes };
-}
+        const now = new Date();
+        const currentIST = new Date(now.getTime() + this.istOffset);
+        const nextReset = this.getNextResetTime();
+        
+        const timeDiff = nextReset.getTime() - currentIST.getTime();
+        
+        if (timeDiff <= 0) return { hours: 0, minutes: 0 };
+        
+        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        return { hours, minutes };
+    }
 
     // Debug function to check current IST time and trading day
-    // Debug function to check current IST time and trading day
-debugTimeInfo() {
-    const now = new Date();
-    const istTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-    const tradingDay = this.getTradingDay();
-    const nextReset = this.getNextResetTime();
-    const timeUntilReset = this.getTimeUntilReset();
-    
-    console.log('=== Daily Tracker Debug Info ===');
-    console.log('UTC Time:', now.toISOString());
-    console.log('IST Time:', istTime.toLocaleString());
-    console.log('Current IST Hour:', istTime.getHours());
-    console.log('Current IST Minute:', istTime.getMinutes());
-    console.log('Trading Day:', tradingDay);
-    console.log('Next Reset (IST):', nextReset.toLocaleString());
-    console.log('Time Until Reset:', `${timeUntilReset.hours}h ${timeUntilReset.minutes}m`);
-    console.log('================================');
-    
-    return {
-        utcTime: now,
-        istTime,
-        tradingDay,
-        nextReset,
-        timeUntilReset
-    };
-}
+    debugTimeInfo() {
+        const now = new Date();
+        const istTime = new Date(now.getTime() + this.istOffset);
+        const tradingDay = this.getTradingDay();
+        const nextReset = this.getNextResetTime();
+        const timeUntilReset = this.getTimeUntilReset();
+        
+        console.log('=== Daily Tracker Debug Info ===');
+        console.log('UTC Time:', now.toISOString());
+        console.log('IST Time:', istTime.toISOString());
+        console.log('Current IST Hour:', istTime.getUTCHours());
+        console.log('Current IST Minute:', istTime.getUTCMinutes());
+        console.log('Trading Day:', tradingDay);
+        console.log('Next Reset (IST):', nextReset.toISOString());
+        console.log('Time Until Reset:', `${timeUntilReset.hours}h ${timeUntilReset.minutes}m`);
+        console.log('================================');
+        
+        return {
+            utcTime: now,
+            istTime,
+            tradingDay,
+            nextReset,
+            timeUntilReset
+        };
+    }
 }
 
 // Create and export singleton instance
