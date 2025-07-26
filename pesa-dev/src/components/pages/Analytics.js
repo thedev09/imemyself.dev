@@ -205,30 +205,55 @@ function Analytics({ accounts, transactions }) {
   const chartData = useMemo(() => {
     // Monthly trend data
     const monthlyData = {};
-    const { start } = getDateRange(timeRange);
+    const { start, end } = getDateRange(timeRange);
     
-    // Initialize months
-    for (let d = new Date(start); d <= new Date(); d.setMonth(d.getMonth() + 1)) {
-      const key = d.toISOString().slice(0, 7); // YYYY-MM
-      monthlyData[key] = {
-        month: d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
-        income: 0,
-        expense: 0,
-        transactions: 0
-      };
+    // For thisMonth, we need daily data instead of monthly aggregates
+    if (timeRange === 'thisMonth') {
+      // Initialize days for current month
+      const currentMonth = new Date();
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        if (date <= new Date()) { // Only show up to today
+          const key = date.toISOString().slice(0, 10); // YYYY-MM-DD
+          monthlyData[key] = {
+            month: date.toLocaleDateString('en-IN', { day: 'numeric' }),
+            income: 0,
+            expense: 0,
+            transactions: 0
+          };
+        }
+      }
+    } else {
+      // Initialize months for other time ranges
+      for (let d = new Date(start); d <= new Date(); d.setMonth(d.getMonth() + 1)) {
+        const key = d.toISOString().slice(0, 7); // YYYY-MM
+        monthlyData[key] = {
+          month: d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
+          income: 0,
+          expense: 0,
+          transactions: 0
+        };
+      }
     }
     
     // Populate with transaction data
     filteredTransactions.forEach(transaction => {
-      const monthKey = transaction.date.slice(0, 7);
-      if (monthlyData[monthKey]) {
+      const key = timeRange === 'thisMonth' 
+        ? transaction.date.slice(0, 10) // YYYY-MM-DD for daily
+        : transaction.date.slice(0, 7);  // YYYY-MM for monthly
+      
+      if (monthlyData[key]) {
         const amountINR = convertToINR(transaction.amount, transaction.currency);
         if (transaction.type === 'income') {
-          monthlyData[monthKey].income += amountINR;
+          monthlyData[key].income += amountINR;
         } else if (transaction.type === 'expense') {
-          monthlyData[monthKey].expense += amountINR;
+          monthlyData[key].expense += amountINR;
         }
-        monthlyData[monthKey].transactions += 1;
+        monthlyData[key].transactions += 1;
       }
     });
 
@@ -332,10 +357,10 @@ function Analytics({ accounts, transactions }) {
   ];
 
   const MetricCard = ({ title, value, change, icon: Icon, color = 'blue', trend = null }) => (
-    <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02] border border-gray-100 dark:border-white/10">
+    <div className="metric-card card-shadow bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02] border border-gray-100 dark:border-white/10">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</h3>
-        <div className={`w-10 h-10 rounded-xl bg-${color}-100 dark:bg-${color}-500/20 flex items-center justify-center`}>
+        <div className={`icon-container w-10 h-10 rounded-xl bg-${color}-100 dark:bg-${color}-500/20 flex items-center justify-center`}>
           <Icon className={`w-5 h-5 text-${color}-600 dark:text-${color}-400`} />
         </div>
       </div>
@@ -344,7 +369,7 @@ function Analytics({ accounts, transactions }) {
           {typeof value === 'number' ? formatCurrency(value) : value}
         </h2>
         {change !== undefined && (
-          <div className={`flex items-center space-x-1 text-sm ${
+          <div className={`change-indicator flex items-center space-x-1 text-sm ${
             change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
           }`}>
             {change >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
@@ -407,7 +432,7 @@ function Analytics({ accounts, transactions }) {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
                 <XAxis dataKey="month" stroke="currentColor" fontSize={12} />
-                <YAxis stroke="currentColor" fontSize={12} tickFormatter={formatIndianNumber} />
+                <YAxis stroke="currentColor" fontSize={12} tickFormatter={formatIndianNumber} domain={[0, 'dataMax + 500000']} ticks={[0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000]} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Area 
@@ -441,16 +466,16 @@ function Analytics({ accounts, transactions }) {
 
       case 'categories':
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-80">
+          <div className="chart-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="chart-pie-container h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
                     data={chartData.categories}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
+                    innerRadius={50}
+                    outerRadius={100}
                     paddingAngle={2}
                     dataKey="value"
                   >
@@ -471,9 +496,9 @@ function Analytics({ accounts, transactions }) {
             </div>
             <div className="space-y-3">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Category Breakdown</h4>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="chart-legend space-y-2 max-h-64 overflow-y-auto">
                 {chartData.categories.map((category, index) => (
-                  <div key={category.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
+                  <div key={category.name} className="chart-legend-item flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div 
                         className="w-4 h-4 rounded-full" 
@@ -500,16 +525,16 @@ function Analytics({ accounts, transactions }) {
 
       case 'accounts':
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="h-80">
+          <div className="chart-grid grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="chart-pie-container h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
                   <Pie
                     data={chartData.accounts}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
+                    innerRadius={50}
+                    outerRadius={100}
                     paddingAngle={2}
                     dataKey="value"
                   >
@@ -530,9 +555,9 @@ function Analytics({ accounts, transactions }) {
             </div>
             <div className="space-y-3">
               <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Account Distribution</h4>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="chart-legend space-y-2 max-h-64 overflow-y-auto">
                 {chartData.accounts.map((account, index) => (
-                  <div key={account.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
+                  <div key={account.name} className="chart-legend-item flex items-center justify-between p-3 bg-gray-50 dark:bg-white/5 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div 
                         className="w-4 h-4 rounded-full" 
@@ -566,7 +591,7 @@ function Analytics({ accounts, transactions }) {
       default: // overview
         return (
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={280}>
               <RechartsBarChart data={chartData.monthly}>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
                 <XAxis dataKey="month" stroke="currentColor" fontSize={12} />
@@ -574,8 +599,8 @@ function Analytics({ accounts, transactions }) {
                   stroke="currentColor" 
                   fontSize={12} 
                   tickFormatter={formatIndianNumber}
-                  domain={[0, 'dataMax']}
-                  ticks={[0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000]}
+                  domain={[0, 'dataMax + 500000']}
+                  ticks={[0, 500000, 1000000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000]}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
@@ -590,10 +615,10 @@ function Analytics({ accounts, transactions }) {
   };
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in relative min-h-screen transition-all duration-500">
+    <div className="analytics-container p-6 space-y-6 animate-fade-in relative min-h-screen transition-all duration-500">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div>
+      <div className="analytics-header flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="header-content">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
             Analytics Dashboard
           </h1>
@@ -605,7 +630,7 @@ function Analytics({ accounts, transactions }) {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setComparisonMode(!comparisonMode)}
-            className={`p-2 rounded-lg shadow-sm dark:shadow-lg hover:shadow-md dark:hover:shadow-xl transition-all duration-300 backdrop-blur-sm border ${
+            className={`comparison-mode-button p-2 rounded-lg shadow-sm dark:shadow-lg hover:shadow-md dark:hover:shadow-xl transition-all duration-300 backdrop-blur-sm border ${
               comparisonMode 
                 ? 'bg-orange-500 text-white border-orange-500' 
                 : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10'
@@ -615,7 +640,7 @@ function Analytics({ accounts, transactions }) {
             <Activity className="w-5 h-5" />
           </button>
           
-          <div className="flex bg-white dark:bg-white/5 rounded-lg p-1 shadow-sm dark:shadow-lg backdrop-blur-sm border border-gray-200 dark:border-white/10">
+          <div className="time-range-controls horizontal-scroll flex bg-white dark:bg-white/5 rounded-lg p-1 shadow-sm dark:shadow-lg backdrop-blur-sm border border-gray-200 dark:border-white/10">
             {timeRangeOptions.map(option => (
               <button
                 key={option.value}
@@ -634,7 +659,7 @@ function Analytics({ accounts, transactions }) {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="metrics-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Income"
           value={metrics.totalIncome}
@@ -665,12 +690,12 @@ function Analytics({ accounts, transactions }) {
       </div>
 
       {/* Chart Section */}
-      <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
+      <div className="chart-container content-section card-shadow bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
         {/* Chart Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center space-x-4">
+        <div className="chart-controls flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+          <div className="chart-controls-header flex items-center justify-between w-full lg:w-auto">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Financial Insights</h3>
-            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <div className="chart-type-buttons flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               {chartTypes.map(type => {
                 const IconComponent = type.icon;
                 return (
@@ -691,7 +716,7 @@ function Analytics({ accounts, transactions }) {
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="filter-controls flex items-center space-x-3">
             <select
               value={selectedAccount}
               onChange={(e) => setSelectedAccount(e.target.value)}
@@ -723,14 +748,14 @@ function Analytics({ accounts, transactions }) {
         </div>
 
         {/* Chart Content */}
-        <div className="w-full">
+        <div className={`${chartType === 'categories' || chartType === 'accounts' ? 'chart-content-pie' : 'chart-content'} w-full`}>
           {renderChart()}
         </div>
       </div>
 
       {/* Insights and Recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
+      <div className="insights-grid content-section grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="insight-card card-shadow bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-8 h-8 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -740,7 +765,7 @@ function Analytics({ accounts, transactions }) {
           
           <div className="space-y-3">
             {metrics.savingsRate > 20 && (
-              <div className="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-500/10 rounded-lg border border-green-200 dark:border-green-500/20">
+              <div className="insight-item flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-500/10 rounded-lg border border-green-200 dark:border-green-500/20">
                 <Star className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-green-800 dark:text-green-300">Excellent Savings Rate!</p>
@@ -750,7 +775,7 @@ function Analytics({ accounts, transactions }) {
             )}
             
             {metrics.expenseGrowth > 20 && (
-              <div className="flex items-start space-x-3 p-3 bg-yellow-50 dark:bg-yellow-500/10 rounded-lg border border-yellow-200 dark:border-yellow-500/20">
+              <div className="insight-item flex items-start space-x-3 p-3 bg-yellow-50 dark:bg-yellow-500/10 rounded-lg border border-yellow-200 dark:border-yellow-500/20">
                 <Info className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Rising Expenses</p>
@@ -760,7 +785,7 @@ function Analytics({ accounts, transactions }) {
             )}
             
             {chartData.categories.length > 0 && (
-              <div className="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20">
+              <div className="insight-item flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg border border-blue-200 dark:border-blue-500/20">
                 <PieChart className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Top Expense Category</p>
@@ -773,7 +798,7 @@ function Analytics({ accounts, transactions }) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
+        <div className="insight-card card-shadow bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-8 h-8 bg-orange-100 dark:bg-orange-500/20 rounded-lg flex items-center justify-center">
               <Target className="w-4 h-4 text-orange-600 dark:text-orange-400" />
@@ -782,9 +807,9 @@ function Analytics({ accounts, transactions }) {
           </div>
           
           <div className="space-y-4">
-            <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Savings Rate</span>
+            <div className="health-metric bg-gray-50 dark:bg-white/5 rounded-lg p-4">
+              <div className="health-metric-header flex items-center justify-between mb-2">
+                <span className="health-metric-text text-sm text-gray-600 dark:text-gray-400">Savings Rate</span>
                 <span className={`text-sm font-medium ${
                   metrics.savingsRate >= 20 ? 'text-green-600 dark:text-green-400' : 
                   metrics.savingsRate >= 10 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
@@ -792,7 +817,7 @@ function Analytics({ accounts, transactions }) {
                   {metrics.savingsRate.toFixed(1)}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="progress-bar w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full transition-all duration-500 ${
                     metrics.savingsRate >= 20 ? 'bg-green-500' : 
@@ -803,26 +828,26 @@ function Analytics({ accounts, transactions }) {
               </div>
             </div>
             
-            <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Account Diversity</span>
+            <div className="health-metric bg-gray-50 dark:bg-white/5 rounded-lg p-4">
+              <div className="health-metric-header flex items-center justify-between mb-2">
+                <span className="health-metric-text text-sm text-gray-600 dark:text-gray-400">Account Diversity</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {accounts.filter(acc => !acc.isDeleted).length} accounts
                 </span>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="health-metric-text text-xs text-gray-500 dark:text-gray-400">
                 {accounts.filter(acc => !acc.isDeleted && acc.type === 'bank').length} Bank • {accounts.filter(acc => !acc.isDeleted && acc.type === 'crypto').length} Crypto
               </div>
             </div>
             
-            <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Transaction Volume</span>
+            <div className="health-metric bg-gray-50 dark:bg-white/5 rounded-lg p-4">
+              <div className="health-metric-header flex items-center justify-between mb-2">
+                <span className="health-metric-text text-sm text-gray-600 dark:text-gray-400">Transaction Volume</span>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {metrics.transactionCount}
                 </span>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="health-metric-text text-xs text-gray-500 dark:text-gray-400">
                 Avg {formatCurrency(metrics.avgTransactionAmount)} per transaction
               </div>
             </div>
@@ -831,13 +856,13 @@ function Analytics({ accounts, transactions }) {
       </div>
 
       {/* Monthly Breakdown Table */}
-      <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
-        <div className="flex items-center justify-between mb-6">
+      <div className="content-section card-shadow bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-white/10">
+        <div className="monthly-breakdown-header flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Monthly Breakdown</h3>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+            className="year-filter px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
           >
             {getAvailableYears().map(year => (
               <option key={year} value={year}>{year}</option>
@@ -845,9 +870,9 @@ function Analytics({ accounts, transactions }) {
           </select>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+        <div className="monthly-table-container overflow-x-auto">
+          <table className="monthly-table w-full">
+            <thead className="sticky-header bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Month</th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Income</th>
@@ -873,6 +898,9 @@ function Analytics({ accounts, transactions }) {
                   const monthKey = monthDate.toLocaleDateString('en-IN', { 
                     month: 'long', 
                     year: 'numeric' 
+                  });
+                  const monthMobile = monthDate.toLocaleDateString('en-IN', { 
+                    month: 'long'
                   });
                   
                   // Get month data from filtered transactions
@@ -919,6 +947,7 @@ function Analytics({ accounts, transactions }) {
                   
                   months.push({
                     key: monthKey,
+                    keyMobile: monthMobile,
                     month: month,
                     year: selectedYear,
                     income: monthlyIncome,
@@ -934,7 +963,8 @@ function Analytics({ accounts, transactions }) {
                   <tr key={index} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-300">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">
-                        {monthData.key}
+                        <span className="hidden sm:inline">{monthData.key}</span>
+                        <span className="sm:hidden">{monthData.keyMobile}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -956,13 +986,13 @@ function Analytics({ accounts, transactions }) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
-                        <span className={`text-sm font-medium ${
+                        <span className={`savings-rate-mobile text-sm font-medium ${
                           monthData.savingsRate >= 20 ? 'text-green-600 dark:text-green-400' :
                           monthData.savingsRate >= 10 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
                         }`}>
                           {monthData.savingsRate.toFixed(1)}%
                         </span>
-                        <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="progress-bar-mini w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div 
                             className={`h-2 rounded-full transition-all duration-500 ${
                               monthData.savingsRate >= 20 ? 'bg-green-500' :
