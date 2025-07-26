@@ -606,18 +606,18 @@ function Overview({ accounts, transactions }) {
   const userName = getUserFirstName();
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in relative min-h-screen transition-all duration-500">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in relative min-h-screen transition-all duration-500">
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="p-3 bg-white dark:bg-white/5 rounded-full shadow-sm dark:shadow-lg transition-all duration-300 backdrop-blur-sm">
-            <GreetingIcon className="w-6 h-6 text-orange-500" />
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="p-2 sm:p-3 bg-white dark:bg-white/5 rounded-full shadow-sm dark:shadow-lg transition-all duration-300 backdrop-blur-sm">
+            <GreetingIcon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
               {greeting}, {userName}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 transition-colors duration-300">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 transition-colors duration-300">
               Here's your financial overview
             </p>
           </div>
@@ -625,9 +625,9 @@ function Overview({ accounts, transactions }) {
       </div>
 
       {/* Balance and Stats Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Total Balance Card - 4 columns */}
-        <div className="lg:col-span-4 bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm h-full shadow-lg dark:shadow-2xl transition-all duration-300 hover:shadow-xl dark:hover:shadow-3xl hover:transform hover:scale-[1.02]">
+        <div className="lg:col-span-4 bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm h-full shadow-lg dark:shadow-2xl transition-all duration-300 hover:shadow-xl dark:hover:shadow-3xl hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">Total Balance</h3>
             <select 
@@ -713,7 +713,7 @@ function Overview({ accounts, transactions }) {
         </div>
 
         {/* Monthly Stats - 3 columns */}
-        <div className="lg:col-span-3 bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm h-full shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+        <div className="lg:col-span-3 bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm h-full shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="h-full flex flex-col justify-between space-y-3">
             <div className="bg-white dark:bg-white/5 rounded-xl p-3 flex-1 border border-gray-200 dark:border-white/10 backdrop-blur-sm transition-all duration-300 hover:bg-gray-50 dark:hover:bg-white/8">
               <div className="flex items-center justify-between h-full">
@@ -776,7 +776,7 @@ function Overview({ accounts, transactions }) {
         </div>
 
         {/* Net Worth Chart - 5 columns */}
-        <div className="lg:col-span-5 bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm h-full flex flex-col shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+        <div className="lg:col-span-5 bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm h-full flex flex-col shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white transition-colors duration-300">
               Net Worth Overview
@@ -792,7 +792,7 @@ function Overview({ accounts, transactions }) {
               <option value="all">All Time</option>
             </select>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-h-[250px]">
             {loadingNetWorth ? (
               <div className="h-full flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -853,21 +853,22 @@ function Overview({ accounts, transactions }) {
       </div>
 
       {/* Recent Transactions */}
-      <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.01]">
+      <div className="bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.01]">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-300">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-300">
             Recent Transactions
           </h3>
           <button 
             onClick={() => navigate('/transactions')}
-            className="text-sm text-orange-500 hover:text-orange-600 dark:hover:text-orange-400 flex items-center transition-colors duration-300"
+            className="text-xs sm:text-sm text-orange-500 hover:text-orange-600 dark:hover:text-orange-400 flex items-center transition-colors duration-300"
           >
             View all
-            <ChevronRight className="w-4 h-4 ml-1" />
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
           </button>
         </div>
         
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="text-left text-sm text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-white/10 transition-colors duration-300">
@@ -973,6 +974,108 @@ function Overview({ accounts, transactions }) {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="lg:hidden space-y-3">
+          {recentTransactions.length > 0 ? (
+            recentTransactions.map((transaction) => (
+              <div key={transaction.id} className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 transition-all duration-300">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${getTransactionColor(transaction.type)}`}>
+                      {getTransactionIcon(transaction.type)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                        {transaction.type}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatDate(transaction.date)} • {formatTime(transaction.date)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-sm font-bold ${
+                      transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 
+                      transaction.type === 'expense' ? 'text-red-600 dark:text-red-400' : 
+                      'text-gray-900 dark:text-white'
+                    }`}>
+                      {transaction.type === 'expense' ? '-' : transaction.type === 'income' ? '+' : ''}
+                      {formatCurrency(transaction.amount, transaction.currency)}
+                    </span>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdown(activeDropdown === transaction.id ? null : transaction.id);
+                        }}
+                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors duration-300"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                      
+                      {activeDropdown === transaction.id && (
+                        <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                          <button
+                            onClick={() => openEditModal(transaction)}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                          >
+                            <Edit className="w-4 h-4" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => openDeleteModal(transaction)}
+                            className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Account:</span>
+                    <p className="text-gray-900 dark:text-white font-medium truncate">
+                      {transaction.accountName || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Category:</span>
+                    <p className="text-gray-900 dark:text-white font-medium truncate">
+                      {transaction.category || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Payment:</span>
+                    <p className="text-gray-900 dark:text-white font-medium truncate">
+                      {transaction.paymentMode || '-'}
+                    </p>
+                  </div>
+                  {transaction.notes && (
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Notes:</span>
+                      <p className="text-gray-900 dark:text-white font-medium truncate">
+                        {transaction.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-12 text-center text-gray-500 dark:text-gray-400 transition-colors duration-300">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="w-8 h-8" />
+              </div>
+              <p className="text-sm">No transactions yet</p>
+              <p className="text-xs mt-1">Add your first transaction to get started!</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Add Transaction Modal */}
@@ -986,9 +1089,9 @@ function Overview({ accounts, transactions }) {
             }
           }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-2xl max-h-[95vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 w-full max-w-2xl max-h-[95vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
               <button onClick={() => { setShowAddModal(false); resetForm(); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-300">
                 <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
@@ -1301,14 +1404,14 @@ function Overview({ accounts, transactions }) {
       )}
 
       {/* Floating Add Transaction Button - Fixed hover area */}
-      <div className="fixed bottom-6 right-6 group">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 group">
         <button
           onClick={() => setShowAddModal(true)}
-          className="w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg dark:shadow-2xl transition-all duration-300 flex items-center justify-center transform hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-3xl"
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg dark:shadow-2xl transition-all duration-300 flex items-center justify-center transform hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-3xl"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
-        <span className="absolute right-16 top-1/2 transform -translate-y-1/2 bg-gray-900 dark:bg-black text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg dark:shadow-2xl pointer-events-none">
+        <span className="absolute right-14 sm:right-16 top-1/2 transform -translate-y-1/2 bg-gray-900 dark:bg-black text-white px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-xs sm:text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg dark:shadow-2xl pointer-events-none hidden sm:block">
           Add Transaction
         </span>
       </div>
