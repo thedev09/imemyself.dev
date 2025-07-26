@@ -16,6 +16,19 @@ import {
 
 const USD_TO_INR = 84.0;
 
+const TRANSACTION_CATEGORIES = {
+  income: ['Salary', 'Gift', 'Payouts', 'Gambling', 'Investments', 'Business', 'Freelance', 'Rental Income', 'Interest', 'Dividends', 'Bonus', 'Commission', 'Refunds', 'Other Income'],
+  expense: ['Food & Dining', 'Travel', 'Entertainment', 'Friends & Family', 'Shopping', 'Utilities', 'Healthcare', 'Personal Care', 'Gifts & Donations', 'Bills', 'Groceries', 'Vehicle', 'Subscriptions', 'Hobbies', 'Eval', 'Other Expenses'],
+  transfer: ['Self Transfer', 'Account Transfer', 'Wallet Transfer'],
+  adjustment: ['Balance Reconciliation', 'Bank Interest', 'Bank Charges', 'Missed Transaction', 'Other Adjustment']
+};
+
+const PAYMENT_MODES = {
+  bank: ['UPI', 'Bank Transfer', 'Debit Card', 'Credit Card', 'Cash', 'Net Banking'],
+  crypto: ['Crypto Transfer', 'Crypto Card', 'Exchange Transfer', 'DeFi Transaction']
+};
+
+
 // Constants based on your project structure
 const ACCOUNT_TYPES = {
   bank: {
@@ -31,8 +44,8 @@ const ACCOUNT_TYPES = {
 };
 
 const ACCOUNT_SUBTYPES = {
-  bank: ['Savings', 'Current', 'Credit Card', 'Fixed Deposit'],
-  crypto: ['Crypto Wallet', 'Investment', 'Trading', 'Staking']
+  bank: ['Savings', 'Current', 'Prepaid Wallet', 'Investments', 'Fixed Deposit'],
+  crypto: ['Crypto Wallet', 'Crypto Exchange', 'Crypto Card', 'Staking']
 };
 
 function Accounts({ accounts, transactions }) {
@@ -42,6 +55,7 @@ function Accounts({ accounts, transactions }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [showBalances, setShowBalances] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -62,6 +76,31 @@ function Accounts({ accounts, transactions }) {
   const [deleteOptions, setDeleteOptions] = useState({
     deleteTransactions: false
   });
+
+  // Get current date/time in local timezone for datetime-local input
+  const getCurrentDateTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [transactionFormData, setTransactionFormData] = useState({
+    type: 'expense',
+    amount: '',
+    currency: 'INR',
+    accountId: '',
+    toAccountId: '',
+    category: '',
+    paymentMode: '',
+    notes: '',
+    date: getCurrentDateTime(),
+    isIncrease: true
+  });
+
 
   const formatCurrency = (amount, currency = 'INR') => {
     if (!showBalances) return '••••••';
@@ -163,19 +202,48 @@ function Accounts({ accounts, transactions }) {
     try {
       setLoading(true);
       
+      const newBalance = parseFloat(formData.balance) || 0;
+      const oldBalance = selectedAccount.balance;
+      const balanceChange = newBalance - oldBalance;
+      
       const accountRef = doc(db, 'users', currentUser.uid, 'accounts', selectedAccount.id);
       await updateDoc(accountRef, {
         name: formData.name,
         type: formData.type,
         subtype: formData.subtype,
         currency: formData.currency,
-        balance: parseFloat(formData.balance) || 0,
+        balance: newBalance,
         description: formData.description,
         updatedAt: new Date().toISOString()
       });
       
+      // Create adjustment transaction if balance changed
+      if (Math.abs(balanceChange) > 0.01) { // Avoid floating point precision issues
+        const currentTime = new Date().toISOString();
+        const adjustmentData = {
+          type: 'adjustment',
+          amount: Math.abs(balanceChange),
+          currency: formData.currency,
+          accountId: selectedAccount.id,
+          accountName: selectedAccount.name,
+          toAccountId: null,
+          category: 'Balance Reconciliation',
+          paymentMode: 'Manual Adjustment',
+          notes: `Balance adjusted from ${oldBalance.toFixed(2)} to ${newBalance.toFixed(2)} (${balanceChange > 0 ? '+' : ''}${balanceChange.toFixed(2)})`,
+          date: currentTime,
+          isIncrease: balanceChange > 0,
+          userId: currentUser.uid,
+          createdAt: currentTime,
+          updatedAt: currentTime
+        };
+        
+        await addDoc(collection(db, 'users', currentUser.uid, 'transactions'), adjustmentData);
+      }
+      
       setShowEditModal(false);
-      setSelectedAccount(null);
+      if (!showDetailsModal) {
+        setSelectedAccount(null);
+      }
       resetForm();
     } catch (error) {
       console.error('Error updating account:', error);
@@ -306,11 +374,92 @@ function Accounts({ accounts, transactions }) {
     setActiveDropdown(null);
   };
 
+  const openEditFromDetails = (account) => {
+    setSelectedAccount(account);
+    setFormData({
+      name: account.name,
+      type: account.type,
+      subtype: account.subtype || '',
+      currency: account.currency,
+      balance: account.balance.toString(),
+      description: account.description || ''
+    });
+    setShowEditModal(true);
+  };
+
   const openDeleteModal = (account) => {
     setSelectedAccount(account);
     setShowDeleteModal(true);
     setActiveDropdown(null);
   };
+
+  const openTransactionModal = (account) => {
+    setTransactionFormData({
+      type: 'expense',
+      amount: '',
+      currency: account.currency,
+      accountId: account.id,
+      toAccountId: '',
+      category: '',
+      paymentMode: '',
+      notes: '',
+      date: getCurrentDateTime(),
+      isIncrease: true
+    });
+    setShowTransactionModal(true);
+  };
+
+  const resetTransactionForm = () => {
+    setTransactionFormData({
+      type: 'expense',
+      amount: '',
+      currency: 'INR',
+      accountId: '',
+      toAccountId: '',
+      category: '',
+      paymentMode: '',
+      notes: '',
+      date: getCurrentDateTime(),
+      isIncrease: true
+    });
+  };
+
+  const handleAddTransaction = async (e) => {
+    e.preventDefault();
+    if (!currentUser || loading || !transactionFormData.amount || !transactionFormData.accountId || !transactionFormData.category) return;
+
+    try {
+      setLoading(true);
+      
+      const transactionData = {
+        type: transactionFormData.type,
+        amount: parseFloat(transactionFormData.amount),
+        currency: transactionFormData.currency,
+        accountId: transactionFormData.accountId,
+        accountName: selectedAccount.name,
+        toAccountId: transactionFormData.toAccountId || null,
+        category: transactionFormData.category,
+        paymentMode: transactionFormData.paymentMode,
+        notes: transactionFormData.notes,
+        date: new Date(transactionFormData.date).toISOString(),
+        isIncrease: transactionFormData.isIncrease,
+        userId: currentUser.uid,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, 'users', currentUser.uid, 'transactions'), transactionData);
+      
+      setShowTransactionModal(false);
+      resetTransactionForm();
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert('Error adding transaction. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
     const handleClickOutside = () => setActiveDropdown(null);
@@ -466,14 +615,10 @@ function Accounts({ accounts, transactions }) {
                     {activeDropdown === account.id && (
                       <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10 backdrop-blur-sm">
                         <button
-                          onClick={() => openDetailsModal(account)}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
-                        >
-                          <Info className="w-4 h-4" />
-                          <span>View Details</span>
-                        </button>
-                        <button
-                          onClick={() => openEditModal(account)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(account);
+                          }}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
                         >
                           <Edit className="w-4 h-4" />
@@ -481,7 +626,10 @@ function Accounts({ accounts, transactions }) {
                         </button>
                         <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                         <button
-                          onClick={() => openDeleteModal(account)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteModal(account);
+                          }}
                           className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -678,11 +826,13 @@ function Accounts({ accounts, transactions }) {
       {/* Edit Account Modal */}
       {showEditModal && selectedAccount && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[70]"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowEditModal(false);
-              setSelectedAccount(null);
+              if (!showDetailsModal) {
+                setSelectedAccount(null);
+              }
               resetForm();
             }
           }}
@@ -785,7 +935,9 @@ function Accounts({ accounts, transactions }) {
                   type="button"
                   onClick={() => {
                     setShowEditModal(false);
-                    setSelectedAccount(null);
+                    if (!showDetailsModal) {
+                      setSelectedAccount(null);
+                    }
                     resetForm();
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300"
@@ -1023,11 +1175,31 @@ function Accounts({ accounts, transactions }) {
 
               {/* Transactions Panel */}
               <div className="flex-1 flex flex-col">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                     <Receipt className="w-5 h-5 mr-2" />
-                    Transactions
+                    Transactions ({(() => {
+                      const accountTransactions = transactions
+                        .filter(t => t.accountId === selectedAccount.id || t.toAccountId === selectedAccount.id);
+                      return accountTransactions.length;
+                    })()})
                   </h3>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => openTransactionModal(selectedAccount)}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg flex items-center space-x-1 text-sm transition-colors duration-300"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add</span>
+                    </button>
+                    <button
+                      onClick={() => openEditFromDetails(selectedAccount)}
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg flex items-center space-x-1 text-sm transition-colors duration-300"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-6">
@@ -1087,7 +1259,14 @@ function Accounts({ accounts, transactions }) {
                                       </span>
                                     </div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                                      {transaction.paymentMode} • {new Date(transaction.date).toLocaleDateString('en-IN')}
+                                      {transaction.paymentMode} • {new Date(transaction.date).toLocaleDateString('en-IN', { 
+                                        day: 'numeric', 
+                                        month: 'short', 
+                                        year: 'numeric' 
+                                      })} • {new Date(transaction.date).toLocaleTimeString('en-IN', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
                                     </div>
                                   </div>
                                 </div>
@@ -1111,6 +1290,191 @@ function Accounts({ accounts, transactions }) {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Transaction Modal */}
+      {showTransactionModal && selectedAccount && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[80]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowTransactionModal(false);
+              resetTransactionForm();
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-2xl backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 transition-colors duration-300">
+              Add Transaction - {selectedAccount.name}
+            </h2>
+            
+            <form onSubmit={handleAddTransaction} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                    Transaction Type
+                  </label>
+                  <select
+                    value={transactionFormData.type}
+                    onChange={(e) => setTransactionFormData({...transactionFormData, type: e.target.value, category: '', toAccountId: ''})}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                  >
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="adjustment">Adjustment</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                    Amount
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={transactionFormData.amount}
+                    onChange={(e) => setTransactionFormData({...transactionFormData, amount: e.target.value})}
+                    placeholder="0.00"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                    Category
+                  </label>
+                  <select
+                    value={transactionFormData.category}
+                    onChange={(e) => setTransactionFormData({...transactionFormData, category: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    required
+                  >
+                    <option value="">Select category</option>
+                    {TRANSACTION_CATEGORIES[transactionFormData.type]?.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                    Payment Mode
+                  </label>
+                  <select
+                    value={transactionFormData.paymentMode}
+                    onChange={(e) => setTransactionFormData({...transactionFormData, paymentMode: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    required
+                  >
+                    <option value="">Select payment mode</option>
+                    {PAYMENT_MODES[selectedAccount.type]?.map(mode => (
+                      <option key={mode} value={mode}>{mode}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {transactionFormData.type === 'transfer' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                    To Account
+                  </label>
+                  <select
+                    value={transactionFormData.toAccountId}
+                    onChange={(e) => setTransactionFormData({...transactionFormData, toAccountId: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    required
+                  >
+                    <option value="">Select destination account</option>
+                    {accounts.filter(acc => acc.id !== selectedAccount.id).map(account => (
+                      <option key={account.id} value={account.id}>{account.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {transactionFormData.type === 'adjustment' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                    Adjustment Type
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="adjustmentType"
+                        checked={transactionFormData.isIncrease}
+                        onChange={() => setTransactionFormData({...transactionFormData, isIncrease: true})}
+                        className="mr-2"
+                      />
+                      <span className="text-green-600 dark:text-green-400">Increase Balance</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="adjustmentType"
+                        checked={!transactionFormData.isIncrease}
+                        onChange={() => setTransactionFormData({...transactionFormData, isIncrease: false})}
+                        className="mr-2"
+                      />
+                      <span className="text-red-600 dark:text-red-400">Decrease Balance</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={transactionFormData.date}
+                  onChange={(e) => setTransactionFormData({...transactionFormData, date: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={transactionFormData.notes}
+                  onChange={(e) => setTransactionFormData({...transactionFormData, notes: e.target.value})}
+                  placeholder="Additional details about this transaction"
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTransactionModal(false);
+                    resetTransactionForm();
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !transactionFormData.amount || !transactionFormData.category}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Adding...' : 'Add Transaction'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

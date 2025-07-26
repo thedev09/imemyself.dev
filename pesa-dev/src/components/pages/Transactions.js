@@ -259,7 +259,7 @@ function Transactions({ accounts, transactions }) {
     if (filters.amountMin && transaction.amount < parseFloat(filters.amountMin)) return false;
     if (filters.amountMax && transaction.amount > parseFloat(filters.amountMax)) return false;
     return true;
-  });
+  }).sort((a, b) => new Date(b.date) - new Date(a.date)); // FIXED: Ensure descending order by date
 
   const indexOfLastTransaction = currentPage * transactionsPerPage;
   const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
@@ -296,7 +296,7 @@ function Transactions({ accounts, transactions }) {
         accountId: formData.accountId,
         accountName: account.name,
         currency: account.currency,
-        date: formData.date,
+        date: new Date(formData.date).toISOString(),
         notes: formData.notes,
         createdAt: new Date().toISOString()
       };
