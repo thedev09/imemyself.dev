@@ -229,6 +229,68 @@
     .stats-table tr {
       border-bottom: 1px solid var(--border-table);
     }
+    /* Floating Action Button */
+    .fab-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+    .fab {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--bg-button-hover);
+      color: var(--text-button-hover);
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px var(--shadow-color);
+    }
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .pagination button {
+      background: var(--bg-card-header);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    .pagination button:hover:not(:disabled) {
+      background: var(--bg-button);
+    }
+    .pagination button.active {
+      background: var(--bg-button-hover);
+      color: var(--text-button-hover);
+      font-weight: 600;
+    }
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .pagination .page-info {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin: 0 8px;
+    }
     /* Responsive */
     @media (max-width: 900px) {
       .trade-info-grid {
@@ -243,13 +305,13 @@
     }
     @media (max-width: 600px) {
       body { padding: 0; }
-      .container { padding: 0 0 32px 0; max-width: 100vw; }
+      .container { padding: 0 0 80px 0; max-width: 100vw; }
       .header { flex-direction: column; align-items: stretch; gap: 0; background: var(--bg-card-header); border-radius: 0 0 18px 18px; box-shadow: 0 2px 12px var(--shadow-color); padding: 12px 0 8px 0; position: sticky; top: 0; z-index: 10; }
       .header h1 { font-size: 1.2rem; margin: 0 0 8px 0; text-align: center; letter-spacing: 0.5px; }
       .nav { flex-direction: row; justify-content: center; gap: 8px; margin-bottom: 0; }
       .nav button, .back-btn, .theme-toggle { font-size: 1rem !important; padding: 10px 0 !important; border-radius: 16px; margin-bottom: 0; width: 100%; min-width: 0; }
       .back-btn { margin: 0 0 8px 0; width: 100%; }
-      .card { padding: 14px 6px; border-radius: 16px; box-shadow: 0 2px 12px var(--shadow-color); margin-bottom: 18px; }
+      .card { padding: 14px 12px; border-radius: 16px; box-shadow: 0 2px 12px var(--shadow-color); margin: 0 8px 18px 8px; }
       h2 { font-size: 1.05rem; margin-bottom: 10px; }
       .trade-status { flex-direction: column; align-items: flex-start; gap: 4px; margin-bottom: 10px; }
       .trade-direction { font-size: 14px; padding: 4px 10px; border-radius: 10px; }
@@ -259,26 +321,101 @@
       .progress-bar-wrap { height: 8px; margin-top: 10px !important; margin-bottom: 6px !important; }
       .progress-bar { height: 8px; }
       .progress-indicator { height: 14px; top: -3px; }
-      .filters { flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
-      select { width: 100%; font-size: 12px; margin-bottom: 2px; }
+      /* Collapsible filters */
+      .filters-container { margin-bottom: 12px; }
+      .filters-toggle {
+        background: var(--bg-card-header);
+        border: none;
+        color: var(--text-primary);
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .filters-toggle::after {
+        content: '▼';
+        font-size: 10px;
+        transition: transform 0.3s ease;
+      }
+      .filters-toggle.active::after {
+        transform: rotate(180deg);
+      }
+      .filters {
+        display: none;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px;
+        background: var(--bg-card-header);
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+      .filters.active {
+        display: flex;
+      }
+      select { width: 100%; font-size: 13px; padding: 8px 10px; }
       /* Hide tables, show card lists */
       .history-table, .stats-table { display: none !important; }
-      .mobile-history-list, .mobile-stats-list { display: flex; flex-direction: column; gap: 10px; }
+      .mobile-history-list, .mobile-stats-list { display: flex; flex-direction: column; gap: 8px; }
       .mobile-history-card, .mobile-stats-card {
         background: var(--bg-card-header);
         border-radius: 12px;
         box-shadow: 0 1px 6px var(--shadow-color);
-        padding: 10px 12px;
+        padding: 12px;
         font-size: 13px;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
+        position: relative;
+        overflow: hidden;
+      }
+      .mobile-history-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--text-secondary);
+      }
+      .mobile-history-card.win::before {
+        background: var(--color-win);
+      }
+      .mobile-history-card.loss::before {
+        background: var(--color-loss);
       }
       .mobile-history-card .row, .mobile-stats-card .row { display: flex; justify-content: space-between; align-items: center; }
+      .mobile-history-card .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .mobile-history-card .symbol {
+        font-size: 15px;
+        color: var(--text-primary);
+      }
+      .mobile-history-card .time {
+        font-size: 11px;
+        color: var(--text-secondary);
+      }
       .mobile-history-card .label, .mobile-stats-card .label { color: var(--text-secondary); font-weight: 500; font-size: 12px; }
       .mobile-history-card .value.win { color: var(--color-win); font-weight: 600; }
       .mobile-history-card .value.loss { color: var(--color-loss); font-weight: 600; }
-      .mobile-history-card .reason-badge { margin-left: 0; margin-top: 2px; font-size: 11px; padding: 2px 6px; }
+      .mobile-history-card .reason-badge { margin-left: 0; margin-top: 2px; font-size: 11px; padding: 2px 6px; display: inline-block; }
+      /* Mobile pagination */
+      .pagination { margin-top: 12px; }
+      .pagination button { padding: 8px 10px; font-size: 12px; }
+      .pagination .page-numbers { display: flex; gap: 4px; max-width: 200px; overflow-x: auto; }
+      .pagination .page-info { font-size: 11px; margin: 0 4px; }
+      /* FAB positioning for mobile */
+      .fab-container { bottom: 90px; right: 16px; }
+      .fab { width: 48px; height: 48px; font-size: 20px; }
     }
     /* Add data-labels to table cells for mobile readability */
   </style>
@@ -345,19 +482,22 @@
     <!-- Trade History -->
     <div class="card">
       <h2>Trade History</h2>
-      <div class="filters">
-        <select>
-          <option>All Engines</option>
-        </select>
-        <select>
-          <option>All Results</option>
-        </select>
-        <select>
-          <option>All Time</option>
-        </select>
-        <select>
-          <option>All Symbols</option>
-        </select>
+      <div class="filters-container">
+        <button class="filters-toggle" onclick="toggleFilters()">Filters</button>
+        <div class="filters">
+          <select>
+            <option>All Engines</option>
+          </select>
+          <select>
+            <option>All Results</option>
+          </select>
+          <select>
+            <option>All Time</option>
+          </select>
+          <select>
+            <option>All Symbols</option>
+          </select>
+        </div>
       </div>
       <table class="history-table">
         <thead>
@@ -433,9 +573,11 @@
       </table>
       <!-- Mobile card list for trade history -->
       <div class="mobile-history-list" style="display:none;">
-        <div class="mobile-history-card">
-          <div class="row"><span class="label">Symbol</span><span class="value">XAU/USD</span></div>
-          <div class="row"><span class="label">Time</span><span class="value">07/16 10:44 PM</span></div>
+        <div class="mobile-history-card loss">
+          <div class="header-row">
+            <span class="symbol">XAU/USD</span>
+            <span class="time">07/16 10:44 PM</span>
+          </div>
           <div class="row"><span class="label">Open</span><span class="value">$3,331.91</span></div>
           <div class="row"><span class="label">Close</span><span class="value">$3,353.10</span></div>
           <div class="row"><span class="label">TP</span><span class="value">$3,275.91</span></div>
@@ -444,9 +586,11 @@
           <div class="row"><span class="label">Result</span><span class="value loss">Loss</span></div>
           <div class="row"><span class="label">Reason</span><span class="value">SL Hit <span class="reason-badge">Stop Loss</span></span></div>
         </div>
-        <div class="mobile-history-card">
-          <div class="row"><span class="label">Symbol</span><span class="value">BTC/USD</span></div>
-          <div class="row"><span class="label">Time</span><span class="value">07/16 08:49 PM</span></div>
+        <div class="mobile-history-card loss">
+          <div class="header-row">
+            <span class="symbol">BTC/USD</span>
+            <span class="time">07/16 08:49 PM</span>
+          </div>
           <div class="row"><span class="label">Open</span><span class="value">$118,196</span></div>
           <div class="row"><span class="label">Close</span><span class="value">$118,317</span></div>
           <div class="row"><span class="label">TP</span><span class="value">$120,495</span></div>
@@ -455,9 +599,11 @@
           <div class="row"><span class="label">Result</span><span class="value loss">Loss</span></div>
           <div class="row"><span class="label">Reason</span><span class="value">SL Hit <span class="reason-badge">Stop Loss</span></span></div>
         </div>
-        <div class="mobile-history-card">
-          <div class="row"><span class="label">Symbol</span><span class="value">BTC/USD</span></div>
-          <div class="row"><span class="label">Time</span><span class="value">07/16 07:29 PM</span></div>
+        <div class="mobile-history-card win">
+          <div class="header-row">
+            <span class="symbol">BTC/USD</span>
+            <span class="time">07/16 07:29 PM</span>
+          </div>
           <div class="row"><span class="label">Open</span><span class="value">$118,725</span></div>
           <div class="row"><span class="label">Close</span><span class="value">$119,704</span></div>
           <div class="row"><span class="label">TP</span><span class="value">$119,775</span></div>
@@ -466,9 +612,11 @@
           <div class="row"><span class="label">Result</span><span class="value win">Win</span></div>
           <div class="row"><span class="label">Reason</span><span class="value">TP Hit <span class="reason-badge">Take Profit</span></span></div>
         </div>
-        <div class="mobile-history-card">
-          <div class="row"><span class="label">Symbol</span><span class="value">BTC/USD</span></div>
-          <div class="row"><span class="label">Time</span><span class="value">07/16 06:54 PM</span></div>
+        <div class="mobile-history-card loss">
+          <div class="header-row">
+            <span class="symbol">BTC/USD</span>
+            <span class="time">07/16 06:54 PM</span>
+          </div>
           <div class="row"><span class="label">Open</span><span class="value">$118,484</span></div>
           <div class="row"><span class="label">Close</span><span class="value">$119,064</span></div>
           <div class="row"><span class="label">TP</span><span class="value">$119,594</span></div>
@@ -477,9 +625,11 @@
           <div class="row"><span class="label">Result</span><span class="value loss">Loss</span></div>
           <div class="row"><span class="label">Reason</span><span class="value">SL Hit <span class="reason-badge">Stop Loss</span></span></div>
         </div>
-        <div class="mobile-history-card">
-          <div class="row"><span class="label">Symbol</span><span class="value">BTC/USD</span></div>
-          <div class="row"><span class="label">Time</span><span class="value">07/16 06:11 PM</span></div>
+        <div class="mobile-history-card loss">
+          <div class="header-row">
+            <span class="symbol">BTC/USD</span>
+            <span class="time">07/16 06:11 PM</span>
+          </div>
           <div class="row"><span class="label">Open</span><span class="value">$118,987</span></div>
           <div class="row"><span class="label">Close</span><span class="value">$119,172</span></div>
           <div class="row"><span class="label">TP</span><span class="value">$119,305</span></div>
@@ -488,6 +638,18 @@
           <div class="row"><span class="label">Result</span><span class="value loss">Loss</span></div>
           <div class="row"><span class="label">Reason</span><span class="value">SL Hit <span class="reason-badge">Stop Loss</span></span></div>
         </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination">
+        <button onclick="changePage('prev')" id="prevBtn">‹</button>
+        <div class="page-numbers">
+          <button class="active" onclick="goToPage(1)">1</button>
+          <button onclick="goToPage(2)">2</button>
+          <button onclick="goToPage(3)">3</button>
+        </div>
+        <button onclick="changePage('next')" id="nextBtn">›</button>
+        <span class="page-info">Page 1 of 3</span>
       </div>
     </div>
     <!-- Performance Stats -->
@@ -545,6 +707,11 @@
         </div>
       </div>
     </div>
+    
+    <!-- Floating Action Button -->
+    <div class="fab-container">
+      <button class="fab" onclick="addTransaction()" title="Add Transaction">+</button>
+    </div>
   </div>
   <script>
     // Theme toggle functionality
@@ -596,6 +763,52 @@
       ((current - sl) / (tp - sl)) * 100;
     document.getElementById('progressBar').style.width = progress + '%';
     document.getElementById('progressIndicator').style.left = `calc(${progress}% - 1px)`;
+    
+    // Filter toggle functionality
+    function toggleFilters() {
+      const filtersToggle = document.querySelector('.filters-toggle');
+      const filters = document.querySelector('.filters');
+      
+      filtersToggle.classList.toggle('active');
+      filters.classList.toggle('active');
+    }
+    
+    // Pagination functionality
+    let currentPage = 1;
+    const totalPages = 3;
+    
+    function changePage(direction) {
+      if (direction === 'prev' && currentPage > 1) {
+        currentPage--;
+      } else if (direction === 'next' && currentPage < totalPages) {
+        currentPage++;
+      }
+      updatePagination();
+    }
+    
+    function goToPage(page) {
+      currentPage = page;
+      updatePagination();
+    }
+    
+    function updatePagination() {
+      document.querySelectorAll('.page-numbers button').forEach((btn, index) => {
+        btn.classList.toggle('active', index + 1 === currentPage);
+      });
+      
+      document.getElementById('prevBtn').disabled = currentPage === 1;
+      document.getElementById('nextBtn').disabled = currentPage === totalPages;
+      
+      document.querySelector('.page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+    }
+    
+    // Floating Action Button functionality
+    function addTransaction() {
+      alert('Add new transaction feature coming soon!');
+    }
+    
+    // Initialize pagination
+    updatePagination();
   </script>
 </body>
 </html>

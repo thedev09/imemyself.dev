@@ -9,7 +9,9 @@
       "Bash(find:*)",
       "Bash(rm:*)",
       "Bash(node:*)",
-      "Bash(claude doctor)"
+      "Bash(claude doctor)",
+      "Bash(dir)",
+      "Bash(timeout 10 npm start)"
     ],
     "deny": []
   }

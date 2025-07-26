@@ -499,87 +499,90 @@ function Transactions({ accounts, transactions }) {
   };
 
   return (
-    <div className="p-6 space-y-6 animate-fade-in relative min-h-screen transition-all duration-500">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 animate-fade-in relative min-h-screen transition-all duration-500 pb-20 md:pb-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
             Transactions
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 transition-colors duration-300">
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 transition-colors duration-300">
             Track and manage your financial transactions
           </p>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 md:space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`p-2 rounded-lg shadow-sm dark:shadow-lg hover:shadow-md dark:hover:shadow-xl transition-all duration-300 backdrop-blur-sm ${
               showFilters ? 'bg-orange-500 text-white' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400'
             }`}
           >
-            <Filter className="w-5 h-5" />
+            <Filter className="w-4 h-4 md:w-5 md:h-5" />
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md dark:shadow-lg"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md dark:shadow-lg"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Transaction</span>
+            <span className="text-sm md:text-base">
+              <span className="md:hidden">Add</span>
+              <span className="hidden md:inline">Add Transaction</span>
+            </span>
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 md:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Total Transactions</h3>
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h3 className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Transactions</h3>
+            <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-3 h-3 md:w-4 md:h-4 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
             {filteredTransactions.length.toLocaleString()}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 md:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Total Income</h3>
-            <div className="w-8 h-8 bg-green-100 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
-              <ArrowDownRight className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <h3 className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Income</h3>
+            <div className="w-6 h-6 md:w-8 md:h-8 bg-green-100 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
+              <ArrowDownRight className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-green-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+          <p className="text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">
             {formatCurrency(totalIncome, 'INR')}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 md:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Total Expense</h3>
-            <div className="w-8 h-8 bg-red-100 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
-              <ArrowUpRight className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <h3 className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Expense</h3>
+            <div className="w-6 h-6 md:w-8 md:h-8 bg-red-100 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
+              <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4 text-red-600 dark:text-red-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+          <p className="text-lg md:text-2xl font-bold text-red-600 dark:text-red-400">
             {formatCurrency(totalExpense, 'INR')}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 md:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Net Amount</h3>
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            <h3 className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Net Amount</h3>
+            <div className={`w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center ${
               netAmount >= 0 ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-orange-100 dark:bg-orange-500/20'
             }`}>
-              <Wallet className={`w-4 h-4 ${
+              <Wallet className={`w-3 h-3 md:w-4 md:h-4 ${
                 netAmount >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'
               }`} />
             </div>
           </div>
-          <p className={`text-2xl font-bold ${
+          <p className={`text-lg md:text-2xl font-bold ${
             netAmount >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'
           }`}>
             {netAmount >= 0 ? '' : '-'}{formatCurrency(Math.abs(netAmount), 'INR')}
@@ -589,9 +592,9 @@ function Transactions({ accounts, transactions }) {
 
       {/* Filters Panel */}
       {showFilters && (
-        <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300">
+        <div className="bg-white dark:bg-white/5 rounded-2xl p-4 md:p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
+            <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Filters</h3>
             <button
               onClick={() => {
                 setFilters({
@@ -603,12 +606,89 @@ function Transactions({ accounts, transactions }) {
               }}
               className="text-sm text-orange-500 hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-300"
             >
-              Clear All
+              <span className="md:hidden">Clear</span>
+              <span className="hidden md:inline">Clear All</span>
             </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
+          {/* Mobile Filters - Horizontal scroll */}
+          <div className="md:hidden mb-4">
+            {/* Search bar - full width */}
+            <div className="mb-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text" value={filters.search}
+                  onChange={(e) => setFilters({...filters, search: e.target.value})}
+                  placeholder="Search transactions..."
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                />
+              </div>
+            </div>
+            
+            {/* Filter chips - horizontal scroll */}
+            <div className="flex space-x-2 overflow-x-auto scrollbar-hide pb-2 pr-4">
+              <select
+                value={filters.datePreset}
+                onChange={(e) => handleDatePresetChange(e.target.value)}
+                className="flex-shrink-0 pl-3 pr-6 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 appearance-none bg-no-repeat bg-right"
+                style={{backgroundImage: "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')", backgroundPosition: "right 8px center", backgroundSize: "12px"}}  
+              >
+                <option value="thisWeek">This Week</option>
+                <option value="thisMonth">This Month</option>
+                <option value="thisYear">This Year</option>
+                <option value="allTime">All Time</option>
+                <option value="custom">Custom</option>
+              </select>
+              
+              <select
+                value={filters.type}
+                onChange={(e) => setFilters({...filters, type: e.target.value})}
+                className="flex-shrink-0 pl-3 pr-6 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 appearance-none bg-no-repeat bg-right"
+                style={{backgroundImage: "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')", backgroundPosition: "right 8px center", backgroundSize: "12px"}}
+              >
+                <option value="all">All Types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+                <option value="transfer">Transfer</option>
+                <option value="adjustment">Adjustment</option>
+              </select>
+              
+              <select
+                value={filters.accountId}
+                onChange={(e) => setFilters({...filters, accountId: e.target.value})}
+                className="flex-shrink-0 pl-3 pr-6 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 appearance-none bg-no-repeat bg-right"
+                style={{backgroundImage: "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K')", backgroundPosition: "right 8px center", backgroundSize: "12px"}}
+              >
+                <option value="all">All Accounts</option>
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>{account.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Custom date range for mobile */}
+            {filters.datePreset === 'custom' && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                  className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                />
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                  className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                />
+              </div>
+            )}
+          </div>
+          
+          {/* Desktop Filters */}
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+            <div className="md:col-span-2 lg:col-span-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -616,7 +696,7 @@ function Transactions({ accounts, transactions }) {
                   type="text" value={filters.search}
                   onChange={(e) => setFilters({...filters, search: e.target.value})}
                   placeholder="Search transactions..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
                 />
               </div>
             </div>
@@ -626,7 +706,7 @@ function Transactions({ accounts, transactions }) {
               <select
                 value={filters.datePreset}
                 onChange={(e) => handleDatePresetChange(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
               >
                 <option value="thisWeek">This Week</option>
                 <option value="thisMonth">This Month</option>
@@ -642,14 +722,14 @@ function Transactions({ accounts, transactions }) {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">From Date</label>
                   <input type="date" value={filters.dateFrom}
                     onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To Date</label>
                   <input type="date" value={filters.dateTo}
                     onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
                   />
                 </div>
               </>
@@ -658,7 +738,7 @@ function Transactions({ accounts, transactions }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
               <select value={filters.type} onChange={(e) => setFilters({...filters, type: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
               >
                 <option value="all">All Types</option>
                 <option value="income">Income</option>
@@ -671,7 +751,7 @@ function Transactions({ accounts, transactions }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account</label>
               <select value={filters.accountId} onChange={(e) => setFilters({...filters, accountId: e.target.value})}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
               >
                 <option value="all">All Accounts</option>
                 {accounts.map(account => (
@@ -685,7 +765,9 @@ function Transactions({ accounts, transactions }) {
 
       {/* Transactions List */}
       <div className="bg-white dark:bg-white/5 rounded-2xl backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 overflow-hidden">
-        <div className="overflow-x-auto">
+        
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
               <tr>
@@ -850,56 +932,188 @@ function Transactions({ accounts, transactions }) {
             </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
+        
+        {/* Mobile Card View - Using Overview design */}
+        <div className="lg:hidden space-y-3 p-4">
+          {currentTransactions.length > 0 ? (
+            currentTransactions.map((transaction) => {
+              const account = getAccountById(transaction.accountId);
+              const toAccount = transaction.toAccountId ? getAccountById(transaction.toAccountId) : null;
+              
+              return (
+                <div key={transaction.id} className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/8 transition-all duration-300">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300 ${getTransactionColor(transaction.type)}`}>
+                        {getTransactionIcon(transaction.type)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                          {transaction.type}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDate(transaction.date)} • {formatTime(transaction.date)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-right">
+                        <span className={`text-sm font-bold ${
+                          transaction.type === 'income' ? 'text-green-600 dark:text-green-400' : 
+                          transaction.type === 'expense' ? 'text-red-600 dark:text-red-400' : 
+                          transaction.type === 'adjustment' ? (transaction.isIncrease ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400') :
+                          'text-gray-900 dark:text-white'
+                        }`}>
+                          {transaction.type === 'expense' ? '-' : transaction.type === 'income' ? '+' : 
+                           transaction.type === 'adjustment' ? (transaction.isIncrease ? '+' : '-') : ''}
+                          {formatCurrency(transaction.amount, transaction.currency)}
+                        </span>
+                        {/* INR conversion below amount */}
+                        {transaction.currency !== 'INR' && transaction.type !== 'transfer' && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            ≈ {formatCurrency(convertToINR(transaction.amount, transaction.currency), 'INR')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDropdown(activeDropdown === transaction.id ? null : transaction.id);
+                          }}
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors duration-300"
+                        >
+                          <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </button>
+                        
+                        {activeDropdown === transaction.id && (
+                          <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                            <button
+                              onClick={() => openEditModal(transaction)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                            >
+                              <Edit className="w-4 h-4" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              onClick={() => openDeleteModal(transaction)}
+                              className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Account:</span>
+                      <p className="text-gray-900 dark:text-white font-medium truncate">
+                        {transaction.accountName || account?.name || '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Category:</span>
+                      <p className="text-gray-900 dark:text-white font-medium truncate">
+                        {transaction.category || '-'}
+                      </p>
+                    </div>
+                    {transaction.type !== 'transfer' && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Payment:</span>
+                        <p className="text-gray-900 dark:text-white font-medium truncate">
+                          {transaction.paymentMode || '-'}
+                        </p>
+                      </div>
+                    )}
+                    {transaction.type === 'transfer' && transaction.toAccountName && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">To Account:</span>
+                        <p className="text-gray-900 dark:text-white font-medium truncate">
+                          {transaction.toAccountName}
+                        </p>
+                      </div>
+                    )}
+                    {transaction.notes && (
+                      <div>
+                        <span className="text-gray-500 dark:text-gray-400">Notes:</span>
+                        <p className="text-gray-900 dark:text-white font-medium truncate">
+                          {transaction.notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-12">
+              <DollarSign className="w-12 h-12 mx-auto mb-4 opacity-50 text-gray-400" />
+              <p className="text-lg font-medium mb-2 text-gray-500 dark:text-gray-400">No transactions found</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Add your first transaction or adjust your filters</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Mobile Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Showing {indexOfFirstTransaction + 1} to {Math.min(indexOfLastTransaction, filteredTransactions.length)} of {filteredTransactions.length} transactions
-            </p>
-            <div className="flex space-x-1">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
-              >
-                Previous
-              </button>
+          <div className="px-4 py-3 border-t border-gray-200 dark:border-white/10 md:px-6 md:py-4">
+            {/* Mobile pagination info */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+              <p className="text-xs md:text-sm text-gray-700 dark:text-gray-300 text-center md:text-left">
+                {indexOfFirstTransaction + 1}-{Math.min(indexOfLastTransaction, filteredTransactions.length)} of {filteredTransactions.length}
+              </p>
               
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
+              {/* Mobile-optimized pagination controls */}
+              <div className="flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 text-xs md:px-3 md:py-1 md:text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
+                >
+                  ‹
+                </button>
                 
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 text-sm border rounded-md transition-colors duration-300 ${
-                      currentPage === pageNum
-                        ? 'bg-orange-500 text-white border-orange-500'
-                        : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
-              >
-                Next
-              </button>
+                <div className="flex space-x-1 max-w-[120px] md:max-w-none overflow-x-auto scrollbar-hide">
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage === 1) {
+                      pageNum = i + 1;
+                    } else if (currentPage === totalPages) {
+                      pageNum = totalPages - 2 + i;
+                    } else {
+                      pageNum = currentPage - 1 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-2 py-1 text-xs md:px-3 md:py-1 md:text-sm border rounded-md transition-colors duration-300 whitespace-nowrap ${
+                          currentPage === pageNum
+                            ? 'bg-orange-500 text-white border-orange-500'
+                            : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 text-xs md:px-3 md:py-1 md:text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-300"
+                >
+                  ›
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1239,7 +1453,10 @@ function Transactions({ accounts, transactions }) {
       )}
 
       {/* Floating Add Transaction Button */}
-      <button onClick={() => setShowAddModal(true)} className="fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg dark:shadow-2xl transition-all duration-300 flex items-center justify-center group transform hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-3xl">
+      <button 
+        onClick={() => setShowAddModal(true)} 
+        className="fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg dark:shadow-2xl transition-all duration-300 flex items-center justify-center group transform hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-3xl z-40"
+      >
         <Plus className="w-6 h-6" />
         <span className="absolute right-16 bg-gray-900 dark:bg-black text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg dark:shadow-2xl pointer-events-none">
           Add Transaction
