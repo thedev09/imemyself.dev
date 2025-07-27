@@ -307,7 +307,13 @@ function Settings() {
               src={profileUrl}
               alt="Profile"
               className={`${size} rounded-full object-cover border-2 border-white dark:border-gray-700 shadow-lg`}
-              onError={() => setProfilePictureFallback(true)}
+              onError={(e) => {
+                console.log('Profile image failed to load in main avatar:', profileUrl);
+                setProfilePictureFallback(true);
+              }}
+              onLoad={() => {
+                console.log('Profile image loaded successfully:', profileUrl);
+              }}
             />
           );
         } else {
@@ -493,9 +499,9 @@ function Settings() {
                   {renderAvatar('w-14 h-14 sm:w-16 sm:h-16', 'text-lg sm:text-xl')}
                   <button
                     onClick={() => setShowAvatarModal(true)}
-                    className="absolute -bottom-1 -right-1 w-5 h-5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300 touch-manipulation border-2 border-white dark:border-gray-900"
+                    className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-5 sm:h-5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300 touch-manipulation border-2 border-white dark:border-gray-900"
                   >
-                    <Camera className="w-2.5 h-2.5" />
+                    <Camera className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
                   </button>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -820,8 +826,8 @@ function Settings() {
 
       {/* Avatar Selection Modal - Mobile Optimized */}
       {showAvatarModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 w-full max-w-lg sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-6 z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 w-full max-w-lg sm:max-w-2xl max-h-[85vh] sm:max-h-[75vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700 my-4 sm:my-8">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Choose Your Avatar</h2>
               <button 
@@ -832,36 +838,36 @@ function Settings() {
               </button>
             </div>
             
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-4">
               {/* Current Avatar Preview */}
               <div className="text-center">
                 <div className="inline-block">
-                  {renderAvatar('w-20 h-20 sm:w-24 sm:h-24', 'text-2xl sm:text-3xl')}
+                  {renderAvatar('w-16 h-16 sm:w-20 sm:h-20', 'text-xl sm:text-2xl')}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Current Avatar</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Current Avatar</p>
               </div>
 
               {/* Avatar Type Selection */}
               <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Avatar Type</h3>
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-2 sm:mb-3">Avatar Type</h3>
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'initials' }))}
-                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
+                    className={`p-2 sm:p-3 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
                       preferences.avatarType === 'initials' 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' 
                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 active:border-orange-400 dark:active:border-orange-400'
                     }`}
                   >
-                    <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-lg mx-auto mb-2">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm mx-auto mb-1">
                       {generateInitialsAvatar(preferences.displayName).initials}
                     </div>
-                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white text-center block">Initials</span>
+                    <span className="text-xs font-medium text-gray-900 dark:text-white text-center block">Initials</span>
                   </button>
 
                   <button
                     onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'profile' }))}
-                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
+                    className={`p-2 sm:p-3 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
                       preferences.avatarType === 'profile' 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' 
                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 active:border-orange-400 dark:active:border-orange-400'
@@ -872,30 +878,33 @@ function Settings() {
                       <img
                         src={getProfilePictureUrl(currentUser)}
                         alt="Profile Picture"
-                        className="w-8 h-8 sm:w-12 sm:h-12 rounded-full mx-auto mb-2 object-cover"
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full mx-auto mb-1 object-cover"
+                        onError={(e) => {
+                          console.log('Profile image failed to load:', getProfilePictureUrl(currentUser));
+                        }}
                       />
                     ) : (
-                      <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-gray-600 text-sm sm:text-lg font-bold mx-auto mb-2">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-gray-600 text-sm font-bold mx-auto mb-1">
                         ?
                       </div>
                     )}
-                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white text-center block">
+                    <span className="text-xs font-medium text-gray-900 dark:text-white text-center block">
                       {getProfilePictureUrl(currentUser) ? 'Profile' : 'Profile (Google)'}
                     </span>
                   </button>
 
                   <button
                     onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'predefined' }))}
-                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
+                    className={`p-2 sm:p-3 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
                       preferences.avatarType === 'predefined' 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' 
                         : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 active:border-orange-400 dark:active:border-orange-400'
                     }`}
                   >
-                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-xl sm:text-3xl mx-auto mb-2">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-xl sm:text-2xl mx-auto mb-1">
                       <span className="leading-none">{predefinedAvatars.find(a => a.id === preferences.avatarData.emojiId)?.emoji || '🐱'}</span>
                     </div>
-                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white text-center block">Characters</span>
+                    <span className="text-xs font-medium text-gray-900 dark:text-white text-center block">Characters</span>
                   </button>
                 </div>
               </div>
@@ -903,8 +912,8 @@ function Settings() {
               {/* Initials Color Picker */}
               {preferences.avatarType === 'initials' && (
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Color Theme</h4>
-                  <div className="grid grid-cols-4 gap-3">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Color Theme</h4>
+                  <div className="grid grid-cols-4 gap-2">
                     {Array.from({ length: 8 }, (_, i) => {
                       const { color } = generateInitialsAvatar(preferences.displayName, i);
                       return (
@@ -914,7 +923,7 @@ function Settings() {
                             ...prev,
                             avatarData: { ...prev.avatarData, colorIndex: i }
                           }))}
-                          className={`relative w-16 h-16 rounded-full bg-gradient-to-br ${color.bg} flex items-center justify-center text-white font-bold text-lg border-4 transition-all duration-300 ${
+                          className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br ${color.bg} flex items-center justify-center text-white font-bold text-sm border-3 transition-all duration-300 ${
                             preferences.avatarData.colorIndex === i 
                               ? 'border-orange-500 scale-110' 
                               : 'border-gray-300 dark:border-gray-600 hover:scale-105'
@@ -931,8 +940,8 @@ function Settings() {
               {/* Predefined Avatar Picker */}
               {preferences.avatarType === 'predefined' && (
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Choose Character</h4>
-                  <div className="grid grid-cols-6 gap-3 max-h-60 overflow-y-auto">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">Choose Character</h4>
+                  <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto">
                     {predefinedAvatars.map(avatar => (
                       <button
                         key={avatar.id}
@@ -940,7 +949,7 @@ function Settings() {
                           ...prev,
                           avatarData: { ...prev.avatarData, emojiId: avatar.id }
                         }))}
-                        className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-3xl border-4 transition-all duration-300 hover:scale-105 ${
+                        className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-xl sm:text-2xl border-3 transition-all duration-300 hover:scale-105 ${
                           preferences.avatarData.emojiId === avatar.id 
                             ? 'border-orange-500 scale-110' 
                             : 'border-gray-300 dark:border-gray-600'
@@ -956,11 +965,11 @@ function Settings() {
 
               {/* Profile Picture Info */}
               {preferences.avatarType === 'profile' && (
-                <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-3">
+                  <div className="flex items-start space-x-2">
+                    <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">About Profile Pictures</h4>
+                      <h4 className="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">About Profile Pictures</h4>
                       <p className="text-xs text-blue-700 dark:text-blue-400">
                         {getProfilePictureUrl(currentUser) 
                           ? 'Using your Google account profile picture. If it fails to load, your initials will be shown as fallback.'
@@ -971,7 +980,7 @@ function Settings() {
                 </div>
               )}
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-3 pt-3">
                 <button
                   onClick={() => setShowAvatarModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300"
