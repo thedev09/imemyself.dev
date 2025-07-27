@@ -485,27 +485,27 @@ function Settings() {
     switch (activeTab) {
       case 'profile':
         return (
-          <div className="space-y-6">
-            {/* Profile Header - More Compact */}
-            <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-500/10 dark:to-red-500/10 rounded-xl p-6">
-              <div className="flex items-center space-x-6">
-                <div className="relative">
-                  {renderAvatar('w-16 h-16', 'text-xl')}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Profile Header - Mobile Optimized */}
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-500/10 dark:to-red-500/10 rounded-xl p-4 sm:p-6">
+              <div className="flex items-center space-x-4 sm:space-x-6">
+                <div className="relative flex-shrink-0">
+                  {renderAvatar('w-14 h-14 sm:w-16 sm:h-16', 'text-lg sm:text-xl')}
                   <button
                     onClick={() => setShowAvatarModal(true)}
-                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors duration-300"
+                    className="absolute -bottom-1 -right-1 w-5 h-5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300 touch-manipulation border-2 border-white dark:border-gray-900"
                   >
-                    <Camera className="w-3 h-3" />
+                    <Camera className="w-2.5 h-2.5" />
                   </button>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {editingName ? (
                     <div className="space-y-2">
                       <input
                         type="text"
                         value={newDisplayName}
                         onChange={(e) => setNewDisplayName(e.target.value)}
-                        className="text-lg font-semibold bg-transparent border-b-2 border-orange-500 focus:outline-none text-gray-900 dark:text-white"
+                        className="text-base sm:text-lg font-semibold bg-transparent border-b-2 border-orange-500 focus:outline-none text-gray-900 dark:text-white w-full"
                         placeholder="Enter your name"
                         autoFocus
                       />
@@ -513,7 +513,7 @@ function Settings() {
                         <button
                           onClick={updateDisplayName}
                           disabled={loading || !newDisplayName.trim()}
-                          className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-xs rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                         >
                           Save
                         </button>
@@ -522,7 +522,7 @@ function Settings() {
                             setEditingName(false);
                             setNewDisplayName(preferences.displayName);
                           }}
-                          className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-300"
+                          className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-300 touch-manipulation"
                         >
                           Cancel
                         </button>
@@ -531,17 +531,17 @@ function Settings() {
                   ) : (
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
                           {preferences.displayName || 'User'}
                         </h3>
                         <button
                           onClick={() => setEditingName(true)}
-                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-300"
+                          className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-300 touch-manipulation flex-shrink-0"
                         >
                           <Edit2 className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                         </button>
                       </div>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{currentUser?.email}</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm truncate">{currentUser?.email}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         Member since {new Date(currentUser?.metadata.creationTime).toLocaleDateString()}
                       </p>
@@ -551,27 +551,27 @@ function Settings() {
               </div>
             </div>
 
-            {/* Stats and Actions - Horizontal Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Account Statistics */}
-              <div className="lg:col-span-2 bg-gray-50 dark:bg-white/5 rounded-xl p-4">
+            {/* Stats and Actions - Mobile First Layout */}
+            <div className="space-y-4">
+              {/* Account Statistics - Mobile Optimized */}
+              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm">Account Overview</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-sm">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.totalAccounts}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.totalAccounts}</div>
                     <div className="text-gray-600 dark:text-gray-400 text-xs">Accounts</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalTransactions.toLocaleString()}</div>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalTransactions.toLocaleString()}</div>
                     <div className="text-gray-600 dark:text-gray-400 text-xs">Transactions</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-semibold text-green-600 dark:text-green-400">{stats.dataSize}</div>
+                    <div className="text-base sm:text-lg font-semibold text-green-600 dark:text-green-400">{stats.dataSize}</div>
                     <div className="text-gray-600 dark:text-gray-400 text-xs">Data Size</div>
                   </div>
                   {stats.oldestTransaction && (
                     <div className="text-center">
-                      <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                      <div className="text-base sm:text-lg font-semibold text-purple-600 dark:text-purple-400">
                         {Math.floor((new Date() - stats.oldestTransaction) / (1000 * 60 * 60 * 24))}d
                       </div>
                       <div className="text-gray-600 dark:text-gray-400 text-xs">Days Active</div>
@@ -580,22 +580,22 @@ function Settings() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
+              {/* Quick Actions - Mobile Optimized */}
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm">Quick Actions</h4>
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     onClick={() => setShowExportModal(true)}
-                    className="w-full px-3 py-2 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors duration-300 flex items-center space-x-2"
+                    className="w-full px-3 py-3 text-xs sm:text-sm bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 active:bg-blue-300 dark:active:bg-blue-500/40 transition-colors duration-300 flex items-center justify-center space-x-2 touch-manipulation"
                   >
-                    <Download className="w-3 h-3" />
+                    <Download className="w-4 h-4" />
                     <span>Export Data</span>
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full px-3 py-2 text-xs bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-500/30 transition-colors duration-300 flex items-center space-x-2"
+                    className="w-full px-3 py-3 text-xs sm:text-sm bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-500/30 active:bg-orange-300 dark:active:bg-orange-500/40 transition-colors duration-300 flex items-center justify-center space-x-2 touch-manipulation"
                   >
-                    <LogOut className="w-3 h-3" />
+                    <LogOut className="w-4 h-4" />
                     <span>Sign Out</span>
                   </button>
                 </div>
@@ -606,11 +606,11 @@ function Settings() {
 
       case 'display':
         return (
-          <div className="space-y-6">
-            {/* Theme Selection */}
-            <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Appearance</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Theme Selection - Mobile Optimized */}
+            <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Appearance</h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 {[
                   { value: 'light', label: 'Light', icon: Sun, desc: 'Clean and bright interface' },
                   { value: 'dark', label: 'Dark', icon: Moon, desc: 'Easy on the eyes, perfect for night use' }
@@ -618,17 +618,17 @@ function Settings() {
                   <button
                     key={theme.value}
                     onClick={() => setPreferences(prev => ({ ...prev, theme: theme.value }))}
-                    className={`p-4 border-2 rounded-xl transition-all duration-300 ${
+                    className={`p-4 border-2 rounded-xl transition-all duration-300 touch-manipulation ${
                       preferences.theme === theme.value 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10 shadow-md' 
-                        : 'border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-400 bg-white dark:bg-white/5'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-orange-300 dark:hover:border-orange-400 active:border-orange-400 dark:active:border-orange-300 bg-white dark:bg-white/5'
                     }`}
                   >
                     <div className="flex items-center space-x-3 mb-2">
                       <theme.icon className={`w-5 h-5 ${
                         preferences.theme === theme.value ? 'text-orange-600 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'
                       }`} />
-                      <span className={`font-medium ${
+                      <span className={`font-medium text-sm sm:text-base ${
                         preferences.theme === theme.value ? 'text-orange-700 dark:text-orange-300' : 'text-gray-900 dark:text-white'
                       }`}>
                         {theme.label}
@@ -640,20 +640,20 @@ function Settings() {
               </div>
             </div>
 
-            {/* Currency Settings */}
-            <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Currency</h3>
-              <div className="max-w-xs">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default Currency</label>
+            {/* Currency Settings - Mobile Optimized */}
+            <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4">Currency</h3>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Default Currency</label>
                 <select
                   value={preferences.currency}
                   onChange={(e) => setPreferences(prev => ({ ...prev, currency: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                  className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm touch-manipulation"
                 >
                   <option value="INR">🇮🇳 Indian Rupee (₹)</option>
                   <option value="USD">🇺🇸 US Dollar ($)</option>
                 </select>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Used for displaying amounts throughout the app</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Used for displaying amounts throughout the app</p>
               </div>
             </div>
           </div>
@@ -661,11 +661,11 @@ function Settings() {
 
       case 'data':
         return (
-          <div className="space-y-6">
-            {/* Info Banner */}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Info Banner - Mobile Optimized */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-500/10 dark:to-indigo-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl p-4">
               <div className="flex items-start space-x-3">
-                <Download className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <Download className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Data Management</h3>
                   <p className="text-xs text-blue-700 dark:text-blue-400">Export your data for backup or permanently delete all data. Handle your financial information securely.</p>
@@ -673,19 +673,19 @@ function Settings() {
               </div>
             </div>
 
-            {/* Data Actions */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Data Actions - Mobile Optimized */}
+            <div className="grid grid-cols-1 gap-4">
               <button
                 onClick={() => setShowExportModal(true)}
-                className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-500/20 border border-blue-200 dark:border-blue-500/20 rounded-xl hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-500/20 dark:hover:to-blue-500/30 transition-all duration-300 group"
+                className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-500/20 border border-blue-200 dark:border-blue-500/20 rounded-xl hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-500/20 dark:hover:to-blue-500/30 active:from-blue-200 active:to-blue-300 dark:active:from-blue-500/30 dark:active:to-blue-500/40 transition-all duration-300 group touch-manipulation"
               >
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-500 dark:bg-blue-400 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Download className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 dark:bg-blue-400 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <Download className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
-                  <div className="text-left">
-                    <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Export Data</h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">Backup your financial data</p>
+                  <div className="text-left min-w-0 flex-1">
+                    <h4 className="text-base sm:text-lg font-semibold text-blue-900 dark:text-blue-100">Export Data</h4>
+                    <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">Backup your financial data</p>
                   </div>
                 </div>
                 <p className="text-xs text-blue-600 dark:text-blue-400 text-left">Download all your accounts, transactions, and settings as JSON or CSV files for backup or migration purposes.</p>
@@ -693,15 +693,15 @@ function Settings() {
 
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-500/10 dark:to-red-500/20 border border-red-200 dark:border-red-500/20 rounded-xl hover:from-red-100 hover:to-red-200 dark:hover:from-red-500/20 dark:hover:to-red-500/30 transition-all duration-300 group"
+                className="p-4 sm:p-6 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-500/10 dark:to-red-500/20 border border-red-200 dark:border-red-500/20 rounded-xl hover:from-red-100 hover:to-red-200 dark:hover:from-red-500/20 dark:hover:to-red-500/30 active:from-red-200 active:to-red-300 dark:active:from-red-500/30 dark:active:to-red-500/40 transition-all duration-300 group touch-manipulation"
               >
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-10 h-10 bg-red-500 dark:bg-red-400 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <Trash2 className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-500 dark:bg-red-400 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    <Trash2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
-                  <div className="text-left">
-                    <h4 className="text-lg font-semibold text-red-900 dark:text-red-100">Delete All Data</h4>
-                    <p className="text-sm text-red-700 dark:text-red-300">Permanently remove everything</p>
+                  <div className="text-left min-w-0 flex-1">
+                    <h4 className="text-base sm:text-lg font-semibold text-red-900 dark:text-red-100">Delete All Data</h4>
+                    <p className="text-xs sm:text-sm text-red-700 dark:text-red-300">Permanently remove everything</p>
                   </div>
                 </div>
                 <p className="text-xs text-red-600 dark:text-red-400 text-left">Permanently delete all accounts, transactions, and settings. This action cannot be undone.</p>
@@ -716,124 +716,155 @@ function Settings() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 animate-fade-in">
-      {/* Compact Header with Inline Actions */}
-      <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Settings
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Customize your Pesa experience
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            {saveStatus && (
-              <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg text-sm ${
-                saveStatus === 'saving' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
-                saveStatus === 'saved' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300' :
-                'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300'
-              }`}>
-                {saveStatus === 'saving' && <RefreshCw className="w-4 h-4 animate-spin" />}
-                {saveStatus === 'saved' && <Check className="w-4 h-4" />}
-                {saveStatus === 'error' && <X className="w-4 h-4" />}
-                <span>
-                  {saveStatus === 'saving' ? 'Saving...' :
-                   saveStatus === 'saved' ? 'Saved!' :
-                   'Error saving'}
-                </span>
+    <div className="max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Mobile-Optimized Header */}
+      <div className="bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Header Content */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                  Settings
+                </h1>
+                
+                {/* Save Status & Button - Next to Title */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {saveStatus && (
+                    <div className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm ${
+                      saveStatus === 'saving' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                      saveStatus === 'saved' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300' :
+                      'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300'
+                    }`}>
+                      {saveStatus === 'saving' && <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />}
+                      {saveStatus === 'saved' && <Check className="w-3 h-3 sm:w-4 sm:h-4" />}
+                      {saveStatus === 'error' && <X className="w-3 h-3 sm:w-4 sm:h-4" />}
+                      <span className="hidden sm:inline">
+                        {saveStatus === 'saving' ? 'Saving...' :
+                         saveStatus === 'saved' ? 'Saved!' :
+                         'Error saving'}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {hasChanges() && (
+                    <button
+                      onClick={savePreferences}
+                      disabled={loading}
+                      className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-3 sm:px-4 py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium touch-manipulation"
+                    >
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Save Changes</span>
+                      <span className="sm:hidden">Save</span>
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
-            
-            {hasChanges() && (
-              <button
-                onClick={savePreferences}
-                disabled={loading}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Save className="w-4 h-4" />
-                <span>Save Changes</span>
-              </button>
-            )}
+              <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mt-1">
+                Customize your Pesa experience
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Inline Tab Navigation */}
-        <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-          {tabs.map(tab => {
-            const IconComponent = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 text-sm font-medium ${
-                  activeTab === tab.id
-                    ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <IconComponent className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+          {/* Mobile-First Tab Navigation */}
+          <div className="pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
+            {/* Mobile: Scrollable horizontal tabs */}
+            <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-1 sm:hidden">
+              {tabs.map(tab => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-shrink-0 px-3 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 text-xs font-medium touch-manipulation ${
+                      activeTab === tab.id
+                        ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    <span className="whitespace-nowrap">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            
+            {/* Desktop: Wrapped tabs */}
+            <div className="hidden sm:flex flex-wrap gap-2">
+              {tabs.map(tab => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 text-sm font-medium ${
+                      activeTab === tab.id
+                        ? 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Content - More Compact */}
-      <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl">
+      {/* Main Content - Mobile Optimized */}
+      <div className="bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl">
         {renderTabContent()}
       </div>
 
-      {/* Avatar Selection Modal */}
+      {/* Avatar Selection Modal - Mobile Optimized */}
       {showAvatarModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Choose Your Avatar</h2>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-6 w-full max-w-lg sm:max-w-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Choose Your Avatar</h2>
               <button 
                 onClick={() => setShowAvatarModal(false)} 
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-300"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-300 touch-manipulation"
               >
                 <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Current Avatar Preview */}
               <div className="text-center">
                 <div className="inline-block">
-                  {renderAvatar('w-24 h-24', 'text-3xl')}
+                  {renderAvatar('w-20 h-20 sm:w-24 sm:h-24', 'text-2xl sm:text-3xl')}
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Current Avatar</p>
               </div>
 
               {/* Avatar Type Selection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Avatar Type</h3>
-                <div className="grid grid-cols-3 gap-3">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Avatar Type</h3>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
                   <button
                     onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'initials' }))}
-                    className={`p-4 border-2 rounded-lg transition-all duration-300 ${
+                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
                       preferences.avatarType === 'initials' 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' 
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 active:border-orange-400 dark:active:border-orange-400'
                     }`}
                   >
-                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center text-white font-bold text-sm sm:text-lg mx-auto mb-2">
                       {generateInitialsAvatar(preferences.displayName).initials}
                     </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">Initials</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white text-center block">Initials</span>
                   </button>
 
                   <button
                     onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'profile' }))}
-                    className={`p-4 border-2 rounded-lg transition-all duration-300 ${
+                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
                       preferences.avatarType === 'profile' 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' 
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 active:border-orange-400 dark:active:border-orange-400'
                     } ${!getProfilePictureUrl(currentUser) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={!getProfilePictureUrl(currentUser)}
                   >
@@ -841,30 +872,30 @@ function Settings() {
                       <img
                         src={getProfilePictureUrl(currentUser)}
                         alt="Profile Picture"
-                        className="w-12 h-12 rounded-full mx-auto mb-2 object-cover"
+                        className="w-8 h-8 sm:w-12 sm:h-12 rounded-full mx-auto mb-2 object-cover"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-gray-600 text-lg font-bold mx-auto mb-2">
+                      <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-gray-300 to-gray-400 rounded-full flex items-center justify-center text-gray-600 text-sm sm:text-lg font-bold mx-auto mb-2">
                         ?
                       </div>
                     )}
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {getProfilePictureUrl(currentUser) ? 'Profile Picture' : 'Profile Picture (Google Only)'}
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white text-center block">
+                      {getProfilePictureUrl(currentUser) ? 'Profile' : 'Profile (Google)'}
                     </span>
                   </button>
 
                   <button
                     onClick={() => setPreferences(prev => ({ ...prev, avatarType: 'predefined' }))}
-                    className={`p-4 border-2 rounded-lg transition-all duration-300 ${
+                    className={`p-3 sm:p-4 border-2 rounded-lg transition-all duration-300 touch-manipulation ${
                       preferences.avatarType === 'predefined' 
                         ? 'border-orange-500 bg-orange-50 dark:bg-orange-500/10' 
-                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 active:border-orange-400 dark:active:border-orange-400'
                     }`}
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-3xl mx-auto mb-2">
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center text-xl sm:text-3xl mx-auto mb-2">
                       <span className="leading-none">{predefinedAvatars.find(a => a.id === preferences.avatarData.emojiId)?.emoji || '🐱'}</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">Characters</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white text-center block">Characters</span>
                   </button>
                 </div>
               </div>
