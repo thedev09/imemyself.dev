@@ -1122,7 +1122,7 @@ function Transactions({ accounts, transactions }) {
       {/* Add Transaction Modal - Optimized for no scroll */}
       {showAddModal && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 py-8 md:py-16"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowAddModal(false);
@@ -1130,18 +1130,18 @@ function Transactions({ accounts, transactions }) {
             }
           }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-2xl max-h-[95vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 md:p-6 w-full max-w-md md:max-w-2xl max-h-[90vh] md:max-h-[80vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
+              <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Add Transaction</h2>
               <button onClick={() => { setShowAddModal(false); resetForm(); }} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-300">
                 <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
             </div>
             
-            <form onSubmit={handleAddTransaction} className="space-y-4">
+            <form onSubmit={handleAddTransaction} className="space-y-3 md:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction Type</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">Transaction Type</label>
+                <div className="grid grid-cols-4 gap-2">
                   {[
                     { value: 'income', label: 'Income', icon: ArrowDownRight, color: 'green' },
                     { value: 'expense', label: 'Expense', icon: ArrowUpRight, color: 'red' },
@@ -1169,9 +1169,9 @@ function Transactions({ accounts, transactions }) {
               </div>
 
               {/* Account First, then Amount/Balance */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     {formData.type === 'transfer' ? 'From Account' : 'Account'}
                   </label>
                   <select value={formData.accountId} onChange={(e) => setFormData({...formData, accountId: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" required>
@@ -1187,7 +1187,7 @@ function Transactions({ accounts, transactions }) {
                 {/* Amount Field - Hide for Adjustment */}
                 {formData.type !== 'adjustment' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Amount</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">Amount</label>
                     <input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} placeholder="0.00" className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" required />
                   </div>
                 )}
@@ -1195,7 +1195,7 @@ function Transactions({ accounts, transactions }) {
                 {/* New Balance Field - Only for Adjustment */}
                 {formData.type === 'adjustment' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Balance</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">New Balance</label>
                     <input type="number" step="0.01" value={formData.newBalance} onChange={(e) => setFormData({...formData, newBalance: e.target.value})} placeholder="0.00" className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" required />
                   </div>
                 )}
@@ -1204,7 +1204,7 @@ function Transactions({ accounts, transactions }) {
               {/* To Account - Only for Transfer */}
               {formData.type === 'transfer' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To Account</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">To Account</label>
                   <select value={formData.toAccountId} onChange={(e) => setFormData({...formData, toAccountId: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" required>
                     <option value="">Select destination account</option>
                     {accounts.filter(acc => acc.id !== formData.accountId).map(account => (
@@ -1231,9 +1231,9 @@ function Transactions({ accounts, transactions }) {
 
               {/* Category and Payment Mode - Only for Income/Expense */}
               {['income', 'expense'].includes(formData.type) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">Category</label>
                     <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" required>
                       <option value="">Select category</option>
                       {TRANSACTION_CATEGORIES[formData.type]?.map(category => (
@@ -1243,7 +1243,7 @@ function Transactions({ accounts, transactions }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment Mode</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">Payment Mode</label>
                     <select value={formData.paymentMode} onChange={(e) => setFormData({...formData, paymentMode: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm">
                       <option value="">Select payment mode</option>
                       {formData.accountId && (() => {
@@ -1258,7 +1258,7 @@ function Transactions({ accounts, transactions }) {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date & Time</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">Date & Time</label>
                 <input 
                   type="datetime-local" 
                   value={formData.date} 
@@ -1270,12 +1270,12 @@ function Transactions({ accounts, transactions }) {
 
               {/* Notes - Smaller */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes (Optional)</label>
-                <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Add any additional notes..." rows={2} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">Notes (Optional)</label>
+                <textarea value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} placeholder="Add any additional notes..." rows={1} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm" />
               </div>
 
               {/* Actions */}
-              <div className="flex space-x-3 pt-2">
+              <div className="flex space-x-3 pt-3 md:pt-4">
                 <button type="button" onClick={() => { setShowAddModal(false); resetForm(); }} className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300 text-sm">Cancel</button>
                 <button 
                   type="submit" 
@@ -1294,7 +1294,7 @@ function Transactions({ accounts, transactions }) {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Add Transaction</span>
+                      <span>Add</span>
                     </>
                   )}
                 </button>
