@@ -91,7 +91,7 @@ function Subscriptions({ accounts }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   
   // New UI states - Set default view based on screen size
-  const [viewMode, setViewMode] = useState(window.innerWidth < 640 ? 'list' : 'category'); // 'category' or 'list'
+  const [viewMode, setViewMode] = useState('list'); // 'category' or 'list' - default to list for all screen sizes
   const [expandedCategories, setExpandedCategories] = useState(new Set(['Entertainment', 'AI Tools']));
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1240,7 +1240,7 @@ function Subscriptions({ accounts }) {
       {/* Add Subscription Modal */}
       {showAddModal && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 py-8 md:py-16"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowAddModal(false);
@@ -1248,12 +1248,12 @@ function Subscriptions({ accounts }) {
             }
           }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-2xl max-h-[95vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Add Subscription</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 md:p-6 w-full max-w-md md:max-w-2xl max-h-[90vh] md:max-h-[80vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-2xl">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-4 md:mb-6">Add Subscription</h2>
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                   Subscription Name
                 </label>
                 <input
@@ -1266,9 +1266,9 @@ function Subscriptions({ accounts }) {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Category
                   </label>
                   <select
@@ -1284,7 +1284,7 @@ function Subscriptions({ accounts }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Service (Optional)
                   </label>
                   <select
@@ -1300,9 +1300,9 @@ function Subscriptions({ accounts }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Amount
                   </label>
                   <input
@@ -1317,7 +1317,7 @@ function Subscriptions({ accounts }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Debit Account
                   </label>
                   <select
@@ -1346,9 +1346,11 @@ function Subscriptions({ accounts }) {
                     </p>
                   )}
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Billing Cycle
                   </label>
                   <select
@@ -1361,36 +1363,36 @@ function Subscriptions({ accounts }) {
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
+                    Next Billing Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.nextBillingDate}
+                    onChange={(e) => setFormData({...formData, nextBillingDate: e.target.value})}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Next Billing Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.nextBillingDate}
-                  onChange={(e) => setFormData({...formData, nextBillingDate: e.target.value})}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                   Description (Optional)
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   placeholder="Add any notes about this subscription..."
-                  rows={2}
+                  rows={1}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
+              <div className="flex items-center justify-between p-3 md:p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
                 <div className="flex items-center space-x-6">
                   <label className="flex items-center space-x-2">
                     <input
@@ -1419,7 +1421,7 @@ function Subscriptions({ accounts }) {
                 </div>
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-3 pt-4 md:pt-6">
                 <button
                   type="button"
                   onClick={() => {
@@ -1443,7 +1445,7 @@ function Subscriptions({ accounts }) {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Add Subscription</span>
+                      <span>Add</span>
                     </>
                   )}
                 </button>
@@ -1456,7 +1458,7 @@ function Subscriptions({ accounts }) {
       {/* Edit Modal */}
       {showEditModal && selectedSubscription && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 py-8 md:py-16"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowEditModal(false);
@@ -1465,10 +1467,10 @@ function Subscriptions({ accounts }) {
             }
           }}
         >
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-2xl max-h-[95vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Edit Subscription</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 md:p-6 w-full max-w-md md:max-w-2xl max-h-[90vh] md:max-h-[80vh] overflow-y-auto backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-2xl">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-4 md:mb-6">Edit Subscription</h2>
             
-            <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 mb-6">
+            <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-3 md:p-4 mb-4">
               <div className="flex items-start space-x-3">
                 <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                 <div>
@@ -1481,9 +1483,9 @@ function Subscriptions({ accounts }) {
               </div>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                   Subscription Name
                 </label>
                 <input
@@ -1496,9 +1498,9 @@ function Subscriptions({ accounts }) {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Category
                   </label>
                   <select
@@ -1514,7 +1516,7 @@ function Subscriptions({ accounts }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Service (Optional)
                   </label>
                   <select
@@ -1530,9 +1532,9 @@ function Subscriptions({ accounts }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Amount
                   </label>
                   <input
@@ -1547,7 +1549,7 @@ function Subscriptions({ accounts }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Debit Account
                   </label>
                   <select
@@ -1571,9 +1573,11 @@ function Subscriptions({ accounts }) {
                     ))}
                   </select>
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                     Billing Cycle
                   </label>
                   <select
@@ -1586,35 +1590,35 @@ function Subscriptions({ accounts }) {
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
+                    Next Billing Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.nextBillingDate}
+                    onChange={(e) => setFormData({...formData, nextBillingDate: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    required
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Next Billing Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.nextBillingDate}
-                  onChange={(e) => setFormData({...formData, nextBillingDate: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2">
                   Description (Optional)
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   placeholder="Add any notes about this subscription..."
-                  rows={2}
+                  rows={1}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
+              <div className="flex items-center justify-between p-3 md:p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
                 <div className="flex items-center space-x-6">
                   <label className="flex items-center space-x-2">
                     <input
@@ -1643,7 +1647,7 @@ function Subscriptions({ accounts }) {
                 </div>
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-3 pt-4 md:pt-6">
                 <button
                   type="button"
                   onClick={() => {
@@ -1668,7 +1672,7 @@ function Subscriptions({ accounts }) {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Update Subscription</span>
+                      <span>Update</span>
                     </>
                   )}
                 </button>
@@ -1681,7 +1685,7 @@ function Subscriptions({ accounts }) {
       {/* Delete Modal */}
       {showDeleteModal && selectedSubscription && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 py-8 md:py-16"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowDeleteModal(false);
@@ -1743,7 +1747,7 @@ function Subscriptions({ accounts }) {
       {/* Process Subscription Modal */}
       {showProcessModal && selectedSubscription && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 py-8 md:py-16"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowProcessModal(false);
