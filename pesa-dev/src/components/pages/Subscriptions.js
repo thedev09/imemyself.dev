@@ -90,8 +90,8 @@ function Subscriptions({ accounts }) {
   const [loading, setLoading] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   
-  // New UI states
-  const [viewMode, setViewMode] = useState('category'); // 'category' or 'list'
+  // New UI states - Set default view based on screen size
+  const [viewMode, setViewMode] = useState(window.innerWidth < 640 ? 'list' : 'category'); // 'category' or 'list'
   const [expandedCategories, setExpandedCategories] = useState(new Set(['Entertainment', 'AI Tools']));
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -547,139 +547,288 @@ function Subscriptions({ accounts }) {
     const isDue = daysUntilBilling <= 0;
     
     return (
-      <div
-        key={subscription.id}
-        className={`border border-gray-200 dark:border-white/10 rounded-xl p-4 transition-all duration-300 hover:shadow-md dark:hover:shadow-xl ${
-          !subscription.isActive ? 'opacity-60' : ''
-        } ${isDue ? 'ring-2 ring-orange-500 ring-opacity-50' : ''}`}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-4">
-            <div className={`w-12 h-12 rounded-xl bg-${serviceColor}-100 dark:bg-${serviceColor}-500/20 flex items-center justify-center flex-shrink-0`}>
-              <ServiceIcon className={`w-6 h-6 text-${serviceColor}-600 dark:text-${serviceColor}-400`} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h4 className="font-semibold text-gray-900 dark:text-white">
-                  {subscription.name}
-                </h4>
-                {!subscription.isActive && (
-                  <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
-                    Paused
-                  </span>
-                )}
-                {isDue && subscription.isActive && (
-                  <span className="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full">
-                    Due
-                  </span>
-                )}
+      <>
+        {/* Desktop View */}
+        <div
+          key={subscription.id}
+          className={`hidden sm:block border border-gray-200 dark:border-white/10 rounded-xl p-4 transition-all duration-300 hover:shadow-md dark:hover:shadow-xl ${
+            !subscription.isActive ? 'opacity-60' : ''
+          } ${isDue ? 'ring-2 ring-orange-500 ring-opacity-50' : ''}`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-4 flex-1 min-w-0">
+              <div className={`w-12 h-12 rounded-xl bg-${serviceColor}-100 dark:bg-${serviceColor}-500/20 flex items-center justify-center flex-shrink-0`}>
+                <ServiceIcon className={`w-6 h-6 text-${serviceColor}-600 dark:text-${serviceColor}-400`} />
               </div>
-              <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
-                <span>{subscription.serviceName || subscription.category}</span>
-                <span>•</span>
-                <span className="capitalize">{subscription.billingCycle}</span>
-                {subscription.isActive && (
-                  <>
-                    <span>•</span>
-                    <span className={`${daysUntilBilling <= 3 ? 'text-orange-600 dark:text-orange-400 font-medium' : ''}`}>
-                      {daysUntilBilling === 0 ? 'Due today' : 
-                       daysUntilBilling < 0 ? `Overdue by ${Math.abs(daysUntilBilling)} days` :
-                       daysUntilBilling === 1 ? 'Due tomorrow' :
-                       `Due in ${daysUntilBilling} days`}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-semibold text-gray-900 dark:text-white truncate">
+                    {subscription.name}
+                  </h4>
+                  {!subscription.isActive && (
+                    <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full whitespace-nowrap">
+                      Paused
                     </span>
-                  </>
+                  )}
+                  {isDue && subscription.isActive && (
+                    <span className="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full whitespace-nowrap">
+                      Due
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-4 mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  <span className="truncate">{subscription.serviceName || subscription.category}</span>
+                  <span>•</span>
+                  <span className="capitalize whitespace-nowrap">{subscription.billingCycle}</span>
+                  {subscription.isActive && (
+                    <>
+                      <span>•</span>
+                      <span className={`whitespace-nowrap ${daysUntilBilling <= 3 ? 'text-orange-600 dark:text-orange-400 font-medium' : ''}`}>
+                        {daysUntilBilling === 0 ? 'Due today' : 
+                         daysUntilBilling < 0 ? `Overdue by ${Math.abs(daysUntilBilling)} days` :
+                         daysUntilBilling === 1 ? 'Due tomorrow' :
+                         `Due in ${daysUntilBilling} days`}
+                      </span>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <CreditCard className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {account?.name || subscription.accountName || 'Unknown Account'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-start space-x-3 flex-shrink-0">
+              <div className="text-right">
+                <p className="font-semibold text-gray-900 dark:text-white">
+                  {formatCurrency(subscription.amount, subscription.currency)}
+                </p>
+                {subscription.currency !== 'INR' && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    ≈ {formatCurrency(convertToINR(subscription.amount, subscription.currency))}
+                  </p>
                 )}
               </div>
-              <div className="flex items-center space-x-2 mt-2">
-                <CreditCard className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {account?.name || subscription.accountName || 'Unknown Account'}
-                </span>
+              
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveDropdown(activeDropdown === subscription.id ? null : subscription.id);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-300"
+                >
+                  <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                {activeDropdown === subscription.id && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                    {isDue && subscription.isActive && (
+                      <>
+                        <button
+                          onClick={() => openProcessModal(subscription)}
+                          className="w-full text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          <span>Process Now</span>
+                        </button>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                      </>
+                    )}
+                    <button
+                      onClick={() => toggleSubscriptionStatus(subscription)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                    >
+                      {subscription.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      <span>{subscription.isActive ? 'Pause' : 'Resume'}</span>
+                    </button>
+                    <button
+                      onClick={() => openEditModal(subscription)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                    <button
+                      onClick={() => openDeleteModal(subscription)}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
           
-          <div className="flex items-start space-x-3">
-            <div className="text-right">
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {formatCurrency(subscription.amount, subscription.currency)}
-              </p>
-              {subscription.currency !== 'INR' && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  ≈ {formatCurrency(convertToINR(subscription.amount, subscription.currency))}
+          {subscription.description && (
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-lg p-2">
+              {subscription.description}
+            </p>
+          )}
+          
+          <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+            <span>
+              {subscription.totalSpent > 0 
+                ? `Total spent: ${formatCurrency(subscription.totalSpent, subscription.currency)}`
+                : 'No transactions yet'
+              }
+            </span>
+            <span>Next billing: {new Date(subscription.nextBillingDate).toLocaleDateString('en-IN')}</span>
+          </div>
+        </div>
+        
+        {/* Mobile View */}
+        <div
+          key={`mobile-${subscription.id}`}
+          className={`sm:hidden bg-white dark:bg-white/5 rounded-xl p-3 border border-gray-200 dark:border-white/10 hover:shadow-md dark:hover:shadow-xl transition-all duration-300 ${
+            !subscription.isActive ? 'opacity-60' : ''
+          } ${isDue ? 'ring-2 ring-orange-500 ring-opacity-50' : ''}`}
+        >
+          <div className="flex items-start mb-3">
+            <div className="flex items-start space-x-3 flex-1 min-w-0 pr-2">
+              <div className={`w-10 h-10 rounded-lg bg-${serviceColor}-100 dark:bg-${serviceColor}-500/20 flex items-center justify-center flex-shrink-0`}>
+                <ServiceIcon className={`w-5 h-5 text-${serviceColor}-600 dark:text-${serviceColor}-400`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {subscription.name}
+                  </h4>
+                  {!subscription.isActive && (
+                    <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full whitespace-nowrap">
+                      Paused
+                    </span>
+                  )}
+                  {isDue && subscription.isActive && (
+                    <span className="px-2 py-0.5 text-xs bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full whitespace-nowrap">
+                      Due
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {subscription.serviceName || subscription.category}
                 </p>
-              )}
+                <p className="text-xs text-gray-400 dark:text-gray-500 capitalize">
+                  {subscription.billingCycle}
+                </p>
+              </div>
             </div>
             
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveDropdown(activeDropdown === subscription.id ? null : subscription.id);
-                }}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-300"
-              >
-                <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              </button>
+            <div className="flex items-start flex-shrink-0">
+              <div className="text-right mr-1">
+                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  {formatCurrency(subscription.amount, subscription.currency)}
+                </p>
+                {subscription.currency !== 'INR' && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    ≈ {formatCurrency(convertToINR(subscription.amount, subscription.currency))}
+                  </p>
+                )}
+                <p className={`text-xs font-medium ${
+                  daysUntilBilling <= 3 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'
+                }`}>
+                  {subscription.isActive ? (
+                    daysUntilBilling === 0 ? 'Due today' : 
+                    daysUntilBilling < 0 ? `Overdue ${Math.abs(daysUntilBilling)}d` :
+                    daysUntilBilling === 1 ? 'Due tomorrow' :
+                    `Due in ${daysUntilBilling}d`
+                  ) : 'Paused'}
+                </p>
+              </div>
               
-              {activeDropdown === subscription.id && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
-                  {isDue && subscription.isActive && (
-                    <>
-                      <button
-                        onClick={() => openProcessModal(subscription)}
-                        className="w-full text-left px-4 py-2 text-sm text-orange-600 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                        <span>Process Now</span>
-                      </button>
-                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                    </>
-                  )}
-                  <button
-                    onClick={() => toggleSubscriptionStatus(subscription)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
-                  >
-                    {subscription.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    <span>{subscription.isActive ? 'Pause' : 'Resume'}</span>
-                  </button>
-                  <button
-                    onClick={() => openEditModal(subscription)}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
-                  >
-                    <Edit className="w-4 h-4" />
-                    <span>Edit</span>
-                  </button>
-                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
-                  <button
-                    onClick={() => openDeleteModal(subscription)}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete</span>
-                  </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveDropdown(activeDropdown === subscription.id ? null : subscription.id);
+                  }}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-300"
+                >
+                  <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                {activeDropdown === subscription.id && (
+                  <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-10">
+                    {isDue && subscription.isActive && (
+                      <>
+                        <button
+                          onClick={() => openProcessModal(subscription)}
+                          className="w-full text-left px-3 py-2 text-xs text-orange-600 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Process</span>
+                        </button>
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                      </>
+                    )}
+                    <button
+                      onClick={() => toggleSubscriptionStatus(subscription)}
+                      className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                    >
+                      {subscription.isActive ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                      <span>{subscription.isActive ? 'Pause' : 'Resume'}</span>
+                    </button>
+                    <button
+                      onClick={() => openEditModal(subscription)}
+                      className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                    >
+                      <Edit className="w-3 h-3" />
+                      <span>Edit</span>
+                    </button>
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                    <button
+                      onClick={() => openDeleteModal(subscription)}
+                      className="w-full text-left px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors duration-300"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-100 dark:border-white/10 pt-3 mt-3">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 block mb-1">Account</span>
+                <p className="text-gray-900 dark:text-white font-medium truncate">
+                  {account?.name || subscription.accountName || 'Unknown Account'}
+                </p>
+              </div>
+              <div>
+                <span className="text-gray-500 dark:text-gray-400 block mb-1">Next billing</span>
+                <p className="text-gray-900 dark:text-white font-medium">
+                  {new Date(subscription.nextBillingDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
+                </p>
+              </div>
+              {subscription.totalSpent > 0 && (
+                <div className="col-span-2">
+                  <span className="text-gray-500 dark:text-gray-400 block mb-1">Total spent</span>
+                  <p className="text-gray-900 dark:text-white font-medium">
+                    {formatCurrency(subscription.totalSpent, subscription.currency)}
+                  </p>
                 </div>
               )}
             </div>
           </div>
+          
+          {subscription.description && (
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/10">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {subscription.description}
+              </p>
+            </div>
+          )}
         </div>
-        
-        {subscription.description && (
-          <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-lg p-2">
-            {subscription.description}
-          </p>
-        )}
-        
-        <div className="mt-3 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span>
-            {subscription.totalSpent > 0 
-              ? `Total spent: ${formatCurrency(subscription.totalSpent, subscription.currency)}`
-              : 'No transactions yet'
-            }
-          </span>
-          <span>Next billing: {new Date(subscription.nextBillingDate).toLocaleDateString('en-IN')}</span>
-        </div>
-      </div>
+      </>
     );
   };
 
@@ -688,112 +837,98 @@ function Subscriptions({ accounts }) {
   return (
     <div className="p-6 space-y-6 animate-fade-in relative min-h-screen transition-all duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
             Subscriptions
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 transition-colors duration-300">
-            Manage your recurring payments and subscriptions
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 transition-colors duration-300">
+            Manage your recurring payments
           </p>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <div className="flex bg-white dark:bg-white/5 rounded-lg p-1 shadow-sm dark:shadow-lg backdrop-blur-sm border border-gray-200 dark:border-white/10">
-            <button
-              onClick={() => setViewMode('category')}
-              className={`p-2 rounded-md transition-all duration-300 ${
-                viewMode === 'category' ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-md transition-all duration-300 ${
-                viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          {/* Filter Button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-lg shadow-sm dark:shadow-lg hover:shadow-md dark:hover:shadow-xl transition-all duration-300 backdrop-blur-sm border ${
+            className={`p-2 rounded-lg shadow-sm dark:shadow-lg hover:shadow-md dark:hover:shadow-xl transition-all duration-300 backdrop-blur-sm border flex items-center justify-center ${
               showFilters ? 'bg-orange-500 text-white border-orange-500' : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10'
             }`}
           >
-            <Filter className="w-5 h-5" />
+            <Filter className="w-4 h-4" />
           </button>
+          
+          {/* Add Button */}
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md dark:shadow-lg"
+            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg flex items-center gap-1 transition-all duration-300 transform hover:-translate-y-0.5 shadow-md dark:shadow-lg text-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Subscription</span>
+            <span className="hidden sm:inline">Add Subscription</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 sm:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Active Subscriptions</h3>
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h3 className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Active Subscriptions</h3>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
             {subscriptions.filter(sub => sub.isActive).length}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
             {subscriptions.filter(sub => !sub.isActive).length} paused
           </p>
         </div>
 
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 sm:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Monthly Spend</h3>
-            <div className="w-8 h-8 bg-green-100 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+            <h3 className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Due this week</h3>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 dark:text-red-400" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatCurrency(calculateMonthlySpend())}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Estimated monthly total
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Yearly Projection</h3>
-            <div className="w-8 h-8 bg-orange-100 dark:bg-orange-500/20 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {formatCurrency(calculateYearlySpend())}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Based on current subscriptions
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-white/5 rounded-xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm text-gray-600 dark:text-gray-400">Due This Week</h3>
-            <div className="w-8 h-8 bg-red-100 dark:bg-red-500/20 rounded-lg flex items-center justify-center">
-              <Calendar className="w-4 h-4 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
             {upcomingBillings.length}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1 truncate">
             {upcomingBillings.length > 0 ? `Next: ${upcomingBillings[0].name}` : 'No upcoming'}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 sm:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Monthly Spend</h3>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 dark:bg-green-500/20 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+            {formatCurrency(calculateMonthlySpend())}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
+            Estimated total
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-white/5 rounded-xl p-3 sm:p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:transform hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Yearly Projection</h3>
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 dark:bg-orange-500/20 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 dark:text-orange-400" />
+            </div>
+          </div>
+          <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
+            {formatCurrency(calculateYearlySpend())}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
+            Based on current
           </p>
         </div>
       </div>
@@ -830,9 +965,35 @@ function Subscriptions({ accounts }) {
         </div>
       )}
 
-      {/* Upcoming Billings Alert */}
+      {/* Upcoming Billings Alert - Mobile Only */}
       {upcomingBillings.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-4">
+        <div className="sm:hidden bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-3">
+          <div className="flex items-start space-x-2">
+            <Bell className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-xs font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                Upcoming Bills
+              </h3>
+              <div className="space-y-1">
+                {upcomingBillings.slice(0, 2).map(sub => (
+                  <div key={sub.id} className="flex items-center justify-between text-xs">
+                    <span className="text-yellow-700 dark:text-yellow-400 truncate mr-2">
+                      {sub.name} - {sub.daysUntil === 0 ? 'Due today' : sub.daysUntil === 1 ? 'Due tomorrow' : `in ${sub.daysUntil} days`}
+                    </span>
+                    <span className="font-medium text-yellow-800 dark:text-yellow-300 whitespace-nowrap">
+                      {formatCurrency(sub.amount, sub.currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Upcoming Billings Alert - Desktop Only */}
+      {upcomingBillings.length > 0 && (
+        <div className="hidden sm:block bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <Bell className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -861,10 +1022,32 @@ function Subscriptions({ accounts }) {
         <div className="lg:col-span-2 space-y-4">
           {/* Subscriptions List */}
           <div className="bg-white dark:bg-white/5 rounded-2xl backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Your Subscriptions
-              </h3>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                  Your Subscriptions
+                </h3>
+                
+                {/* View Switcher */}
+                <div className="flex bg-white dark:bg-white/5 rounded-lg p-1 shadow-sm dark:shadow-lg backdrop-blur-sm border border-gray-200 dark:border-white/10">
+                  <button
+                    onClick={() => setViewMode('category')}
+                    className={`p-1.5 rounded-md transition-all duration-300 flex items-center justify-center ${
+                      viewMode === 'category' ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Grid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-1.5 rounded-md transition-all duration-300 flex items-center justify-center ${
+                      viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
               
               {filteredSubscriptions.length === 0 ? (
                 <div className="text-center py-12">
@@ -908,18 +1091,18 @@ function Subscriptions({ accounts }) {
                               onClick={() => toggleCategory(categoryName)}
                               className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors duration-300"
                             >
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-10 h-10 rounded-xl bg-${categoryInfo.color}-100 dark:bg-${categoryInfo.color}-500/20 flex items-center justify-center`}>
+                              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                <div className={`w-10 h-10 rounded-xl bg-${categoryInfo.color}-100 dark:bg-${categoryInfo.color}-500/20 flex items-center justify-center flex-shrink-0`}>
                                   <IconComponent className={`w-5 h-5 text-${categoryInfo.color}-600 dark:text-${categoryInfo.color}-400`} />
                                 </div>
-                                <div className="text-left">
-                                  <h3 className="font-semibold text-gray-900 dark:text-white">{categoryName}</h3>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                <div className="text-left flex-1 min-w-0">
+                                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">{categoryName}</h3>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                                     {categorySubs.length} subscriptions • {formatCurrency(categorySpend)}/month
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-2 flex-shrink-0">
                                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                                   {formatCurrency(categorySpend)}
                                 </span>
@@ -975,8 +1158,8 @@ function Subscriptions({ accounts }) {
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Category Spending */}
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
               Spending by Category
             </h3>
             {getCategorySpending().length > 0 ? (
@@ -1011,8 +1194,8 @@ function Subscriptions({ accounts }) {
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-white dark:bg-white/5 rounded-2xl p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
               Quick Stats
             </h3>
             <div className="space-y-3">
@@ -1638,10 +1821,18 @@ function Subscriptions({ accounts }) {
         </div>
       )}
 
-      {/* Floating Add Button */}
+      {/* Floating Add Button - Mobile Only */}
       <button
         onClick={() => setShowAddModal(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg dark:shadow-2xl transition-all duration-300 flex items-center justify-center group transform hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-3xl"
+        className="sm:hidden fixed bottom-6 right-6 w-12 h-12 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg dark:shadow-2xl transition-all duration-300 flex items-center justify-center transform hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-3xl"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+      
+      {/* Floating Add Button - Desktop Only */}
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="hidden sm:flex fixed bottom-6 right-6 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full shadow-lg dark:shadow-2xl transition-all duration-300 items-center justify-center group transform hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-3xl"
       >
         <Plus className="w-6 h-6" />
         <span className="absolute right-16 bg-gray-900 dark:bg-black text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg dark:shadow-2xl">
