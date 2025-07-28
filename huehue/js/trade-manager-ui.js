@@ -5,7 +5,7 @@ class TradeManagerUI {
         this.firebaseStorage = null;
         this.activeTrades = [];
         this.tradeHistory = [];
-        this.filteredHistory = [];
+        this.filteredHistory = null; // Use null to indicate no filters applied
         this.currentPage = 1;
         this.tradesPerPage = 50;
         this.updateInterval = null;
@@ -361,10 +361,14 @@ class TradeManagerUI {
 
     renderTradeHistory() {
         const container = document.getElementById('tradeHistoryContainer');
-        const allTrades = this.filteredHistory.length > 0 ? this.filteredHistory : this.tradeHistory;
+        // Use filteredHistory if filters have been applied, otherwise use full history
+        const allTrades = this.filteredHistory !== null ? this.filteredHistory : this.tradeHistory;
         
         if (allTrades.length === 0) {
-            container.innerHTML = '<div class="no-trades">No trade history found</div>';
+            const message = this.filteredHistory !== null 
+                ? 'No trades match the selected filters' 
+                : 'No trade history found';
+            container.innerHTML = `<div class="no-trades">${message}</div>`;
             return;
         }
 
@@ -519,6 +523,8 @@ class TradeManagerUI {
         const result = document.getElementById('resultFilter')?.value;
         const time = document.getElementById('timeFilter')?.value;
         const symbol = document.getElementById('symbolFilter')?.value;
+        
+        console.log(`🔍 Applying filters - Engine: ${engine}, Result: ${result}, Time: ${time}, Symbol: ${symbol}`);
         
         let filtered = [...this.tradeHistory];
         

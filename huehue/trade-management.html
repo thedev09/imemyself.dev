@@ -376,7 +376,8 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            height: 600px;
+            min-height: 200px;
+            max-height: 600px;
             display: flex;
             flex-direction: column;
         }
@@ -386,6 +387,7 @@
             overflow-y: auto;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            min-height: 100px;
         }
 
         /* Custom Scrollbar Styling */
@@ -758,6 +760,10 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             grid-column: span 2;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
         }
 
         .no-trades h3 {
@@ -808,7 +814,8 @@
 
             /* ✅ MOBILE: Flexible table with horizontal scroll */
             .trade-history-table {
-                height: 500px !important;
+                min-height: 150px !important;
+                max-height: 400px !important;
             }
             
             .trade-history-content {
