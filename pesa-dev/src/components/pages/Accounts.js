@@ -521,7 +521,63 @@ function Accounts({ accounts, transactions }) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+      {/* Mobile Layout: Total Balance at top, INR/USD side by side below */}
+      <div className="md:hidden space-y-4">
+        {/* Total Balance Card - Mobile Only */}
+        <div className="bg-white dark:bg-white/5 rounded-2xl p-4 backdrop-blur-sm shadow-lg dark:shadow-2xl transition-all duration-300 hover:shadow-xl dark:hover:shadow-3xl hover:transform hover:scale-[1.02]">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">Total Balance</h3>
+            <Wallet className="w-5 h-5 text-orange-500" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+            {formatCurrency(totalINR, 'INR')}
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300 mt-1">
+            ${(totalINR / USD_TO_INR).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300 mt-2">
+            Across {accounts.length} accounts
+          </p>
+        </div>
+
+        {/* INR and USD Accounts - Side by Side on Mobile */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 backdrop-blur-sm h-full shadow-lg dark:shadow-2xl transition-all duration-300 hover:shadow-xl dark:hover:shadow-3xl hover:transform hover:scale-[1.02]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">INR Accounts</h3>
+              <Building className="w-5 h-5 text-blue-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+              {formatCurrency(bankTotalINR, 'INR')}
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300 mt-1">
+              ${(bankTotalINR / USD_TO_INR).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300 mt-2">
+              {bankAccounts.length} accounts
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-white/5 rounded-2xl p-4 backdrop-blur-sm h-full shadow-lg dark:shadow-2xl transition-all duration-300 hover:shadow-xl dark:hover:shadow-3xl hover:transform hover:scale-[1.02]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">USD Accounts</h3>
+              <Bitcoin className="w-5 h-5 text-orange-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors duration-300">
+              ${(cryptoTotalINR / USD_TO_INR).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300 mt-1">
+              {formatCurrency(cryptoTotalINR, 'INR')}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300 mt-2">
+              {cryptoAccounts.length} accounts
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout: Original 3-column layout */}
+      <div className="hidden md:grid md:grid-cols-3 gap-4 sm:gap-6">
         <div className="bg-white dark:bg-white/5 rounded-2xl p-4 sm:p-6 backdrop-blur-sm h-full shadow-lg dark:shadow-2xl transition-all duration-300 hover:shadow-xl dark:hover:shadow-3xl hover:transform hover:scale-[1.02]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">Total Balance</h3>
