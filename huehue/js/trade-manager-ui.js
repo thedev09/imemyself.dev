@@ -412,7 +412,7 @@ class TradeManagerUI {
                 <div class="trade-history-row ${isProfit ? 'profit' : 'loss'}">
                     <div class="col-symbol trade-symbol">${trade.symbol || 'N/A'}</div>
                     <div class="col-direction">
-                        <span class="trade-direction-badge ${direction}">${direction.toUpperCase()}</span>
+                        <span class="trade-direction-badge ${direction}">${trade.engine ? trade.engine.toUpperCase() + ' ' : ''}${direction.toUpperCase()}</span>
                     </div>
                     <div class="col-time trade-time">
                         <div class="trade-date">${dateStr}</div>
