@@ -12,7 +12,8 @@
       "Bash(claude doctor)",
       "Bash(dir)",
       "Bash(timeout 10 npm start)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": []
   }
