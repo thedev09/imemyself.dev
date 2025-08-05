@@ -408,8 +408,6 @@ function Overview({ accounts, transactions }) {
       
       setShowAddModal(false);
       resetForm();
-      // Refresh the page data
-      window.location.reload();
     } catch (error) {
       console.error('Error adding transaction:', error);
       alert('Error adding transaction. Please try again.');
@@ -435,8 +433,6 @@ function Overview({ accounts, transactions }) {
       setShowEditModal(false);
       setSelectedTransaction(null);
       resetForm();
-      // Refresh the page data
-      window.location.reload();
     } catch (error) {
       console.error('Error updating transaction:', error);
       alert('Error updating transaction. Please try again.');
@@ -493,8 +489,6 @@ function Overview({ accounts, transactions }) {
       
       setShowDeleteModal(false);
       setSelectedTransaction(null);
-      // Refresh the page data
-      window.location.reload();
     } catch (error) {
       console.error('Error deleting transaction:', error);
       alert('Error deleting transaction. Please try again.');

@@ -450,6 +450,50 @@ function Accounts({ accounts, transactions }) {
 
       await addDoc(collection(db, 'users', currentUser.uid, 'transactions'), transactionData);
       
+      // Update account balance based on transaction type
+      const amount = parseFloat(transactionFormData.amount);
+      const accountRef = doc(db, 'users', currentUser.uid, 'accounts', transactionFormData.accountId);
+      const currentAccount = accounts.find(acc => acc.id === transactionFormData.accountId);
+      
+      if (currentAccount) {
+        let newBalance = currentAccount.balance;
+        
+        switch (transactionFormData.type) {
+          case 'income':
+            newBalance += amount;
+            break;
+          case 'expense':
+            newBalance -= amount;
+            break;
+          case 'transfer':
+            // Decrease from source account
+            newBalance -= amount;
+            // Increase in destination account
+            if (transactionFormData.toAccountId) {
+              const toAccountRef = doc(db, 'users', currentUser.uid, 'accounts', transactionFormData.toAccountId);
+              const toAccount = accounts.find(acc => acc.id === transactionFormData.toAccountId);
+              if (toAccount) {
+                await updateDoc(toAccountRef, {
+                  balance: toAccount.balance + amount,
+                  lastActivityAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
+                });
+              }
+            }
+            break;
+          case 'adjustment':
+            newBalance += transactionFormData.isIncrease ? amount : -amount;
+            break;
+        }
+        
+        // Update the source account balance
+        await updateDoc(accountRef, {
+          balance: newBalance,
+          lastActivityAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
       setShowTransactionModal(false);
       resetTransactionForm();
     } catch (error) {
@@ -466,6 +510,16 @@ function Accounts({ accounts, transactions }) {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  // Update selectedAccount when accounts prop changes (for real-time updates)
+  useEffect(() => {
+    if (selectedAccount && accounts.length > 0) {
+      const updatedAccount = accounts.find(acc => acc.id === selectedAccount.id);
+      if (updatedAccount) {
+        setSelectedAccount(updatedAccount);
+      }
+    }
+  }, [accounts]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
