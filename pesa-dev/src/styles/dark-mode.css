@@ -1,31 +1,192 @@
-/* Premium Seamless Dark Mode Styles */
+/* Premium Dark Mode - Rich & Vibrant */
 
-/* Root dark mode variables - Elegant & Seamless */
+/* BEAUTIFUL THEME TRANSITION SYSTEM */
+.theme-switching {
+  overflow: hidden;
+}
+
+/* Beautiful smooth transitions for all elements during theme switch */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Staggered animation delays for visual hierarchy */
+.theme-switching nav {
+  transition-delay: 0ms !important;
+}
+
+.theme-switching .rounded-2xl,
+.theme-switching .rounded-xl {
+  transition-delay: 50ms !important;
+}
+
+.theme-switching .rounded-lg {
+  transition-delay: 100ms !important;
+}
+
+.theme-switching button:not(.bg-orange-500) {
+  transition-delay: 150ms !important;
+}
+
+/* Beautiful ripple transition overlay */
+.theme-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  background: 
+    radial-gradient(circle at 85% 8%, rgba(255,140,66,0.04) 0%, rgba(255,140,66,0.01) 30%, transparent 50%),
+    radial-gradient(circle at center, rgba(0,0,0,0.015) 0%, transparent 70%),
+    linear-gradient(135deg, rgba(255,140,66,0.008) 0%, transparent 100%);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-transition-overlay.active {
+  opacity: 1;
+  animation: themeRipple 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes themeRipple {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* Beautiful scale animation for cards during theme switch */
+.theme-switching .rounded-2xl:nth-child(odd) {
+  animation: cardScaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-switching .rounded-2xl:nth-child(even) {
+  animation: cardScaleIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.05s both;
+}
+
+@keyframes cardScaleIn {
+  0% {
+    transform: scale(0.98);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Beautiful icon animation for theme toggle */
+.theme-icon-rotating {
+  animation: themeIconSpin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes themeIconSpin {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Smooth breathing effect for cards */
+.theme-switching .bg-white,
+.theme-switching .bg-gray-900 {
+  animation: breatheCard 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes breatheCard {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(0.995);
+  }
+  70% {
+    transform: scale(1.003);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Force GPU acceleration for better performance */
+.dark .rounded-2xl,
+.dark .rounded-xl,
+.dark .rounded-lg {
+  will-change: background-color, border-color;
+  transform: translateZ(0);
+}
+
+/* Prevent layout shifts during theme switching */
+html {
+  color-scheme: light dark;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Reduce backdrop-filter complexity for better performance */
+.dark .backdrop-blur-sm {
+  backdrop-filter: blur(4px) !important;
+}
+
+.dark nav {
+  backdrop-filter: blur(8px) saturate(150%) !important;
+}
+
+/* Root dark mode variables - Rich & Seamless */
 :root.dark {
-  --bg-primary: #0a0a0a;           /* Deep black with slight warmth */
-  --bg-secondary: #151515;         /* Subtle elevation */
-  --bg-tertiary: #1f1f1f;          /* Card backgrounds */
-  --bg-elevated: #252525;          /* Elevated surfaces */
-  --bg-hover: #2a2a2a;             /* Hover states */
-  --bg-subtle: #121212;            /* Very subtle backgrounds */
+  --bg-primary: #0f0f0f;           /* Rich black background */
+  --bg-secondary: #1a1a1a;         /* Elevated surfaces */
+  --bg-tertiary: #222222;          /* Card backgrounds */
+  --bg-elevated: #2a2a2a;          /* Higher elevation */
+  --bg-hover: #333333;             /* Hover states */
+  --bg-subtle: #161616;            /* Subtle backgrounds */
   
-  --text-primary: #ffffff;         /* Pure white */
-  --text-secondary: #e8e8e8;       /* Light gray */
-  --text-tertiary: #b8b8b8;        /* Medium gray */
-  --text-muted: #888888;           /* Muted gray */
+  --text-primary: #ffffff;         /* Pure white for high contrast */
+  --text-secondary: #e0e0e0;       /* Bright secondary text */
+  --text-tertiary: #a0a0a0;        /* Visible tertiary text */
+  --text-muted: #707070;           /* Muted but readable */
   
-  --border-subtle: rgba(255, 255, 255, 0.06);    /* Very subtle borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);    /* Glass-like borders */
   --border-light: rgba(255, 255, 255, 0.1);      /* Light borders */
   --border-medium: rgba(255, 255, 255, 0.15);    /* Medium borders */
   
-  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.6);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.7);
   --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.8);
+  
+  /* Orange accent for vibrancy */
+  --accent-orange: #ff8c42;
+  --accent-orange-dark: #ff6b1a;
 }
 
-/* Main backgrounds - Seamless approach */
+/* Main backgrounds - Rich black with seamless transitions */
 .dark {
-  background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%);
+  background: var(--bg-primary);
   color: var(--text-primary);
 }
 
@@ -38,20 +199,21 @@
 }
 
 .dark .bg-white {
-  background: rgba(255, 255, 255, 0.02) !important;
-  backdrop-filter: blur(20px) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(12px) !important;
   border: 1px solid var(--border-subtle) !important;
+  box-shadow: var(--shadow-subtle) !important;
 }
 
-.dark .bg-gray-900 {
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(20px) !important;
+.dark .bg-gray-900:not(.bg-orange-500) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(10px) !important;
   border: 1px solid var(--border-subtle) !important;
 }
 
 .dark .bg-gray-800 {
-  background: rgba(255, 255, 255, 0.04) !important;
-  backdrop-filter: blur(20px) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(8px) !important;
   border: 1px solid var(--border-light) !important;
 }
 
@@ -59,11 +221,12 @@
   background: var(--bg-primary) !important;
 }
 
-/* Navigation - Seamless glass effect */
+/* Navigation - Premium glass effect */
 .dark nav {
-  background: rgba(10, 10, 10, 0.8) !important;
-  backdrop-filter: blur(20px) !important;
+  background: rgba(15, 15, 15, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
   border-bottom: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Text colors - Better hierarchy */
@@ -86,22 +249,24 @@
   color: var(--text-muted) !important;
 }
 
-/* Cards - Seamless glass morphism */
-.dark .rounded-2xl {
-  background: rgba(255, 255, 255, 0.02) !important;
-  backdrop-filter: blur(20px) !important;
+/* Cards - Glass morphism ONLY for non-modal cards, NOT orange buttons */
+.dark .rounded-2xl:not(.fixed .rounded-2xl):not([role="dialog"] .rounded-2xl):not(.bg-white):not(.bg-orange-500):not([class*="bg-orange"]) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
   border: 1px solid var(--border-subtle) !important;
-  box-shadow: var(--shadow-subtle) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
 }
 
-.dark .rounded-xl {
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(16px) !important;
+.dark .rounded-xl:not(.fixed .rounded-xl):not([role="dialog"] .rounded-xl):not(.bg-white):not(.bg-orange-500):not([class*="bg-orange"]) {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
   border: 1px solid var(--border-light) !important;
+  box-shadow: var(--shadow-medium) !important;
 }
 
-.dark .rounded-lg {
-  background: rgba(255, 255, 255, 0.02) !important;
+.dark .rounded-lg:not(.fixed .rounded-lg):not([role="dialog"] .rounded-lg):not(.bg-white):not(.bg-orange-500):not([class*="bg-orange"]) {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(10px) !important;
   border: 1px solid var(--border-subtle) !important;
 }
 
@@ -113,124 +278,198 @@
   border-color: var(--border-subtle) !important;
 }
 
-/* Buttons - Maintain identity but seamless */
-.dark .bg-gray-900:not(.rounded-2xl):not(.rounded-xl) {
-  background: linear-gradient(135deg, #2a2a2a, #1a1a1a) !important;
+/* Buttons - Only style gray buttons, not orange ones */
+.dark .bg-gray-900:not(.bg-orange-500):not([class*="bg-orange"]) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(8px) !important;
   border: 1px solid var(--border-light) !important;
-  box-shadow: var(--shadow-subtle) !important;
+  transition: all 0.2s ease !important;
 }
 
-.dark .bg-orange-500 {
-  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+/* Orange buttons - ALWAYS keep orange! - HIGHEST SPECIFICITY */
+.dark .bg-orange-500,
+.dark button.bg-orange-500,
+.dark .bg-orange-500.bg-orange-500,
+.dark button.bg-orange-500.bg-orange-500,
+.dark [class*="bg-orange-500"],
+.dark .hover\:bg-orange-600,
+.dark a.bg-orange-500 {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  color: white !important;
   border: none !important;
-  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.25) !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25) !important;
+  backdrop-filter: none !important;
 }
 
 .dark .hover\:bg-gray-800:hover {
-  background: linear-gradient(135deg, #3a3a3a, #2a2a2a) !important;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-medium) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
-.dark .hover\:bg-orange-600:hover {
-  background: linear-gradient(135deg, #ea580c, #dc2626) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 25px rgba(249, 115, 22, 0.35) !important;
+.dark .hover\:bg-orange-600:hover,
+.dark .bg-orange-500:hover,
+.dark button.bg-orange-500:hover {
+  background: #ea580c !important;
+  background-color: #ea580c !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+  backdrop-filter: none !important;
 }
 
-/* Form elements - Seamless integration */
+/* Disabled orange buttons */
+.dark .bg-orange-500:disabled,
+.dark .bg-orange-500.opacity-50,
+.dark button:disabled.bg-orange-500 {
+  background: rgba(249, 115, 22, 0.4) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Modal buttons specific fix */
+.dark .fixed button.bg-orange-500,
+.dark [role="dialog"] button.bg-orange-500 {
+  background: #f97316 !important;
+  color: white !important;
+}
+
+.dark .fixed button.bg-orange-500:disabled,
+.dark [role="dialog"] button.bg-orange-500:disabled {
+  background: rgba(249, 115, 22, 0.4) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Modal cancel/gray buttons */
+.dark .fixed button.bg-gray-300,
+.dark [role="dialog"] button.bg-gray-300,
+.dark .fixed button.border-gray-300,
+.dark [role="dialog"] button.border-gray-300 {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-secondary) !important;
+}
+
+.dark .fixed button.bg-gray-300:hover,
+.dark [role="dialog"] button.bg-gray-300:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Form elements - Glass-like inputs */
 .dark input,
 .dark select,
 .dark textarea {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(8px) !important;
   border: 1px solid var(--border-subtle) !important;
   color: var(--text-primary) !important;
-  backdrop-filter: blur(10px) !important;
 }
 
 .dark input:focus,
 .dark select:focus,
 .dark textarea:focus {
-  border-color: rgba(249, 115, 22, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--accent-orange) !important;
+  box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.15) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Table improvements - Seamless rows */
+/* Fix select dropdown options */
+.dark select {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: none !important;
+}
+
+.dark select option {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  padding: 8px !important;
+}
+
+.dark select optgroup {
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Table improvements - Premium feel */
 .dark table {
   background: transparent !important;
 }
 
 .dark table thead tr {
-  border-bottom: 1px solid var(--border-subtle) !important;
-  background: rgba(255, 255, 255, 0.01) !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .dark table tbody tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
   transition: all 0.2s ease;
 }
 
 .dark table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02) !important;
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.04) !important;
+  transform: scale(1.005) !important;
 }
 
-/* Hover effects - Subtle and smooth */
+/* Hover effects - Interactive and responsive */
 .dark .hover\:bg-gray-50:hover,
 .dark .hover\:bg-gray-100:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(8px) !important;
 }
 
 .dark .hover\:bg-gray-700:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
-/* Color accents - Maintain vibrancy */
-.dark .text-green-600 { color: #22c55e !important; }
-.dark .text-green-400 { color: #4ade80 !important; }
-.dark .text-red-600 { color: #ef4444 !important; }
-.dark .text-red-400 { color: #f87171 !important; }
-.dark .text-blue-600 { color: #3b82f6 !important; }
-.dark .text-blue-400 { color: #60a5fa !important; }
-.dark .text-orange-500 { color: #f97316 !important; }
-.dark .text-orange-600 { color: #ea580c !important; }
+/* Color accents - Vibrant and punchy */
+.dark .text-green-600 { color: #34d399 !important; }
+.dark .text-green-400 { color: #6ee7b7 !important; }
+.dark .text-red-600 { color: #f87171 !important; }
+.dark .text-red-400 { color: #fca5a5 !important; }
+.dark .text-blue-600 { color: #60a5fa !important; }
+.dark .text-blue-400 { color: #93c5fd !important; }
+.dark .text-orange-500 { color: var(--accent-orange) !important; }
+.dark .text-orange-600 { color: var(--accent-orange-dark) !important; }
 
-/* Transaction type backgrounds - Subtle glass effect */
+/* Transaction type backgrounds - Glass effect with color tints */
 .dark .bg-green-100 {
-  background: rgba(34, 197, 94, 0.1) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  background: rgba(52, 211, 153, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(52, 211, 153, 0.2) !important;
 }
 
 .dark .bg-red-100 {
-  background: rgba(239, 68, 68, 0.1) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  background: rgba(248, 113, 113, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(248, 113, 113, 0.2) !important;
 }
 
 .dark .bg-blue-100 {
-  background: rgba(59, 130, 246, 0.1) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  background: rgba(96, 165, 250, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(96, 165, 250, 0.2) !important;
 }
 
 .dark .bg-orange-100 {
-  background: rgba(249, 115, 22, 0.1) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(249, 115, 22, 0.2) !important;
+  background: rgba(255, 140, 66, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 140, 66, 0.2) !important;
 }
 
-/* Floating button - Premium glow */
+/* Floating button - Premium glow effect */
 .dark .fixed.bottom-6.right-6 {
-  background: linear-gradient(135deg, #f97316, #ea580c) !important;
-  box-shadow: 0 8px 32px rgba(249, 115, 22, 0.3) !important;
+  background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-dark)) !important;
+  box-shadow: 0 8px 32px rgba(255, 140, 66, 0.4) !important;
   border: none !important;
 }
 
 .dark .fixed.bottom-6.right-6:hover {
-  background: linear-gradient(135deg, #ea580c, #dc2626) !important;
-  box-shadow: 0 12px 40px rgba(249, 115, 22, 0.4) !important;
+  background: linear-gradient(135deg, var(--accent-orange-dark), #ff5500) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 40px rgba(255, 140, 66, 0.5) !important;
 }
 
 /* Scrollbar - Elegant and minimal */
@@ -284,26 +523,38 @@
   color: var(--text-primary);
 }
 
-/* Smooth transitions for everything */
-.dark * {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease !important;
+/* Elegant transitions for regular interactions (not theme switching) */
+:root:not(.theme-switching) .bg-white,
+:root:not(.theme-switching) .bg-gray-50,
+:root:not(.theme-switching) .bg-gray-100,
+:root:not(.theme-switching) .bg-gray-800,
+:root:not(.theme-switching) .bg-gray-900,
+:root:not(.theme-switching) .text-gray-900,
+:root:not(.theme-switching) .text-gray-700,
+:root:not(.theme-switching) .text-gray-600,
+:root:not(.theme-switching) .text-gray-500,
+:root:not(.theme-switching) .border-gray-200,
+:root:not(.theme-switching) .border-gray-300,
+:root:not(.theme-switching) input,
+:root:not(.theme-switching) select,
+:root:not(.theme-switching) textarea,
+:root:not(.theme-switching) button:not(.bg-orange-500) {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
 }
 
 /* Custom fade-in animation for dark mode */
 .dark .animate-fade-in {
-  animation: darkFadeInSeamless 0.4s ease-out;
+  animation: darkFadeIn 0.3s ease-out;
 }
 
-@keyframes darkFadeInSeamless {
+@keyframes darkFadeIn {
   from { 
     opacity: 0; 
-    transform: translateY(8px);
-    filter: blur(4px);
+    transform: translateY(4px);
   }
   to { 
     opacity: 1; 
     transform: translateY(0);
-    filter: blur(0px);
   }
 }
 
@@ -316,28 +567,281 @@
   border-bottom-color: var(--border-subtle) !important;
 }
 
-/* Ensure seamless background everywhere */
+/* Ensure rich black background everywhere */
 .dark body,
 .dark #root,
 .dark .min-h-screen {
-  background: linear-gradient(135deg, #0a0a0a 0%, #151515 100%) !important;
+  background: var(--bg-primary) !important;
+  min-height: 100vh;
 }
 
-/* Premium glass effect for main content areas */
-.dark .p-6 > .space-y-6 > div,
-.dark .grid > div {
-  position: relative;
+/* Additional utility classes for special backgrounds */
+.dark .bg-white\/5 {
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
-.dark .grid > div::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%);
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -1;
+.dark .bg-black\/50 {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Modal and overlay backgrounds */
+.dark .fixed.inset-0.bg-black\/50 {
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Modals - Clean solid backgrounds like Add Account modal */
+.dark .fixed .bg-white,
+.dark .fixed .bg-gray-900,
+.dark .fixed [class*="rounded"] {
+  background: #1a1a1a !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Modal content wrapper */
+.dark .fixed.inset-0 .bg-white,
+.dark .fixed.z-50 .bg-white {
+  background: #1a1a1a !important;
+  backdrop-filter: none !important;
+}
+
+/* Modal headers - clean without boxes */
+.dark .fixed h1,
+.dark .fixed h2,
+.dark .fixed h3,
+.dark .fixed h4 {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Modal form elements */
+.dark .fixed input,
+.dark .fixed select,
+.dark .fixed textarea {
+  background: #2a2a2a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: none !important;
+}
+
+/* Specific component overrides */
+.dark .bg-gradient-to-r {
+  opacity: 0.8 !important;
+}
+
+/* Badge and pill styles - Vibrant with glass effect */
+.dark .bg-green-500\/20 {
+  background: rgba(52, 211, 153, 0.2) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.dark .bg-red-500\/20 {
+  background: rgba(248, 113, 113, 0.2) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.dark .bg-blue-500\/20 {
+  background: rgba(96, 165, 250, 0.2) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.dark .bg-orange-500\/20 {
+  background: rgba(255, 140, 66, 0.2) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.dark .bg-orange-500\/10 {
+  background: rgba(255, 140, 66, 0.1) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* Fix specific UI elements for better visibility */
+.dark .shadow,
+.dark .shadow-sm {
+  box-shadow: var(--shadow-subtle) !important;
+}
+
+.dark .shadow-md {
+  box-shadow: var(--shadow-medium) !important;
+}
+
+/* Ensure proper dark mode for modals */
+.dark .bg-gray-900:not(.bg-orange-500) {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Loading states */
+.dark .animate-pulse {
+  background: var(--bg-elevated) !important;
+}
+
+/* Skeleton loaders */
+.dark .bg-gray-200 {
+  background: var(--bg-elevated) !important;
+}
+
+/* Dark mode for notifications and toasts */
+.dark .bg-white.shadow-lg {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+/* Ensure icons have proper contrast */
+.dark svg {
+  color: inherit;
+}
+
+/* Fix backdrop blur for modals */
+.dark .backdrop-blur-sm {
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Navigation active states */
+.dark .bg-gray-800 {
+  background: var(--bg-tertiary) !important;
+}
+
+/* Fix specific gradient backgrounds - More vibrant */
+.dark .from-orange-50.to-red-50 {
+  background: linear-gradient(135deg, rgba(255, 140, 66, 0.08), rgba(248, 113, 113, 0.08)) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.dark .from-blue-50.to-indigo-50 {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.08), rgba(129, 140, 248, 0.08)) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.dark .from-green-50.to-teal-50 {
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(45, 212, 191, 0.08)) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Chart and graph styles */
+.dark .recharts-surface {
+  background: transparent !important;
+}
+
+.dark .recharts-cartesian-axis-tick-value {
+  fill: var(--text-tertiary) !important;
+}
+
+.dark .recharts-legend-item-text {
+  color: var(--text-secondary) !important;
+}
+
+/* Dropdown menus - Fix white background issue */
+.dark .absolute.bg-white,
+.dark select option,
+.dark .bg-white.shadow-lg.rounded-md,
+.dark .absolute.z-10.bg-white {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-light) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark select option {
+  background: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+}
+
+.dark select option:hover {
+  background: var(--bg-hover) !important;
+}
+
+/* Premium glow for focused elements */
+.dark .focus\:ring-2:focus {
+  box-shadow: 0 0 0 2px var(--accent-orange) !important;
+}
+
+.dark .focus\:ring-orange-500:focus {
+  box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.3) !important;
+}
+
+/* Make stats and numbers pop */
+.dark .text-2xl,
+.dark .text-3xl,
+.dark .text-4xl,
+.dark .text-5xl {
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Enhanced loading spinner */
+.dark .animate-spin {
+  border-color: transparent !important;
+  border-top-color: var(--accent-orange) !important;
+  border-right-color: var(--accent-orange) !important;
+}
+
+/* Tab active states */
+.dark .bg-orange-100 {
+  background: rgba(255, 140, 66, 0.15) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Improve readability of muted elements */
+.dark .text-gray-400 {
+  color: #999999 !important;
+}
+
+/* Glass effect for code blocks and pre elements */
+.dark pre,
+.dark code {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--border-subtle) !important;
+}
+
+/* Enhanced transitions - optimized for performance */
+.dark .rounded-2xl,
+.dark .rounded-xl,
+.dark .rounded-lg,
+.dark .shadow-lg,
+.dark .shadow-md,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-800:hover,
+.dark tbody tr {
+  transition: background-color 0.15s ease, 
+              border-color 0.15s ease, 
+              color 0.15s ease,
+              transform 0.1s ease,
+              box-shadow 0.15s ease !important;
+}
+
+/* ULTIMATE ORANGE BUTTON FIX - NUCLEAR OPTION WITH MAXIMUM SPECIFICITY */
+.dark button.bg-orange-500.hover\:bg-orange-600,
+.dark .bg-orange-500.hover\:bg-orange-600,
+.dark button[class*="bg-orange-500"],
+.dark .bg-orange-500[class*="hover:bg-orange"],
+.dark button.bg-orange-500.rounded-lg,
+.dark .bg-orange-500.rounded-lg {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  background-image: none !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25) !important;
+  backdrop-filter: none !important;
+}
+
+.dark button.bg-orange-500.hover\:bg-orange-600:hover,
+.dark .bg-orange-500.hover\:bg-orange-600:hover,
+.dark button[class*="bg-orange-500"]:hover,
+.dark .bg-orange-500[class*="hover:bg-orange"]:hover,
+.dark button.bg-orange-500.rounded-lg:hover,
+.dark .bg-orange-500.rounded-lg:hover {
+  background: #ea580c !important;
+  background-color: #ea580c !important;
+  background-image: none !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+  backdrop-filter: none !important;
+  transform: translateY(-1px) !important;
 }

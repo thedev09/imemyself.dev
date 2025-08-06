@@ -1,0 +1,84 @@
+/* ULTRA-CRITICAL FIXES FOR DARK MODE - MAXIMUM PRIORITY */
+
+/* 1. FIX ICON BACKGROUNDS - ORANGE BOXES ISSUE */
+.dark .bg-orange-100 {
+  background: rgba(255, 140, 66, 0.1) !important;
+  backdrop-filter: none !important;
+}
+
+.dark .bg-orange-500\/20 {
+  background: rgba(255, 140, 66, 0.15) !important;
+  backdrop-filter: none !important;
+}
+
+/* 2. FORCE ALL ORANGE BUTTONS TO BE ORANGE - REMOVE GLOW AND SHINE */
+.dark .bg-orange-500.bg-orange-500,
+.dark button.bg-orange-500.bg-orange-500,
+.dark .bg-orange-500.bg-orange-500.bg-orange-500,
+.dark button.bg-orange-500.bg-orange-500.bg-orange-500 {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  background-image: none !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 3. OVERRIDE ANY GRAY STYLES ON ORANGE BUTTONS */
+.dark .bg-gray-900.bg-orange-500,
+.dark button.bg-gray-900.bg-orange-500,
+.dark .bg-orange-500.bg-gray-900 {
+  background: #f97316 !important;
+  background-color: #f97316 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25) !important;
+}
+
+.dark .bg-orange-500:hover,
+.dark button.bg-orange-500:hover {
+  background: #ea580c !important;
+  background-color: #ea580c !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 4. FIX "VIEW ALL" BUTTONS - ONLY ORANGE TEXT, NOT BACKGROUND */
+.dark .text-orange-600,
+.dark .text-orange-500,
+.dark [class*="text-orange"] {
+  color: #f97316 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* 5. CLEAN MODALS - NO GLASS EFFECTS */
+.dark .fixed .bg-white,
+.dark .fixed .bg-gray-900,
+.dark .fixed [class*="rounded"] {
+  background: #1a1a1a !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 6. REMOVE UGLY BOXES FROM MODAL HEADERS */
+.dark .fixed h1,
+.dark .fixed h2,
+.dark .fixed h3 {
+  background: none !important;
+  backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* 7. CLEAN MODAL INPUTS */
+.dark .fixed input,
+.dark .fixed select,
+.dark .fixed textarea {
+  background: #2a2a2a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}

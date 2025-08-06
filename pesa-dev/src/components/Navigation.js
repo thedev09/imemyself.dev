@@ -306,7 +306,45 @@ function Navigation({ theme, toggleTheme }) {
             <div className="flex items-center space-x-3">
               {/* Theme Toggle */}
               <button
-                onClick={toggleTheme}
+                onClick={(e) => {
+                  // Add icon rotation animation
+                  const icon = e.target.querySelector('svg');
+                  if (icon) {
+                    icon.classList.add('theme-icon-rotating');
+                    setTimeout(() => {
+                      icon.classList.remove('theme-icon-rotating');
+                    }, 600);
+                  }
+                  
+                  // Create beautiful transition overlay
+                  const overlay = document.createElement('div');
+                  overlay.className = 'theme-transition-overlay';
+                  document.body.appendChild(overlay);
+                  
+                  // Add theme-switching class for smooth transitions
+                  document.documentElement.classList.add('theme-switching');
+                  
+                  // Show overlay briefly for smooth visual effect
+                  setTimeout(() => {
+                    overlay.classList.add('active');
+                  }, 10);
+                  
+                  // Call the original toggle function with slight delay
+                  setTimeout(() => {
+                    toggleTheme();
+                  }, 100);
+                  
+                  // Hide overlay and remove classes after transition completes
+                  setTimeout(() => {
+                    overlay.classList.remove('active');
+                    setTimeout(() => {
+                      if (document.body.contains(overlay)) {
+                        document.body.removeChild(overlay);
+                      }
+                      document.documentElement.classList.remove('theme-switching');
+                    }, 200);
+                  }, 600);
+                }}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 {theme === 'dark' ? (
