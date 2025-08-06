@@ -348,7 +348,7 @@ function Navigation({ theme, toggleTheme }) {
                     }, 200);
                   }, 600);
                 }}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors flex items-center justify-center"
               >
                 {theme === 'dark' ? (
                   <Sun className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -365,7 +365,7 @@ function Navigation({ theme, toggleTheme }) {
                   console.log('Mobile menu button clicked, current state:', showMobileMenu);
                   setShowMobileMenu(!showMobileMenu);
                 }}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="md:hidden p-2 rounded-lg hover:bg-gray-100/50 dark:hover:bg-white/5 transition-colors flex items-center justify-center"
               >
                 {showMobileMenu ? (
                   <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />

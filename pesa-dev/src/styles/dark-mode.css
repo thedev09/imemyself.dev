@@ -278,12 +278,19 @@ html.dark {
   border-color: var(--border-subtle) !important;
 }
 
-/* Buttons - Only style gray buttons, not orange ones */
-.dark .bg-gray-900:not(.bg-orange-500):not([class*="bg-orange"]) {
+/* Buttons - Only style gray buttons, not orange ones or navigation buttons */
+.dark .bg-gray-900:not(.bg-orange-500):not([class*="bg-orange"]):not(nav button) {
   background: rgba(255, 255, 255, 0.06) !important;
   backdrop-filter: blur(8px) !important;
   border: 1px solid var(--border-light) !important;
   transition: all 0.2s ease !important;
+}
+
+/* Navigation buttons - keep them transparent */
+.dark nav button {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border: none !important;
 }
 
 /* Orange buttons - ALWAYS keep orange! - HIGHEST SPECIFICITY */

@@ -495,13 +495,36 @@ function Settings() {
             {/* Profile Header - Mobile Optimized */}
             <div className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-500/10 dark:to-red-500/10 rounded-xl p-4 sm:p-6">
               <div className="flex items-center space-x-4 sm:space-x-6">
-                <div className="relative flex-shrink-0">
+                <div className="relative flex-shrink-0" style={{position: 'relative'}}>
                   {renderAvatar('w-14 h-14 sm:w-16 sm:h-16', 'text-lg sm:text-xl')}
+                  
+                  {/* Desktop: Orange circle button */}
                   <button
                     onClick={() => setShowAvatarModal(true)}
-                    className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 h-3 sm:w-5 sm:h-5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-full flex items-center justify-center shadow-md transition-colors duration-300 touch-manipulation border-2 border-white dark:border-gray-900"
+                    className="hidden sm:flex absolute bottom-0 right-0 w-6 h-6 bg-orange-500 hover:bg-orange-600 text-white rounded-full items-center justify-center shadow-lg transition-all duration-200 border-2 border-white dark:border-gray-800 z-10"
                   >
-                    <Camera className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
+                    <Camera className="w-3 h-3" />
+                  </button>
+                </div>
+                
+                {/* Mobile: Camera icon positioned absolutely with fixed coordinates */}
+                <div className="sm:hidden" style={{marginLeft: '-20px', marginTop: '40px', position: 'relative', zIndex: 20}}>
+                  <button
+                    onClick={() => setShowAvatarModal(true)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '4px'
+                    }}
+                  >
+                    <Camera 
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        color: '#f97316',
+                        filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))'
+                      }}
+                    />
                   </button>
                 </div>
                 <div className="flex-1 min-w-0">
