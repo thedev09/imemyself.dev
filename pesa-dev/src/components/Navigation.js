@@ -269,12 +269,15 @@ function Navigation({ theme, toggleTheme }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center justify-center shadow-sm">
-                <Logo size="sm" className="" />
+            <button 
+              onClick={() => navigate('/')}
+              className="flex items-center space-x-3 hover:opacity-90 transition-all duration-200 group"
+            >
+              <div className="w-11 h-11 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:rotate-1">
+                <Logo size="md" className="group-hover:scale-110 transition-transform duration-200" />
               </div>
-              <span className="text-xl font-semibold dark:text-white">Pesa</span>
-            </div>
+              <span className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-200 tracking-tight">Pesa</span>
+            </button>
 
             {/* Center Menu - Desktop Only */}
             <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2">
