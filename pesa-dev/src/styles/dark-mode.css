@@ -598,8 +598,7 @@ html.dark {
 
 /* Modals - Clean solid backgrounds like Add Account modal */
 .dark .fixed .bg-white,
-.dark .fixed .bg-gray-900,
-.dark .fixed [class*="rounded"] {
+.dark .fixed .bg-gray-900 {
   background: #1a1a1a !important;
   backdrop-filter: none !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -624,14 +623,14 @@ html.dark {
   padding: 0 !important;
 }
 
-/* Modal form elements */
-.dark .fixed input,
+/* Modal form elements - MOVED TO modal-fixes.css for better organization */
+/* .dark .fixed input,
 .dark .fixed select,
 .dark .fixed textarea {
   background: #2a2a2a !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: none !important;
-}
+} */
 
 /* Specific component overrides */
 .dark .bg-gradient-to-r {

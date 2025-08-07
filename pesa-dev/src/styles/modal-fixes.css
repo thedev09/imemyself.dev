@@ -1,5 +1,69 @@
 /* ULTRA-CRITICAL FIXES FOR DARK MODE - MAXIMUM PRIORITY */
 
+/* FIX SCROLLBAR IN ROUNDED MODALS - Keep scrollbar but inside corners */
+/* Style modal scrollbars to be sleek and stay within bounds */
+.fixed ::-webkit-scrollbar,
+[role="dialog"] ::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.fixed ::-webkit-scrollbar-track,
+[role="dialog"] ::-webkit-scrollbar-track {
+  background: transparent !important;
+  margin: 12px 0 !important; /* Keep scrollbar away from top/bottom rounded corners */
+}
+
+.fixed ::-webkit-scrollbar-thumb,
+[role="dialog"] ::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4) !important;
+  border-radius: 4px !important;
+}
+
+.fixed ::-webkit-scrollbar-thumb:hover,
+[role="dialog"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.6) !important;
+}
+
+/* Dark mode scrollbar colors */
+.dark .fixed ::-webkit-scrollbar-thumb,
+.dark [role="dialog"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .fixed ::-webkit-scrollbar-thumb:hover,
+.dark [role="dialog"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* CRITICAL LIGHT MODE FIX - Ensure all inputs are white in light mode */
+:root:not(.dark) input,
+:root:not(.dark) select,
+:root:not(.dark) textarea {
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  color: #111827 !important;
+}
+
+:root:not(.dark) input:focus,
+:root:not(.dark) select:focus,
+:root:not(.dark) textarea:focus {
+  border-color: #f97316 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
+}
+
+/* Light mode select options */
+:root:not(.dark) select option {
+  background: white !important;
+  color: #111827 !important;
+}
+
+:root:not(.dark) select optgroup {
+  background: #f9fafb !important;
+  color: #6b7280 !important;
+}
+
 /* 1. FIX ICON BACKGROUNDS - ORANGE BOXES ISSUE */
 .dark .bg-orange-100 {
   background: rgba(255, 140, 66, 0.1) !important;
@@ -55,13 +119,27 @@
   background-color: transparent !important;
 }
 
-/* 5. CLEAN MODALS - NO GLASS EFFECTS */
+/* 5. MODAL BACKGROUNDS - PROPER THEME SEPARATION */
+
+/* DARK MODE MODALS - Clean dark backgrounds */
 .dark .fixed .bg-white,
 .dark .fixed .bg-gray-900,
-.dark .fixed [class*="rounded"] {
+.dark [role="dialog"] .bg-white,
+.dark [role="dialog"] .bg-gray-900 {
   background: #1a1a1a !important;
   backdrop-filter: none !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* LIGHT MODE MODALS - Clean white backgrounds */
+:root:not(.dark) .fixed .bg-white,
+:root:not(.dark) .fixed .bg-gray-900,
+:root:not(.dark) [role="dialog"] .bg-white,
+:root:not(.dark) [role="dialog"] .bg-gray-900 {
+  background: white !important;
+  backdrop-filter: none !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* 6. REMOVE UGLY BOXES FROM MODAL HEADERS */
@@ -74,11 +152,40 @@
   box-shadow: none !important;
 }
 
-/* 7. CLEAN MODAL INPUTS */
+/* 7. MODAL INPUTS - PROPER THEME SEPARATION */
+
+/* DARK MODE MODAL INPUTS */
 .dark .fixed input,
 .dark .fixed select,
-.dark .fixed textarea {
+.dark .fixed textarea,
+.dark [role="dialog"] input,
+.dark [role="dialog"] select,
+.dark [role="dialog"] textarea {
   background: #2a2a2a !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: white !important;
+}
+
+/* LIGHT MODE MODAL INPUTS - Explicit light mode styling */
+:root:not(.dark) .fixed input,
+:root:not(.dark) .fixed select,
+:root:not(.dark) .fixed textarea,
+:root:not(.dark) [role="dialog"] input,
+:root:not(.dark) [role="dialog"] select,
+:root:not(.dark) [role="dialog"] textarea {
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  color: #111827 !important;
+}
+
+/* Light mode focus states for modal inputs */
+:root:not(.dark) .fixed input:focus,
+:root:not(.dark) .fixed select:focus,
+:root:not(.dark) .fixed textarea:focus,
+:root:not(.dark) [role="dialog"] input:focus,
+:root:not(.dark) [role="dialog"] select:focus,
+:root:not(.dark) [role="dialog"] textarea:focus {
+  border-color: #f97316 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
 }
