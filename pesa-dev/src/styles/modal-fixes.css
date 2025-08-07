@@ -47,7 +47,7 @@
 
 /* iOS Safari Fix - Ensure proper height for form elements */
 input,
-select,
+select:not(.bg-transparent),
 textarea {
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
@@ -59,8 +59,8 @@ textarea {
   border-radius: 8px !important;
 }
 
-/* Specific iOS select dropdown fix */
-select {
+/* Specific iOS select dropdown fix - ONLY for form selects, not transparent ones */
+select:not(.bg-transparent) {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
   background-position: right 12px center !important;
   background-repeat: no-repeat !important;
@@ -68,9 +68,93 @@ select {
   padding-right: 40px !important;
 }
 
-/* Dark mode dropdown arrow */
-.dark select {
+/* Dark mode dropdown arrow - ONLY for form selects */
+.dark select:not(.bg-transparent) {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23e5e7eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+}
+
+/* TRANSPARENT/COMPACT SELECTORS - Lightweight border with arrow */
+select.bg-transparent,
+select[class*="bg-transparent"],
+select[class*="border-0"][class*="bg-transparent"] {
+  /* KILL ALL NATIVE STYLING */
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  
+  /* MINIMAL COMPACT DESIGN WITH VISIBLE BORDER */
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(156, 163, 175, 0.4) !important;
+  border-radius: 6px !important;
+  padding: 4px 20px 4px 8px !important;
+  font-size: 13px !important;
+  color: #6b7280 !important;
+  cursor: pointer !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  line-height: 20px !important;
+  
+  /* SINGLE CUSTOM ARROW - Light mode */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 4px center !important;
+  background-repeat: no-repeat !important;
+  background-size: 12px !important;
+}
+
+select.bg-transparent:focus,
+select[class*="bg-transparent"]:focus,
+select[class*="border-0"][class*="bg-transparent"]:focus {
+  outline: none !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Dark mode transparent selectors - HIGHEST SPECIFICITY */
+html.dark select.bg-transparent,
+html.dark select[class*="bg-transparent"], 
+html.dark select[class*="border-0"][class*="bg-transparent"],
+.dark select.bg-transparent.bg-transparent,
+.dark select[class*="bg-transparent"][class*="bg-transparent"],
+.dark select[class*="border-0"][class*="bg-transparent"][class*="bg-transparent"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #e5e7eb !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23e5e7eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 4px center !important;
+  background-repeat: no-repeat !important;
+  background-size: 12px !important;
+}
+
+html.dark select.bg-transparent:focus,
+html.dark select[class*="bg-transparent"]:focus,
+html.dark select[class*="border-0"][class*="bg-transparent"]:focus,
+.dark select.bg-transparent.bg-transparent:focus,
+.dark select[class*="bg-transparent"][class*="bg-transparent"]:focus,
+.dark select[class*="border-0"][class*="bg-transparent"][class*="bg-transparent"]:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3) !important;
+}
+
+/* FIX OVERLAPPING ARROWS - Remove native arrows from options */
+select.bg-transparent option,
+select[class*="bg-transparent"] option,
+select[class*="border-0"][class*="bg-transparent"] option {
+  background: white !important;
+  color: #111827 !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  border: none !important;
+  /* Kill any native styling on options */
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+.dark select.bg-transparent option,
+.dark select[class*="bg-transparent"] option,
+.dark select[class*="border-0"][class*="bg-transparent"] option {
+  background: #2a2a2a !important;
+  color: #e5e7eb !important;
 }
 
 /* iOS date input fix */
@@ -108,19 +192,32 @@ input[type="datetime-local"] {
     touch-action: manipulation !important; /* Improves touch responsiveness */
   }
   
-  /* Ensure dropdowns have enough tap area on mobile */
-  select {
+  /* Ensure dropdowns have enough tap area on mobile - ONLY non-transparent selects */
+  select:not(.bg-transparent) {
     min-height: 48px !important;
     line-height: 48px !important;
     padding: 0 40px 0 16px !important;
   }
   
-  /* Fix for iOS select height issue */
-  select:not([multiple]) {
+  /* Fix for iOS select height issue - ONLY non-transparent selects */
+  select:not([multiple]):not(.bg-transparent) {
     height: 48px !important;
     line-height: normal !important;
     padding-top: 14px !important;
     padding-bottom: 14px !important;
+  }
+  
+  /* Transparent selector mobile overrides - stay compact */
+  select.bg-transparent,
+  select[class*="bg-transparent"],
+  select[class*="border-0"][class*="bg-transparent"] {
+    min-height: 32px !important;
+    height: 32px !important;
+    line-height: 24px !important;
+    padding: 4px 24px 4px 8px !important;
+    font-size: 14px !important;
+    background-position: right 6px center !important;
+    background-size: 14px !important;
   }
 }
 

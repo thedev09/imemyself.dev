@@ -778,7 +778,7 @@ function Overview({ accounts, transactions }) {
             <select 
               value={netWorthFilter}
               onChange={(e) => setNetWorthFilter(e.target.value)}
-              className="text-sm bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-lg px-3 py-1 text-gray-900 dark:text-gray-100 backdrop-blur-sm transition-colors duration-300"
+              className="text-sm bg-transparent border-0 focus:outline-none text-gray-600 dark:text-gray-400 cursor-pointer transition-colors duration-300"
             >
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>

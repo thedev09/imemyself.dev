@@ -364,9 +364,9 @@ html.dark {
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Form elements - Glass-like inputs */
+/* Form elements - Glass-like inputs - EXCLUDE transparent selects */
 .dark input,
-.dark select,
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]),
 .dark textarea {
   background: rgba(255, 255, 255, 0.04) !important;
   backdrop-filter: blur(8px) !important;
@@ -375,27 +375,28 @@ html.dark {
 }
 
 .dark input:focus,
-.dark select:focus,
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]):focus,
 .dark textarea:focus {
   border-color: var(--accent-orange) !important;
   box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.15) !important;
   background: rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Fix select dropdown options */
-.dark select {
+/* Fix select dropdown options - EXCLUDE transparent selects */
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]) {
   background: var(--bg-elevated) !important;
   color: var(--text-primary) !important;
   backdrop-filter: none !important;
 }
 
-.dark select option {
+/* Only apply to non-transparent select options */
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]) option {
   background: var(--bg-elevated) !important;
   color: var(--text-primary) !important;
   padding: 8px !important;
 }
 
-.dark select optgroup {
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]) optgroup {
   background: var(--bg-secondary) !important;
   color: var(--text-secondary) !important;
 }
@@ -543,7 +544,7 @@ html.dark {
 :root:not(.theme-switching) .border-gray-200,
 :root:not(.theme-switching) .border-gray-300,
 :root:not(.theme-switching) input,
-:root:not(.theme-switching) select,
+:root:not(.theme-switching) select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]),
 :root:not(.theme-switching) textarea,
 :root:not(.theme-switching) button:not(.bg-orange-500) {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
@@ -739,9 +740,9 @@ html.dark {
   color: var(--text-secondary) !important;
 }
 
-/* Dropdown menus - Fix white background issue */
+/* Dropdown menus - Fix white background issue - EXCLUDE transparent selects */
 .dark .absolute.bg-white,
-.dark select option,
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]) option,
 .dark .bg-white.shadow-lg.rounded-md,
 .dark .absolute.z-10.bg-white {
   background: var(--bg-elevated) !important;
@@ -750,12 +751,12 @@ html.dark {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8) !important;
 }
 
-.dark select option {
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]) option {
   background: var(--bg-elevated) !important;
   color: var(--text-primary) !important;
 }
 
-.dark select option:hover {
+.dark select:not(.bg-transparent):not([class*="bg-transparent"]):not([class*="border-0"]) option:hover {
   background: var(--bg-hover) !important;
 }
 
