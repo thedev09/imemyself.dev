@@ -831,9 +831,9 @@ function Accounts({ accounts, transactions }) {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 transition-colors duration-300">Add New Account</h2>
             
             <form onSubmit={handleAddAccount} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Account Name
                   </label>
                   <input
@@ -841,19 +841,19 @@ function Accounts({ accounts, transactions }) {
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                     placeholder="e.g., HDFC Savings"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Account Type
                   </label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({...formData, type: e.target.value, subtype: '', currency: e.target.value === 'crypto' ? 'USD' : 'INR'})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                   >
                     {Object.entries(ACCOUNT_TYPES).map(([key, value]) => (
                       <option key={key} value={key}>{value.label}</option>
@@ -862,15 +862,15 @@ function Accounts({ accounts, transactions }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Subtype
                   </label>
                   <select
                     value={formData.subtype}
                     onChange={(e) => setFormData({...formData, subtype: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                     required
                   >
                     <option value="">Select subtype</option>
@@ -881,13 +881,13 @@ function Accounts({ accounts, transactions }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Currency
                   </label>
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                   >
                     {ACCOUNT_TYPES[formData.type].currencies.map(currency => (
                       <option key={currency} value={currency}>{currency}</option>
@@ -965,28 +965,28 @@ function Accounts({ accounts, transactions }) {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6 transition-colors duration-300">Edit Account</h2>
             
             <form onSubmit={handleEditAccount} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Account Name
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Account Type
                   </label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({...formData, type: e.target.value, subtype: ''})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                   >
                     {Object.entries(ACCOUNT_TYPES).map(([key, value]) => (
                       <option key={key} value={key}>{value.label}</option>
@@ -995,15 +995,15 @@ function Accounts({ accounts, transactions }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Subtype
                   </label>
                   <select
                     value={formData.subtype}
                     onChange={(e) => setFormData({...formData, subtype: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                     required
                   >
                     <option value="">Select subtype</option>
@@ -1014,13 +1014,13 @@ function Accounts({ accounts, transactions }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Currency
                   </label>
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                   >
                     {ACCOUNT_TYPES[formData.type].currencies.map(currency => (
                       <option key={currency} value={currency}>{currency}</option>
@@ -1598,15 +1598,15 @@ function Accounts({ accounts, transactions }) {
             </h2>
             
             <form onSubmit={handleAddTransaction} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Transaction Type
                   </label>
                   <select
                     value={transactionFormData.type}
                     onChange={(e) => setTransactionFormData({...transactionFormData, type: e.target.value, category: '', toAccountId: ''})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                   >
                     <option value="expense">Expense</option>
                     <option value="income">Income</option>
@@ -1616,7 +1616,7 @@ function Accounts({ accounts, transactions }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Amount
                   </label>
                   <input
@@ -1625,21 +1625,21 @@ function Accounts({ accounts, transactions }) {
                     value={transactionFormData.amount}
                     onChange={(e) => setTransactionFormData({...transactionFormData, amount: e.target.value})}
                     placeholder="0.00"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                     required
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Category
                   </label>
                   <select
                     value={transactionFormData.category}
                     onChange={(e) => setTransactionFormData({...transactionFormData, category: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                     required
                   >
                     <option value="">Select category</option>
@@ -1650,13 +1650,13 @@ function Accounts({ accounts, transactions }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-300">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 md:mb-2 transition-colors duration-300">
                     Payment Mode
                   </label>
                   <select
                     value={transactionFormData.paymentMode}
                     onChange={(e) => setTransactionFormData({...transactionFormData, paymentMode: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300"
+                    className="w-full px-3 md:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-300 text-sm md:text-base"
                     required
                   >
                     <option value="">Select payment mode</option>
