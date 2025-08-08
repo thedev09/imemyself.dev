@@ -13,7 +13,25 @@
       "Bash(dir)",
       "Bash(timeout 10 npm start)",
       "Bash(ls:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(npx create-react-app:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run copy-build:*)",
+      "Bash(rename:*)",
+      "Bash(move:*)",
+      "Bash(mv:*)",
+      "Bash(cmd /c:*)",
+      "Bash(powershell:*)",
+      "Bash(robocopy:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run:*)",
+      "Bash(del package-lock.json)",
+      "Bash(del firebase-test.js)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }
