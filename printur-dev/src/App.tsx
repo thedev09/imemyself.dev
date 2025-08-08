@@ -21,7 +21,7 @@ function App() {
             ? "bg-dark-bg/90 min-h-screen" 
             : "bg-light-bg min-h-screen"
         }>
-          <BrowserRouter>
+          <BrowserRouter basename="/printur">
             <Sidebar />
             <TopBar />
             

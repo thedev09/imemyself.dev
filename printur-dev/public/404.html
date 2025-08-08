@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Printur - Trading Dashboard</title>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1; // Keep /printur/ segment
+      
+      var l = window.location;
+      var pathArray = l.pathname.split('/').slice(1);
+      
+      // If accessing /status, /analytics, etc. directly, redirect to /printur/ with the route
+      if (pathArray.length > pathSegmentsToKeep && pathArray[0] !== 'printur') {
+        l.replace(
+          l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+          '/printur/?' + pathArray.slice(pathSegmentsToKeep).join('/') +
+          (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+          l.hash
+        );
+      } else {
+        // If accessing /printur/something, just redirect to /printur/
+        l.replace(
+          l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+          '/printur/'
+        );
+      }
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
