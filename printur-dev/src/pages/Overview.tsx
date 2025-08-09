@@ -22,6 +22,7 @@ export function Overview() {
   const [vpsStatus, setVpsStatus] = useState<VPSStatus>({ status: 'offline' });
   const [currentSession, setCurrentSession] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTrades, setActiveTrades] = useState<any[]>([]);
 
   useEffect(() => {
     setCurrentSession(getCurrentSession());
@@ -55,6 +56,14 @@ export function Overview() {
       });
       unsubscribeFunctions.push(unsubscribeEngine);
     });
+    
+    // Subscribe to live trades for active trades count
+    const unsubscribeTrades = dataService.subscribeToLiveTrades((trades) => {
+      console.log('Overview: Received trades:', trades.length);
+      const activeTradesData = trades.filter(t => t.status === 'ACTIVE');
+      setActiveTrades(activeTradesData);
+    });
+    unsubscribeFunctions.push(unsubscribeTrades);
     
     // Cleanup function
     return () => {
@@ -481,30 +490,17 @@ export function Overview() {
               "text-sm",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
-              Active Signals
+              Active Trades
             </span>
           </div>
           <div className="text-2xl font-bold text-blue-400">
-            {(() => {
-              // Count active signals across all engines and assets
-              let totalSignals = 0;
-              Object.values(engineBiases).forEach(biases => {
-                if (biases) {
-                  biases.forEach(bias => {
-                    if (bias.bias && bias.bias !== 'NEUTRAL' && bias.confidence > 0) {
-                      totalSignals++;
-                    }
-                  });
-                }
-              });
-              return totalSignals;
-            })()}
+            {activeTrades.length}
           </div>
           <div className={cn(
             "text-xs",
             theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
           )}>
-            Across 3 engines
+            Currently running
           </div>
         </div>
 

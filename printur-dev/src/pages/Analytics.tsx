@@ -35,7 +35,7 @@ interface AssetPerformance {
 export function Analytics() {
   const { theme } = useTheme();
   const [selectedView, setSelectedView] = useState<'engines' | 'assets' | 'comparison'>('engines');
-  const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | 'ALL'>('1D');
+  const [timeframe, setTimeframe] = useState<'1D' | '1W' | '1M' | 'ALL'>('1W');
   const [isLoading, setIsLoading] = useState(true);
   const [enginePerformance, setEnginePerformance] = useState<EnginePerformance[]>([]);
   const [assetPerformance, setAssetPerformance] = useState<AssetPerformance[]>([]);
@@ -93,6 +93,9 @@ export function Analytics() {
       const engineTrades = filteredTrades.filter(trade => trade.engine === engine);
       console.log(`Analytics: ${engine} has ${engineTrades.length} trades in ${timeframe} timeframe`);
       
+      // For active trades count, use ALL trades (not filtered by timeframe) since active trades should be counted regardless of when they started
+      const allEngineTradesForActive = tradesData.filter(trade => trade.engine === engine);
+      
       // Log sample trades for debugging
       if (engineTrades.length > 0) {
         console.log(`Analytics: Sample ${engine} trades:`, engineTrades.slice(0, 3).map(t => ({
@@ -104,7 +107,7 @@ export function Analytics() {
         })));
       }
       
-      const activeTrades = engineTrades.filter(trade => trade.status === 'ACTIVE').length;
+      const activeTrades = allEngineTradesForActive.filter(trade => trade.status === 'ACTIVE').length;
       
       // FIXED: Only count CLOSED trades for Total P&L and Total Trades (as requested)
       const closedTrades = engineTrades.filter(trade => trade.status !== 'ACTIVE');
