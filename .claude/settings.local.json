@@ -31,7 +31,9 @@
       "Bash(del firebase-test.js)",
       "Bash(pkill:*)",
       "Bash(true)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:twelvedata.com)",
+      "WebFetch(domain:api.twelvedata.com)"
     ],
     "deny": []
   }

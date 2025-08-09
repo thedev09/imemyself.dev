@@ -204,7 +204,11 @@ export function Overview() {
                         "text-xs",
                         theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
                       )}>
-                        Live Price
+                        {(price.symbol === 'XAUUSD' || price.symbol === 'USDJPY') && getCurrentSession().includes('Closed') ? (
+                          <span className="text-orange-500">Market Closed</span>
+                        ) : (
+                          'Live Price'
+                        )}
                       </div>
                     </div>
                   </div>

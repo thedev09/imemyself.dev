@@ -7,14 +7,35 @@ import { cn } from '../utils/cn';
 export function MarketData() {
   const [prices, setPrices] = useState<MarketPrice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMarketClosed, setIsMarketClosed] = useState(false);
 
   useEffect(() => {
+    const checkMarketStatus = () => {
+      const now = new Date();
+      const day = now.getUTCDay();
+      const hour = now.getUTCHours();
+      
+      // Check if forex markets are closed (weekend)
+      // Markets close Friday 20:00 UTC and open Sunday 21:00 UTC
+      const isClosed = (day === 0 && hour < 21) || // Sunday before 21:00 UTC
+                       (day === 6) || // Saturday all day
+                       (day === 5 && hour >= 20); // Friday after 20:00 UTC
+      
+      setIsMarketClosed(isClosed);
+    };
+    
+    checkMarketStatus();
+    const marketCheckInterval = setInterval(checkMarketStatus, 60000); // Check every minute
+    
     const unsubscribe = dataService.subscribeToMarketPrices((newPrices) => {
       setPrices(newPrices);
       setIsLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      clearInterval(marketCheckInterval);
+    };
   }, []);
 
   const getAssetIcon = (symbol: AssetSymbol) => {
@@ -137,6 +158,11 @@ export function MarketData() {
                   {price.symbol === 'BTCUSD' && (
                     <span className="ml-2 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1.5 py-0.5 rounded">
                       24/7
+                    </span>
+                  )}
+                  {(price.symbol === 'XAUUSD' || price.symbol === 'USDJPY') && isMarketClosed && (
+                    <span className="ml-2 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 px-1.5 py-0.5 rounded">
+                      Market Closed
                     </span>
                   )}
                 </h4>
