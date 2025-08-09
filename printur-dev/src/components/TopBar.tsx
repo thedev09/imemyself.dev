@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Wifi, Database, Clock } from 'lucide-react';
 import { useTheme } from '../store/useTheme';
@@ -8,6 +8,43 @@ import { cn } from '../utils/cn';
 export function TopBar() {
   const { theme } = useTheme();
   const { vpsStatus, isLoading } = useVPSStatus();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = currentTime.getHours();
+    if (hour < 12) return 'Good morning, champion!';
+    if (hour < 17) return 'Good afternoon, champion!';
+    return 'Good evening, champion!';
+  };
+
+  // Format the current time
+  const formatTime = () => {
+    return currentTime.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Format the current date in smooth format
+  const formatDate = () => {
+    return currentTime.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const getCurrentSession = () => {
     const now = new Date();
@@ -59,7 +96,43 @@ export function TopBar() {
           : "bg-light-surface/90 border-light-border"
       )}>
         <div className="px-6 py-4">
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between">
+            {/* Greeting + Time */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center space-x-3"
+            >
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.05, 1],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="text-2xl"
+              >
+                👋
+              </motion.div>
+              <div className="flex flex-col">
+                <div className={cn(
+                  "text-lg font-medium",
+                  theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
+                )}>
+                  {getGreeting()}
+                </div>
+                <div className={cn(
+                  "text-xs font-mono",
+                  theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                )}>
+                  {formatTime()} • {formatDate()}
+                </div>
+              </div>
+            </motion.div>
+
             {/* Status Indicators */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
