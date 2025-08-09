@@ -4,7 +4,7 @@ import {
   TrendingUp, TrendingDown, BarChart3, Activity, DollarSign, 
   Percent, Target, Zap, Crown, Bitcoin, Users
 } from 'lucide-react';
-import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend, LineChart, Line, Tooltip } from 'recharts';
 import { dataService } from '../services/dataService';
 import { useTheme } from '../store/useTheme';
 import type { AssetSymbol, Engine, LiveTrade } from '../types';
@@ -289,6 +289,101 @@ export function Analytics() {
     activeTrades: enginePerformance.reduce((sum, engine) => sum + engine.activeTrades, 0)
   };
 
+  // Calculate win rates over time for line chart
+  const calculateWinRatesOverTime = useCallback((trades: LiveTrade[]) => {
+    const now = Date.now();
+    const timePoints: { date: string; timestamp: number; v1: number; v2: number; v3: number; }[] = [];
+    
+    // Create time points based on timeframe
+    let intervals: { label: string; start: number; end: number }[] = [];
+    
+    switch (timeframe) {
+      case '1D':
+        // Last 24 hours, every 4 hours
+        for (let i = 6; i >= 0; i--) {
+          const end = now - (i * 4 * 60 * 60 * 1000);
+          const start = end - (4 * 60 * 60 * 1000);
+          intervals.push({
+            label: new Date(end).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            start,
+            end
+          });
+        }
+        break;
+      case '1W':
+        // Last 7 days, daily
+        for (let i = 6; i >= 0; i--) {
+          const end = now - (i * 24 * 60 * 60 * 1000);
+          const start = end - (24 * 60 * 60 * 1000);
+          intervals.push({
+            label: new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            start,
+            end
+          });
+        }
+        break;
+      case '1M':
+        // Last 4 weeks, weekly
+        for (let i = 3; i >= 0; i--) {
+          const end = now - (i * 7 * 24 * 60 * 60 * 1000);
+          const start = end - (7 * 24 * 60 * 60 * 1000);
+          intervals.push({
+            label: `Week ${4 - i}`,
+            start,
+            end
+          });
+        }
+        break;
+      case 'ALL':
+        // Last 6 months, monthly
+        for (let i = 5; i >= 0; i--) {
+          const end = new Date();
+          end.setMonth(end.getMonth() - i);
+          end.setDate(1);
+          end.setHours(23, 59, 59, 999);
+          
+          const start = new Date(end);
+          start.setMonth(start.getMonth() - 1);
+          start.setDate(1);
+          start.setHours(0, 0, 0, 0);
+          
+          intervals.push({
+            label: end.toLocaleDateString('en-US', { month: 'short' }),
+            start: start.getTime(),
+            end: end.getTime()
+          });
+        }
+        break;
+    }
+
+    // Calculate win rates for each interval
+    intervals.forEach(interval => {
+      const intervalTrades = trades.filter(trade => 
+        trade.timestamp >= interval.start && 
+        trade.timestamp <= interval.end &&
+        trade.status !== 'ACTIVE' // Only closed trades for win rate
+      );
+
+      const engineRates: { [key: string]: number } = {};
+      
+      ['v1', 'v2', 'v3'].forEach(engine => {
+        const engineTrades = intervalTrades.filter(t => t.engine === engine);
+        const winningTrades = engineTrades.filter(t => (t.pnl || 0) > 0);
+        engineRates[engine] = engineTrades.length > 0 ? (winningTrades.length / engineTrades.length) * 100 : 0;
+      });
+
+      timePoints.push({
+        date: interval.label,
+        timestamp: interval.end,
+        v1: Math.round(engineRates.v1 * 10) / 10,
+        v2: Math.round(engineRates.v2 * 10) / 10,
+        v3: Math.round(engineRates.v3 * 10) / 10
+      });
+    });
+
+    return timePoints;
+  }, [timeframe]);
+
   // Prepare chart data for engine comparison
   const chartData = enginePerformance.map(engine => ({
     name: getEngineLabel(engine.engine),
@@ -298,6 +393,9 @@ export function Analytics() {
     trades: engine.totalTrades,
     confidence: engine.avgConfidence
   }));
+
+  // Timeline chart data for win rates
+  const timelineData = calculateWinRatesOverTime(allTrades);
 
   // Radar chart data for engine comparison
   const radarData = [
@@ -719,7 +817,7 @@ export function Analytics() {
             </div>
           </div>
 
-          {/* Engine Performance Chart */}
+          {/* Engine Win Rate Timeline Chart */}
           <div className={cn(
             "backdrop-blur-xl border rounded-2xl p-6 transition-all duration-300",
             theme === 'dark'
@@ -730,15 +828,15 @@ export function Analytics() {
               "text-lg font-semibold mb-4",
               theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
             )}>
-              Engine Win Rate Comparison
+              Engine Win Rate Timeline - {getTimeframeDescription()}
             </h3>
             
-            <div className="h-64">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
+                <LineChart data={timelineData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
                   <XAxis 
-                    dataKey="name" 
+                    dataKey="date" 
                     stroke="currentColor" 
                     opacity={0.6}
                     fontSize={12}
@@ -747,14 +845,69 @@ export function Analytics() {
                     stroke="currentColor"
                     opacity={0.6}
                     fontSize={12}
+                    domain={[0, 100]}
                     tickFormatter={(value) => `${value}%`}
                   />
-                  <Bar 
-                    dataKey="winRate" 
-                    fill={theme === 'dark' ? '#3b82f6' : '#2563eb'}
-                    radius={[4, 4, 0, 0]}
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+                      border: theme === 'dark' ? '1px solid #333' : '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      boxShadow: theme === 'dark' 
+                        ? '0 10px 30px rgba(0, 0, 0, 0.5)' 
+                        : '0 10px 30px rgba(0, 0, 0, 0.1)',
+                      color: theme === 'dark' ? '#ffffff' : '#000000',
+                      fontSize: '12px'
+                    }}
+                    labelStyle={{
+                      color: theme === 'dark' ? '#ffffff' : '#000000',
+                      fontWeight: 'bold',
+                      marginBottom: '8px'
+                    }}
+                    formatter={(value: number, name: string) => {
+                      const engineNames: { [key: string]: string } = {
+                        'v1': 'Smart Engine (v1)',
+                        'v2': 'AI Enhanced (v2)', 
+                        'v3': 'Simple Engine (v3)'
+                      };
+                      return [`${value}%`, engineNames[name] || name];
+                    }}
+                    labelFormatter={(label) => `Time: ${label}`}
                   />
-                </BarChart>
+                  <Line
+                    type="monotone"
+                    dataKey="v1"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+                    name="Smart Engine (v1)"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="v2"
+                    stroke="#a855f7"
+                    strokeWidth={3}
+                    dot={{ fill: '#a855f7', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#a855f7', strokeWidth: 2 }}
+                    name="AI Enhanced (v2)"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="v3"
+                    stroke="#06b6d4"
+                    strokeWidth={3}
+                    dot={{ fill: '#06b6d4', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#06b6d4', strokeWidth: 2 }}
+                    name="Simple Engine (v3)"
+                  />
+                  <Legend 
+                    wrapperStyle={{ 
+                      paddingTop: '20px',
+                      fontSize: '12px'
+                    }}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
