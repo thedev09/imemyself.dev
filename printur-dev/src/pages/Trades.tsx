@@ -484,7 +484,11 @@ export function Trades() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="space-y-6"
+          className={cn(
+            activeTab === 'live' 
+              ? "grid grid-cols-1 md:grid-cols-2 gap-6" 
+              : "space-y-6"
+          )}
         >
           {(activeTab === 'live' ? filteredLiveTrades : filteredHistoryTrades).map((trade) => {
             const isProfitable = trade.pnl >= 0;
