@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,6 +9,34 @@
     @apply bg-white dark:bg-dark-bg text-gray-900 dark:text-gray-100;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  
+  /* Futuristic branding text */
+  .printur-brand {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #E91E63;
+    text-shadow: 0 0 10px rgba(233, 30, 99, 0.5),
+                 0 0 20px rgba(233, 30, 99, 0.3),
+                 0 0 30px rgba(233, 30, 99, 0.2);
+  }
+  
+  /* Logo with matching glow effect */
+  .printur-logo {
+    filter: drop-shadow(0 0 8px rgba(233, 30, 99, 0.6))
+            drop-shadow(0 0 15px rgba(233, 30, 99, 0.4))
+            drop-shadow(0 0 25px rgba(233, 30, 99, 0.2));
+    transition: all 0.3s ease;
+  }
+  
+  .printur-logo:hover {
+    filter: drop-shadow(0 0 12px rgba(233, 30, 99, 0.8))
+            drop-shadow(0 0 20px rgba(233, 30, 99, 0.5))
+            drop-shadow(0 0 35px rgba(233, 30, 99, 0.3));
+    transform: scale(1.05);
+  }
+  
   
   /* Scrollbar styling */
   ::-webkit-scrollbar {

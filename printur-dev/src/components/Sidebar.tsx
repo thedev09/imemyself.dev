@@ -53,17 +53,24 @@ export function Sidebar() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className={cn(
-              "text-2xl font-bold bg-premium-pink bg-clip-text text-transparent"
-            )}>
-              Printur
-            </h1>
-            <p className={cn(
-              "text-sm mt-1",
-              theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
-            )}>
-              Trading Dashboard
-            </p>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <img 
+                  src={`${process.env.PUBLIC_URL}/logo512-transparent.png`} 
+                  alt="Printur Logo" 
+                  className="w-10 h-10 printur-logo"
+                />
+                <h1 className="printur-brand text-2xl">
+                  Printur
+                </h1>
+              </div>
+              <p className={cn(
+                "text-sm opacity-70",
+                theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
+              )}>
+                The Trading Dashboard
+              </p>
+            </div>
           </motion.div>
 
           {/* Navigation */}

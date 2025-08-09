@@ -33,7 +33,8 @@
       "Bash(true)",
       "Bash(npx tsc:*)",
       "WebFetch(domain:twelvedata.com)",
-      "WebFetch(domain:api.twelvedata.com)"
+      "WebFetch(domain:api.twelvedata.com)",
+      "Bash(copy:*)"
     ],
     "deny": []
   }

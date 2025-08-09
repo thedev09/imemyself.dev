@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Printur",
+  "name": "Printur Trading Dashboard",
+  "description": "Advanced trading dashboard with triple-engine analysis",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#E91E63",
+  "background_color": "#0a0a0b",
+  "orientation": "portrait-primary"
 }
