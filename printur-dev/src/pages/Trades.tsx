@@ -495,68 +495,81 @@ export function Trades() {
                 key={trade.id}
                 variants={cardVariants}
                 className={cn(
-                  "backdrop-blur-xl border rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02]",
+                  "backdrop-blur-xl border rounded-xl p-4 transition-all duration-300 hover:scale-[1.01]",
                   theme === 'dark'
                     ? "bg-card-dark hover:bg-card-hover-dark border-dark-border shadow-premium-dark"
                     : "bg-card-light hover:bg-card-hover-light border-light-border shadow-premium",
-                  isActive && "ring-2 ring-blue-400/30"
+                  isActive && "ring-1 ring-blue-400/30"
                 )}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <div className={cn("w-3 h-3 rounded-full", getEngineGradient(trade.engine))}></div>
-                    <span className={cn(
-                      "text-sm font-medium",
-                      theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
-                    )}>
-                      {getEngineLabel(trade.engine)}
-                    </span>
+                {/* Top row: Asset, Direction, P&L */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    {/* Engine indicator */}
+                    <div className={cn("w-2 h-2 rounded-full", getEngineGradient(trade.engine))}></div>
                     
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center justify-center w-8 h-8">
+                    {/* Asset */}
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center justify-center w-6 h-6">
                         {getAssetIcon(trade.symbol)}
                       </div>
                       <span className={cn(
-                        "font-semibold text-lg",
+                        "font-semibold",
                         theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
                       )}>
                         {trade.symbol}
                       </span>
                     </div>
                     
+                    {/* Direction */}
                     <div className={cn(
-                      "flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium",
+                      "flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium",
                       trade.direction === 'BUY' 
                         ? theme === 'dark'
-                          ? "bg-green-500/20 text-trading-up-dark"
-                          : "bg-green-500/20 text-trading-up-light"
+                          ? "bg-green-500/15 text-trading-up-dark"
+                          : "bg-green-500/15 text-trading-up-light"
                         : theme === 'dark'
-                          ? "bg-red-500/20 text-trading-down-dark"
-                          : "bg-red-500/20 text-trading-down-light"
+                          ? "bg-red-500/15 text-trading-down-dark"
+                          : "bg-red-500/15 text-trading-down-light"
                     )}>
                       {trade.direction === 'BUY' ? (
-                        <TrendingUp className="w-4 h-4" />
+                        <TrendingUp className="w-3 h-3" />
                       ) : (
-                        <TrendingDown className="w-4 h-4" />
+                        <TrendingDown className="w-3 h-3" />
                       )}
                       <span>{trade.direction}</span>
                     </div>
 
-                    {!isActive && (
+                    {/* Engine label */}
+                    <span className={cn(
+                      "text-xs px-2 py-1 rounded bg-gray-500/10",
+                      theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                    )}>
+                      {getEngineLabel(trade.engine)}
+                    </span>
+
+                    {/* Status */}
+                    {!isActive ? (
                       <div className={cn(
-                        "px-3 py-1 rounded-lg text-xs font-medium",
+                        "px-2 py-1 rounded text-xs font-medium",
                         trade.status === 'CLOSED'
-                          ? "bg-gray-500/20 text-gray-400"
-                          : "bg-blue-500/20 text-blue-400"
+                          ? "bg-gray-500/15 text-gray-400"
+                          : "bg-blue-500/15 text-blue-400"
                       )}>
                         {trade.status}
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-green-400 font-medium text-xs">LIVE</span>
                       </div>
                     )}
                   </div>
                   
+                  {/* P&L */}
                   <div className="text-right">
                     <div className={cn(
-                      "text-2xl font-bold",
+                      "text-lg font-bold",
                       isProfitable 
                         ? theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
                         : theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
@@ -564,7 +577,7 @@ export function Trades() {
                       {isProfitable ? '+' : ''}{trade.pnl.toFixed(1)} pips
                     </div>
                     <div className={cn(
-                      "text-sm font-medium",
+                      "text-xs font-medium",
                       isProfitable 
                         ? theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
                         : theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
@@ -574,89 +587,87 @@ export function Trades() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                  <div>
-                    <span className={cn(
-                      theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
-                    )}>
-                      Entry
-                    </span>
-                    <div className={cn(
-                      "font-mono font-medium",
-                      theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
-                    )}>
-                      {formatPrice(trade.symbol, trade.entry)}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <span className={cn(
-                      theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
-                    )}>
-                      {isActive ? 'Current' : 'Exit'}
-                    </span>
-                    <div className={cn(
-                      "font-mono font-medium",
-                      theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
-                    )}>
-                      {formatPrice(trade.symbol, trade.currentPrice)}
-                    </div>
-                  </div>
-                  
-                  {trade.takeProfit && (
-                    <div>
-                      <span className={cn(
-                        "flex items-center space-x-1",
-                        theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
-                      )}>
-                        <Target className="w-3 h-3" />
-                        <span>TP</span>
-                      </span>
-                      <div className={cn(
-                        "font-mono font-medium",
-                        theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
-                      )}>
-                        {formatPrice(trade.symbol, trade.takeProfit)}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {trade.stopLoss && (
-                    <div>
-                      <span className={cn(
-                        "flex items-center space-x-1",
-                        theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
-                      )}>
-                        <Shield className="w-3 h-3" />
-                        <span>SL</span>
-                      </span>
-                      <div className={cn(
-                        "font-mono font-medium",
-                        theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
-                      )}>
-                        {formatPrice(trade.symbol, trade.stopLoss)}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className={cn(
-                  "flex items-center justify-between text-sm pt-4 border-t",
-                  theme === 'dark' 
-                    ? "text-dark-text-muted border-dark-border" 
-                    : "text-light-text-muted border-light-border"
-                )}>
-                  <div className="flex items-center space-x-4">
+                {/* Price info row */}
+                <div className="flex items-center justify-between text-sm mb-3">
+                  <div className="flex items-center space-x-6">
                     <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4" />
-                      <span>{isActive ? formatDuration(trade.timestamp) : formatDateTime(trade.timestamp)}</span>
+                      <span className={cn(
+                        "text-xs",
+                        theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
+                      )}>
+                        Entry:
+                      </span>
+                      <span className={cn(
+                        "font-mono font-medium",
+                        theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
+                      )}>
+                        {formatPrice(trade.symbol, trade.entry)}
+                      </span>
                     </div>
-                    {isActive && (
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-green-400 font-medium">LIVE</span>
+                    
+                    <div className="flex items-center space-x-2">
+                      <span className={cn(
+                        "text-xs",
+                        theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
+                      )}>
+                        {isActive ? 'Current:' : 'Exit:'}
+                      </span>
+                      <span className={cn(
+                        "font-mono font-medium",
+                        theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
+                      )}>
+                        {formatPrice(trade.symbol, trade.currentPrice)}
+                      </span>
+                    </div>
+                    
+                    {trade.takeProfit && (
+                      <div className="flex items-center space-x-2">
+                        <div className={cn(
+                          "flex items-center space-x-1 text-xs",
+                          theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
+                        )}>
+                          <Target className="w-3 h-3" />
+                          <span>TP:</span>
+                        </div>
+                        <span className={cn(
+                          "font-mono font-medium text-xs",
+                          theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
+                        )}>
+                          {formatPrice(trade.symbol, trade.takeProfit)}
+                        </span>
                       </div>
                     )}
+                    
+                    {trade.stopLoss && (
+                      <div className="flex items-center space-x-2">
+                        <div className={cn(
+                          "flex items-center space-x-1 text-xs",
+                          theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
+                        )}>
+                          <Shield className="w-3 h-3" />
+                          <span>SL:</span>
+                        </div>
+                        <span className={cn(
+                          "font-mono font-medium text-xs",
+                          theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
+                        )}>
+                          {formatPrice(trade.symbol, trade.stopLoss)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Bottom row: Time and ID */}
+                <div className={cn(
+                  "flex items-center justify-between text-xs pt-2 border-t",
+                  theme === 'dark' 
+                    ? "text-dark-text-muted border-dark-border/30" 
+                    : "text-light-text-muted border-light-border/30"
+                )}>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-3 h-3" />
+                    <span>{isActive ? formatDuration(trade.timestamp) : formatDateTime(trade.timestamp)}</span>
                   </div>
                   <span>ID: {trade.id.slice(-8)}</span>
                 </div>
