@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, Wifi, Database, Clock } from 'lucide-react';
+import { Wifi, Database, Clock } from 'lucide-react';
 import { useTheme } from '../store/useTheme';
 import { useVPSStatus } from '../hooks/useVPSStatus';
 import { cn } from '../utils/cn';
@@ -59,31 +59,7 @@ export function TopBar() {
           : "bg-light-surface/90 border-light-border"
       )}>
         <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Search */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex-1 max-w-md"
-            >
-              <div className="relative">
-                <Search className={cn(
-                  "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4",
-                  theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
-                )} />
-                <input
-                  type="text"
-                  placeholder="Search trades, assets, engines..."
-                  className={cn(
-                    "w-full pl-10 pr-4 py-2 rounded-xl border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500/50",
-                    theme === 'dark'
-                      ? "bg-dark-card border-dark-border text-dark-text-primary placeholder-dark-text-muted"
-                      : "bg-light-card border-light-border text-light-text-primary placeholder-light-text-muted"
-                  )}
-                />
-              </div>
-            </motion.div>
-
+          <div className="flex items-center justify-end">
             {/* Status Indicators */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}

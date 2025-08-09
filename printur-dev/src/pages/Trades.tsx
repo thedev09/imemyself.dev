@@ -263,11 +263,43 @@ export function Trades() {
   // Get unique symbols for filter dropdown
   const availableSymbols = Array.from(new Set(tradeHistory.map(t => t.symbol)));
 
+  // Get period label based on current filter
+  const getPeriodLabel = () => {
+    switch (timeFilter) {
+      case '1D': return 'Daily P&L';
+      case '1W': return 'Weekly P&L';
+      case '1M': return 'Monthly P&L';
+      case 'ALL': return 'All Time P&L';
+      default: return 'Period P&L';
+    }
+  };
+
+  // Get win rate label based on current filter and active tab
+  const getWinRateLabel = () => {
+    if (activeTab === 'live') {
+      return 'Weekly Win Rate'; // Always weekly for live trades
+    }
+    // For trade history, match the time filter
+    switch (timeFilter) {
+      case '1D': return 'Daily Win Rate';
+      case '1W': return 'Weekly Win Rate';
+      case '1M': return 'Monthly Win Rate';
+      case 'ALL': return 'All Time Win Rate';
+      default: return 'Win Rate';
+    }
+  };
+
   // Calculate statistics
   const activeTotalPnL = filteredLiveTrades.reduce((sum, trade) => sum + trade.pnl, 0);
   const historyTotalPnL = filteredHistoryTrades.reduce((sum, trade) => sum + trade.pnl, 0);
-  const winningTrades = filteredHistoryTrades.filter(t => t.pnl > 0).length;
-  const winRate = filteredHistoryTrades.length > 0 ? (winningTrades / filteredHistoryTrades.length) * 100 : 0;
+  
+  // For Live Trades: Always use weekly data for win rate
+  const weeklyHistoryTrades = activeTab === 'live' ? filterTradesByTime(tradeHistory.filter(t => 
+    engineFilter === 'all' ? true : t.engine === engineFilter
+  )) : filteredHistoryTrades;
+  
+  const winningTrades = weeklyHistoryTrades.filter(t => t.pnl > 0).length;
+  const winRate = weeklyHistoryTrades.length > 0 ? (winningTrades / weeklyHistoryTrades.length) * 100 : 0;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -374,7 +406,7 @@ export function Trades() {
               "text-xs",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
-              Win Rate
+              {getWinRateLabel()}
             </span>
           </div>
           <div className={cn(
@@ -399,7 +431,7 @@ export function Trades() {
               "text-xs",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
-              Week P&L
+              {activeTab === 'live' ? 'Weekly P&L' : getPeriodLabel()}
             </span>
           </div>
           <div className={cn(
