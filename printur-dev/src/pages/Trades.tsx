@@ -155,6 +155,51 @@ export function Trades() {
     });
   };
 
+  const calculateProgressBarData = (trade: LiveTrade) => {
+    const { entry, currentPrice, stopLoss, takeProfit, direction } = trade;
+    
+    if (!stopLoss || !takeProfit) return null;
+    
+    // Calculate risk and reward distances
+    const riskDistance = Math.abs(entry - stopLoss);
+    const rewardDistance = Math.abs(takeProfit - entry);
+    const totalDistance = riskDistance + rewardDistance;
+    
+    const riskPercent = (riskDistance / totalDistance) * 100;
+    const rewardPercent = (rewardDistance / totalDistance) * 100;
+    
+    // For ALL trades: visually show risk on left (0% to riskPercent), reward on right (riskPercent to 100%)
+    const visualRiskStart = 0;
+    const visualRewardStart = riskPercent;
+    
+    // Entry is always at the border between risk and reward zones
+    const visualEntryPos = riskPercent;
+    
+    // Calculate current position based on actual price distance from entry
+    const currentDistanceFromEntry = Math.abs(currentPrice - entry);
+    let visualCurrentPos;
+    
+    if (trade.pnl >= 0) {
+      // In profit: calculate how far into reward zone
+      const progressIntoReward = Math.min(currentDistanceFromEntry / rewardDistance, 1);
+      visualCurrentPos = visualEntryPos + (progressIntoReward * rewardPercent);
+    } else {
+      // In loss: calculate how far into risk zone
+      const progressIntoRisk = Math.min(currentDistanceFromEntry / riskDistance, 1);
+      visualCurrentPos = visualEntryPos - (progressIntoRisk * riskPercent);
+    }
+    
+    return {
+      entryPos: visualEntryPos,
+      currentPos: visualCurrentPos,
+      riskPercent,
+      rewardPercent,
+      visualRiskStart,
+      visualRewardStart,
+      direction
+    };
+  };
+
   // Filter trades
   const filteredLiveTrades = engineFilter === 'all' 
     ? liveTrades 
@@ -217,50 +262,50 @@ export function Trades() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
       >
         <div className={cn(
-          "backdrop-blur-xl border rounded-2xl p-4 transition-all duration-300",
+          "backdrop-blur-xl border rounded-xl p-3 transition-all duration-300",
           theme === 'dark'
             ? "bg-card-dark border-dark-border shadow-premium-dark"
             : "bg-card-light border-light-border shadow-premium"
         )}>
-          <div className="flex items-center space-x-2 mb-2">
-            <Activity className="w-4 h-4 text-blue-400" />
+          <div className="flex items-center space-x-2 mb-1">
+            <Activity className="w-3 h-3 text-blue-400" />
             <span className={cn(
-              "text-sm",
+              "text-xs",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
               Live Trades
             </span>
           </div>
-          <div className="text-2xl font-bold text-blue-400">
+          <div className="text-xl font-bold text-blue-400">
             {filteredLiveTrades.length}
           </div>
         </div>
 
         <div className={cn(
-          "backdrop-blur-xl border rounded-2xl p-4 transition-all duration-300",
+          "backdrop-blur-xl border rounded-xl p-3 transition-all duration-300",
           theme === 'dark'
             ? "bg-card-dark border-dark-border shadow-premium-dark"
             : "bg-card-light border-light-border shadow-premium"
         )}>
-          <div className="flex items-center space-x-2 mb-2">
+          <div className="flex items-center space-x-2 mb-1">
             <TrendingUp className={cn(
-              "w-4 h-4",
+              "w-3 h-3",
               activeTotalPnL >= 0 
                 ? theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
                 : theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
             )} />
             <span className={cn(
-              "text-sm",
+              "text-xs",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
               Live P&L
             </span>
           </div>
           <div className={cn(
-            "text-2xl font-bold",
+            "text-xl font-bold",
             activeTotalPnL >= 0 
               ? theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
               : theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
@@ -270,22 +315,22 @@ export function Trades() {
         </div>
 
         <div className={cn(
-          "backdrop-blur-xl border rounded-2xl p-4 transition-all duration-300",
+          "backdrop-blur-xl border rounded-xl p-3 transition-all duration-300",
           theme === 'dark'
             ? "bg-card-dark border-dark-border shadow-premium-dark"
             : "bg-card-light border-light-border shadow-premium"
         )}>
-          <div className="flex items-center space-x-2 mb-2">
-            <BarChart3 className="w-4 h-4 text-purple-400" />
+          <div className="flex items-center space-x-2 mb-1">
+            <BarChart3 className="w-3 h-3 text-purple-400" />
             <span className={cn(
-              "text-sm",
+              "text-xs",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
               Win Rate
             </span>
           </div>
           <div className={cn(
-            "text-2xl font-bold",
+            "text-xl font-bold",
             winRate >= 50 
               ? theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
               : theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
@@ -295,22 +340,22 @@ export function Trades() {
         </div>
 
         <div className={cn(
-          "backdrop-blur-xl border rounded-2xl p-4 transition-all duration-300",
+          "backdrop-blur-xl border rounded-xl p-3 transition-all duration-300",
           theme === 'dark'
             ? "bg-card-dark border-dark-border shadow-premium-dark"
             : "bg-card-light border-light-border shadow-premium"
         )}>
-          <div className="flex items-center space-x-2 mb-2">
-            <Calendar className="w-4 h-4 text-cyan-400" />
+          <div className="flex items-center space-x-2 mb-1">
+            <Calendar className="w-3 h-3 text-cyan-400" />
             <span className={cn(
-              "text-sm",
+              "text-xs",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
               Week P&L
             </span>
           </div>
           <div className={cn(
-            "text-2xl font-bold",
+            "text-xl font-bold",
             historyTotalPnL >= 0 
               ? theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
               : theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
@@ -320,94 +365,51 @@ export function Trades() {
         </div>
       </motion.div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation with Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="flex space-x-2 mb-6"
+        className="flex items-center justify-between mb-6"
       >
-        {[
-          { key: 'live', label: 'Live Trades', count: filteredLiveTrades.length },
-          { key: 'history', label: 'Trade History', count: filteredHistoryTrades.length }
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as 'live' | 'history')}
-            className={cn(
-              "flex items-center space-x-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300",
-              activeTab === tab.key
-                ? theme === 'dark'
-                  ? "bg-card-dark text-dark-text-primary shadow-premium-dark border border-dark-border"
-                  : "bg-card-light text-light-text-primary shadow-premium border border-light-border"
-                : theme === 'dark'
-                  ? "text-dark-text-secondary hover:text-dark-text-primary hover:bg-card-dark"
-                  : "text-light-text-secondary hover:text-light-text-primary hover:bg-card-light"
-            )}
-          >
-            <span>{tab.label}</span>
-            <span className={cn(
-              "px-2 py-1 rounded-full text-xs",
-              activeTab === tab.key
-                ? theme === 'dark' ? "bg-dark-bg text-dark-text-primary" : "bg-light-bg text-light-text-primary"
-                : theme === 'dark' ? "bg-dark-surface text-dark-text-muted" : "bg-light-surface text-light-text-muted"
-            )}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </motion.div>
-
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="flex flex-wrap items-center gap-4 mb-8"
-      >
-        {/* Engine Filter */}
-        <div className="flex items-center space-x-2">
-          <Filter className={cn(
-            "w-4 h-4",
-            theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
-          )} />
-          <span className={cn(
-            "text-sm font-medium",
-            theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
-          )}>
-            Engine:
-          </span>
-          <div className="flex space-x-1">
-            {[
-              { key: 'all' as const, label: 'All' },
-              { key: 'v1' as const, label: 'V1' },
-              { key: 'v2' as const, label: 'V2' },
-              { key: 'v3' as const, label: 'V3' }
-            ].map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() => setEngineFilter(filter.key)}
-                className={cn(
-                  "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-300",
-                  engineFilter === filter.key
-                    ? theme === 'dark'
-                      ? "bg-card-dark text-dark-text-primary border border-dark-border"
-                      : "bg-card-light text-light-text-primary border border-light-border"
-                    : theme === 'dark'
-                      ? "text-dark-text-muted hover:text-dark-text-secondary hover:bg-dark-surface"
-                      : "text-light-text-muted hover:text-light-text-secondary hover:bg-light-surface"
-                )}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
+        {/* Left: Tab buttons */}
+        <div className="flex space-x-2">
+          {[
+            { key: 'live', label: 'Live Trades', count: filteredLiveTrades.length },
+            { key: 'history', label: 'Trade History', count: filteredHistoryTrades.length }
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as 'live' | 'history')}
+              className={cn(
+                "flex items-center space-x-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300",
+                activeTab === tab.key
+                  ? theme === 'dark'
+                    ? "bg-card-dark text-dark-text-primary shadow-premium-dark border border-dark-border"
+                    : "bg-card-light text-light-text-primary shadow-premium border border-light-border"
+                  : theme === 'dark'
+                    ? "text-dark-text-secondary hover:text-dark-text-primary hover:bg-card-dark"
+                    : "text-light-text-secondary hover:text-light-text-primary hover:bg-card-light"
+              )}
+            >
+              <span>{tab.label}</span>
+              <span className={cn(
+                "px-2 py-1 rounded-full text-xs",
+                activeTab === tab.key
+                  ? theme === 'dark' ? "bg-dark-bg text-dark-text-primary" : "bg-light-bg text-light-text-primary"
+                  : theme === 'dark' ? "bg-dark-surface text-dark-text-muted" : "bg-light-surface text-light-text-muted"
+              )}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
         </div>
 
-        {/* Time Filter (for history only) */}
-        {activeTab === 'history' && (
+        {/* Right: Filters */}
+        <div className="flex items-center gap-6">
+          {/* Engine Filter */}
           <div className="flex items-center space-x-2">
-            <Calendar className={cn(
+            <Filter className={cn(
               "w-4 h-4",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )} />
@@ -415,21 +417,21 @@ export function Trades() {
               "text-sm font-medium",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
-              Period:
+              Engine:
             </span>
             <div className="flex space-x-1">
               {[
-                { key: '1D' as const, label: 'Today' },
-                { key: '1W' as const, label: 'This Week' },
-                { key: '1M' as const, label: 'Month' },
-                { key: 'ALL' as const, label: 'All' }
+                { key: 'all' as const, label: 'All' },
+                { key: 'v1' as const, label: 'V1' },
+                { key: 'v2' as const, label: 'V2' },
+                { key: 'v3' as const, label: 'V3' }
               ].map((filter) => (
                 <button
                   key={filter.key}
-                  onClick={() => setTimeFilter(filter.key)}
+                  onClick={() => setEngineFilter(filter.key)}
                   className={cn(
                     "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-300",
-                    timeFilter === filter.key
+                    engineFilter === filter.key
                       ? theme === 'dark'
                         ? "bg-card-dark text-dark-text-primary border border-dark-border"
                         : "bg-card-light text-light-text-primary border border-light-border"
@@ -443,7 +445,48 @@ export function Trades() {
               ))}
             </div>
           </div>
-        )}
+
+          {/* Time Filter (for history only) */}
+          {activeTab === 'history' && (
+            <div className="flex items-center space-x-2">
+              <Calendar className={cn(
+                "w-4 h-4",
+                theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+              )} />
+              <span className={cn(
+                "text-sm font-medium",
+                theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+              )}>
+                Period:
+              </span>
+              <div className="flex space-x-1">
+                {[
+                  { key: '1D' as const, label: 'Today' },
+                  { key: '1W' as const, label: 'This Week' },
+                  { key: '1M' as const, label: 'Month' },
+                  { key: 'ALL' as const, label: 'All' }
+                ].map((filter) => (
+                  <button
+                    key={filter.key}
+                    onClick={() => setTimeFilter(filter.key)}
+                    className={cn(
+                      "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-300",
+                      timeFilter === filter.key
+                        ? theme === 'dark'
+                          ? "bg-card-dark text-dark-text-primary border border-dark-border"
+                          : "bg-card-light text-light-text-primary border border-light-border"
+                        : theme === 'dark'
+                          ? "text-dark-text-muted hover:text-dark-text-secondary hover:bg-dark-surface"
+                          : "text-light-text-muted hover:text-light-text-secondary hover:bg-light-surface"
+                    )}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {/* Trade Cards */}
@@ -486,8 +529,8 @@ export function Trades() {
           animate="visible"
           className={cn(
             activeTab === 'live' 
-              ? "grid grid-cols-1 md:grid-cols-2 gap-6" 
-              : "space-y-6"
+              ? "grid grid-cols-1 md:grid-cols-2 gap-4" 
+              : "space-y-4"
           )}
         >
           {(activeTab === 'live' ? filteredLiveTrades : filteredHistoryTrades).map((trade) => {
@@ -499,7 +542,7 @@ export function Trades() {
                 key={trade.id}
                 variants={cardVariants}
                 className={cn(
-                  "backdrop-blur-xl border rounded-xl p-4 transition-all duration-300 hover:scale-[1.01]",
+                  "backdrop-blur-xl border rounded-xl p-3 transition-all duration-300 hover:scale-[1.01]",
                   theme === 'dark'
                     ? "bg-card-dark hover:bg-card-hover-dark border-dark-border shadow-premium-dark"
                     : "bg-card-light hover:bg-card-hover-light border-light-border shadow-premium",
@@ -507,7 +550,7 @@ export function Trades() {
                 )}
               >
                 {/* Top row: Asset, Direction, P&L */}
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-3">
                     {/* Engine indicator */}
                     <div className={cn("w-2 h-2 rounded-full", getEngineGradient(trade.engine))}></div>
@@ -592,7 +635,7 @@ export function Trades() {
                 </div>
                 
                 {/* Price info row */}
-                <div className="flex items-center justify-between text-sm mb-3">
+                <div className="flex items-center justify-between text-sm mb-2">
                   <div className="flex items-center space-x-6">
                     <div className="flex items-center space-x-2">
                       <span className={cn(
@@ -661,6 +704,73 @@ export function Trades() {
                     )}
                   </div>
                 </div>
+
+                {/* Progress Bar */}
+                {(() => {
+                  const progressData = calculateProgressBarData(trade);
+                  if (!progressData) return null;
+                  
+                  const { entryPos, currentPos, riskPercent, rewardPercent, visualRiskStart, visualRewardStart } = progressData;
+                  const isProfitable = trade.pnl >= 0;
+                  
+                  // Calculate fill parameters  
+                  let fillStart, fillWidth, fillColor;
+                  
+                  fillStart = Math.min(entryPos, currentPos);
+                  fillWidth = Math.abs(currentPos - entryPos);
+                  fillColor = isProfitable ? 'bg-green-400' : 'bg-red-400';
+                  
+                  return (
+                    <div className="mb-2">
+                      <div className="relative">
+                        {/* Main progress bar with risk/reward zones */}
+                        <div className={cn(
+                          "h-3 rounded-full relative overflow-hidden border",
+                          theme === 'dark' ? "border-dark-border/30" : "border-light-border/30"
+                        )}>
+                          {/* Risk zone background */}
+                          <div
+                            className="absolute h-full bg-red-500/15"
+                            style={{
+                              left: `${visualRiskStart}%`,
+                              width: `${riskPercent}%`
+                            }}
+                          />
+                          
+                          {/* Reward zone background */}
+                          <div
+                            className="absolute h-full bg-green-500/15"
+                            style={{
+                              left: `${visualRewardStart}%`,
+                              width: `${rewardPercent}%`
+                            }}
+                          />
+                          
+                          {/* Entry point divider */}
+                          <div
+                            className="absolute top-0 w-0.5 h-full bg-blue-400/60 z-5"
+                            style={{ left: `${entryPos}%` }}
+                          />
+                          
+                          {/* Current position fill */}
+                          <div
+                            className={cn("absolute h-full transition-all duration-500 opacity-80", fillColor)}
+                            style={{
+                              left: `${fillStart}%`,
+                              width: `${fillWidth}%`
+                            }}
+                          />
+                          
+                          {/* Current position marker */}
+                          <div
+                            className="absolute top-0 w-1 h-full bg-white shadow-lg z-10 rounded-full"
+                            style={{ left: `${currentPos}%`, transform: 'translateX(-50%)' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 
                 {/* Bottom row: Time and ID */}
                 <div className={cn(
