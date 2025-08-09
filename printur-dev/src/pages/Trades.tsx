@@ -5,9 +5,11 @@ import { useTheme } from '../store/useTheme';
 import { dataService } from '../services/dataService';
 import type { LiveTrade, AssetSymbol, Engine } from '../types';
 import { cn } from '../utils/cn';
+import { CustomDropdown, type DropdownOption } from '../components/CustomDropdown';
 
 type TimeFilter = '1D' | '1W' | '1M' | 'ALL';
 type TradeStatus = 'ACTIVE' | 'CLOSED' | 'ALL';
+type SymbolFilter = 'all' | AssetSymbol;
 
 export function Trades() {
   const { theme } = useTheme();
@@ -17,6 +19,7 @@ export function Trades() {
   const [engineFilter, setEngineFilter] = useState<'all' | Engine>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('1W'); // Default to current week
   const [statusFilter, setStatusFilter] = useState<TradeStatus>('ALL');
+  const [symbolFilter, setSymbolFilter] = useState<SymbolFilter>('all');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -129,7 +132,7 @@ export function Trades() {
     const now = Date.now();
     const ms = now - timestamp;
     
-    if (!ms || isNaN(ms)) return 'Duration: 0m';
+    if (!ms || isNaN(ms)) return '0m';
     
     const hours = Math.floor(ms / (60 * 60 * 1000));
     const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
@@ -137,11 +140,11 @@ export function Trades() {
     if (hours > 24) {
       const days = Math.floor(hours / 24);
       const remainingHours = hours % 24;
-      return remainingHours > 0 ? `Duration: ${days}d ${remainingHours}h` : `Duration: ${days}d`;
+      return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
     } else if (hours > 0) {
-      return minutes > 0 ? `Duration: ${hours}h ${minutes}m` : `Duration: ${hours}h`;
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
     } else {
-      return `Duration: ${minutes}m`;
+      return `${minutes}m`;
     }
   };
 
@@ -153,6 +156,43 @@ export function Trades() {
       minute: '2-digit',
       timeZoneName: 'short'
     });
+  };
+
+  const formatFullDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const dateStr = date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+    const timeStr = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    return { date: dateStr, time: timeStr };
+  };
+
+  const getCloseReason = (trade: LiveTrade) => {
+    if (trade.status === 'ACTIVE') {
+      return 'Active';
+    }
+    
+    // Use exitReason field if available (matches huehue project logic)
+    const exitReason = (trade as any).exitReason || trade.status;
+    
+    // Map server-side reason codes to display text
+    const reasonMap: { [key: string]: string } = {
+      'CLOSED_TP': 'Take Profit',
+      'CLOSED_SL': 'Stop Loss', 
+      'TIME_EXPIRY': 'Expired',
+      'FLIPPED': 'Flipped',
+      'TAKE_PROFIT': 'Take Profit',
+      'STOP_LOSS': 'Stop Loss',
+      'EXPIRED': 'Expired'
+    };
+    
+    return reasonMap[exitReason] || exitReason || 'Unknown';
   };
 
   const calculateProgressBarData = (trade: LiveTrade) => {
@@ -209,11 +249,19 @@ export function Trades() {
     ? tradeHistory 
     : tradeHistory.filter(t => t.engine === engineFilter);
 
+  // Apply symbol filter
+  if (symbolFilter !== 'all') {
+    filteredHistoryTrades = filteredHistoryTrades.filter(t => t.symbol === symbolFilter);
+  }
+
   filteredHistoryTrades = filterTradesByTime(filteredHistoryTrades);
   
   if (statusFilter !== 'ALL') {
     filteredHistoryTrades = filteredHistoryTrades.filter(t => t.status === statusFilter);
   }
+
+  // Get unique symbols for filter dropdown
+  const availableSymbols = Array.from(new Set(tradeHistory.map(t => t.symbol)));
 
   // Calculate statistics
   const activeTotalPnL = filteredLiveTrades.reduce((sum, trade) => sum + trade.pnl, 0);
@@ -406,7 +454,7 @@ export function Trades() {
         </div>
 
         {/* Right: Filters */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           {/* Engine Filter */}
           <div className="flex items-center space-x-2">
             <Filter className={cn(
@@ -414,77 +462,77 @@ export function Trades() {
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )} />
             <span className={cn(
-              "text-sm font-medium",
+              "text-xs font-medium",
               theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
             )}>
               Engine:
             </span>
-            <div className="flex space-x-1">
-              {[
-                { key: 'all' as const, label: 'All' },
-                { key: 'v1' as const, label: 'V1' },
-                { key: 'v2' as const, label: 'V2' },
-                { key: 'v3' as const, label: 'V3' }
-              ].map((filter) => (
-                <button
-                  key={filter.key}
-                  onClick={() => setEngineFilter(filter.key)}
-                  className={cn(
-                    "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-300",
-                    engineFilter === filter.key
-                      ? theme === 'dark'
-                        ? "bg-card-dark text-dark-text-primary border border-dark-border"
-                        : "bg-card-light text-light-text-primary border border-light-border"
-                      : theme === 'dark'
-                        ? "text-dark-text-muted hover:text-dark-text-secondary hover:bg-dark-surface"
-                        : "text-light-text-muted hover:text-light-text-secondary hover:bg-light-surface"
-                  )}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
+            <CustomDropdown
+              value={engineFilter}
+              onChange={(value) => setEngineFilter(value as 'all' | Engine)}
+              options={[
+                { value: 'all', label: 'All' },
+                { value: 'v1', label: 'V1' },
+                { value: 'v2', label: 'V2' },
+                { value: 'v3', label: 'V3' }
+              ]}
+              minWidth="70px"
+            />
           </div>
 
           {/* Time Filter (for history only) */}
           {activeTab === 'history' && (
-            <div className="flex items-center space-x-2">
-              <Calendar className={cn(
-                "w-4 h-4",
-                theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
-              )} />
-              <span className={cn(
-                "text-sm font-medium",
-                theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
-              )}>
-                Period:
-              </span>
-              <div className="flex space-x-1">
-                {[
-                  { key: '1D' as const, label: 'Today' },
-                  { key: '1W' as const, label: 'This Week' },
-                  { key: '1M' as const, label: 'Month' },
-                  { key: 'ALL' as const, label: 'All' }
-                ].map((filter) => (
-                  <button
-                    key={filter.key}
-                    onClick={() => setTimeFilter(filter.key)}
-                    className={cn(
-                      "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-300",
-                      timeFilter === filter.key
-                        ? theme === 'dark'
-                          ? "bg-card-dark text-dark-text-primary border border-dark-border"
-                          : "bg-card-light text-light-text-primary border border-light-border"
-                        : theme === 'dark'
-                          ? "text-dark-text-muted hover:text-dark-text-secondary hover:bg-dark-surface"
-                          : "text-light-text-muted hover:text-light-text-secondary hover:bg-light-surface"
-                    )}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
+            <>
+              <div className="flex items-center space-x-2">
+                <Calendar className={cn(
+                  "w-4 h-4",
+                  theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                )} />
+                <span className={cn(
+                  "text-xs font-medium",
+                  theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                )}>
+                  Period:
+                </span>
+                <CustomDropdown
+                  value={timeFilter}
+                  onChange={(value) => setTimeFilter(value as TimeFilter)}
+                  options={[
+                    { value: '1D', label: 'Today' },
+                    { value: '1W', label: 'This Week' },
+                    { value: '1M', label: 'Month' },
+                    { value: 'ALL', label: 'All' }
+                  ]}
+                  minWidth="100px"
+                />
               </div>
-            </div>
+
+              {/* Symbol Filter */}
+              <div className="flex items-center space-x-2">
+                <BarChart3 className={cn(
+                  "w-4 h-4",
+                  theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                )} />
+                <span className={cn(
+                  "text-xs font-medium",
+                  theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                )}>
+                  Asset:
+                </span>
+                <CustomDropdown
+                  value={symbolFilter}
+                  onChange={(value) => setSymbolFilter(value as SymbolFilter)}
+                  options={[
+                    { value: 'all', label: 'All' },
+                    ...availableSymbols.map((symbol) => ({
+                      value: symbol,
+                      label: symbol
+                    }))
+                  ]}
+                  minWidth="90px"
+                />
+              </div>
+            </>
           )}
         </div>
       </motion.div>
@@ -523,32 +571,31 @@ export function Trades() {
           ))}
         </div>
       ) : (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className={cn(
-            activeTab === 'live' 
-              ? "grid grid-cols-1 md:grid-cols-2 gap-4" 
-              : "space-y-4"
-          )}
-        >
-          {(activeTab === 'live' ? filteredLiveTrades : filteredHistoryTrades).map((trade) => {
-            const isProfitable = trade.pnl >= 0;
-            const isActive = trade.status === 'ACTIVE';
-            
-            return (
-              <motion.div
-                key={trade.id}
-                variants={cardVariants}
-                className={cn(
-                  "backdrop-blur-xl border rounded-xl p-3 transition-all duration-300 hover:scale-[1.01]",
-                  theme === 'dark'
-                    ? "bg-card-dark hover:bg-card-hover-dark border-dark-border shadow-premium-dark"
-                    : "bg-card-light hover:bg-card-hover-light border-light-border shadow-premium",
-                  isActive && "ring-1 ring-blue-400/30"
-                )}
-              >
+        <>
+          {activeTab === 'live' ? (
+            /* Live Trades - Card Layout */
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              {filteredLiveTrades.map((trade) => {
+              const isProfitable = trade.pnl >= 0;
+              const isActive = trade.status === 'ACTIVE';
+              
+              return (
+                <motion.div
+                  key={trade.id}
+                  variants={cardVariants}
+                  className={cn(
+                    "backdrop-blur-xl border rounded-xl p-3 transition-all duration-300 hover:scale-[1.01]",
+                    theme === 'dark'
+                      ? "bg-card-dark hover:bg-card-hover-dark border-dark-border shadow-premium-dark"
+                      : "bg-card-light hover:bg-card-hover-light border-light-border shadow-premium",
+                    isActive && "ring-1 ring-blue-400/30"
+                  )}
+                >
                 {/* Top row: Asset, Direction, P&L */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-3">
@@ -786,9 +833,235 @@ export function Trades() {
                   <span>ID: {trade.id.slice(-8)}</span>
                 </div>
               </motion.div>
-            );
-          })}
-        </motion.div>
+                );
+              })}
+            </motion.div>
+          ) : (
+            /* Trade History - Table Layout */
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="overflow-x-auto"
+            >
+              <div className={cn(
+                "backdrop-blur-xl border rounded-xl overflow-hidden",
+                theme === 'dark'
+                  ? "bg-card-dark border-dark-border"
+                  : "bg-card-light border-light-border"
+              )}>
+                {/* Table Header */}
+                <div className={cn(
+                  "grid gap-4 p-3 border-b text-xs font-medium",
+                  "grid-cols-[100px_80px_60px_120px_90px_90px_70px_90px_90px_70px_90px]",
+                  theme === 'dark'
+                    ? "bg-dark-surface border-dark-border text-dark-text-secondary"
+                    : "bg-light-surface border-light-border text-light-text-secondary"
+                )}>
+                  <div className="flex items-center">
+                    <span>Symbol</span>
+                  </div>
+                  <div>Direction</div>
+                  <div>Engine</div>
+                  <div className="text-center">Open Time</div>
+                  <div>Open Price</div>
+                  <div>Close Price</div>
+                  <div>Pips</div>
+                  <div>Take Profit</div>
+                  <div>Stop Loss</div>
+                  <div>Duration</div>
+                  <div>Reason</div>
+                </div>
+
+                {/* Table Body */}
+                <div className="divide-y divide-gray-200/10">
+                  {filteredHistoryTrades.map((trade, index) => {
+                    const isProfitable = trade.pnl >= 0;
+                    const closeReason = getCloseReason(trade);
+                    
+                    return (
+                      <motion.div
+                        key={trade.id}
+                        variants={cardVariants}
+                        className={cn(
+                          "grid gap-4 p-3 text-xs hover:bg-opacity-50 transition-colors duration-200",
+                          "grid-cols-[100px_80px_60px_120px_90px_90px_70px_90px_90px_70px_90px]",
+                          index % 2 === 0
+                            ? theme === 'dark' ? "bg-transparent" : "bg-transparent"
+                            : theme === 'dark' ? "bg-white/5" : "bg-black/5"
+                        )}
+                      >
+                        {/* Symbol */}
+                        <div className="flex items-center space-x-2">
+                          <div className={cn("w-1 h-1 rounded-full", getEngineGradient(trade.engine))}></div>
+                          <div className="flex items-center space-x-1">
+                            <div className="flex items-center justify-center w-4 h-4">
+                              {getAssetIcon(trade.symbol)}
+                            </div>
+                            <span className={cn(
+                              "font-medium",
+                              theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
+                            )}>
+                              {trade.symbol}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Direction */}
+                        <div>
+                          <div className={cn(
+                            "flex items-center space-x-1 px-2 py-1 rounded text-xs w-fit",
+                            trade.direction === 'BUY' 
+                              ? theme === 'dark'
+                                ? "bg-green-500/10 text-trading-up-dark"
+                                : "bg-green-500/10 text-trading-up-light"
+                              : theme === 'dark'
+                                ? "bg-red-500/10 text-trading-down-dark"
+                                : "bg-red-500/10 text-trading-down-light"
+                          )}>
+                            {trade.direction === 'BUY' ? (
+                              <TrendingUp className="w-2.5 h-2.5" />
+                            ) : (
+                              <TrendingDown className="w-2.5 h-2.5" />
+                            )}
+                            <span>{trade.direction}</span>
+                          </div>
+                        </div>
+
+                        {/* Engine */}
+                        <div>
+                          <span className={cn(
+                            "px-2 py-1 rounded text-xs bg-gray-500/10",
+                            theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                          )}>
+                            {getEngineLabel(trade.engine)}
+                          </span>
+                        </div>
+
+                        {/* Open Time */}
+                        <div className="text-center">
+                          <div className={cn(
+                            "font-mono text-xs",
+                            theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
+                          )}>
+                            <div className="leading-tight">{formatFullDateTime(trade.timestamp).date}</div>
+                            <div className={cn(
+                              "text-xs leading-tight",
+                              theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                            )}>
+                              {formatFullDateTime(trade.timestamp).time}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Open Price */}
+                        <div>
+                          <span className={cn(
+                            "font-mono",
+                            theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
+                          )}>
+                            {formatPrice(trade.symbol, trade.entry)}
+                          </span>
+                        </div>
+
+                        {/* Close Price */}
+                        <div>
+                          <span className={cn(
+                            "font-mono",
+                            theme === 'dark' ? "text-dark-text-primary" : "text-light-text-primary"
+                          )}>
+                            {formatPrice(trade.symbol, trade.currentPrice)}
+                          </span>
+                        </div>
+
+                        {/* Pips */}
+                        <div>
+                          <span className={cn(
+                            "font-bold",
+                            isProfitable 
+                              ? theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
+                              : theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
+                          )}>
+                            {isProfitable ? '+' : ''}{trade.pnl.toFixed(1)}
+                          </span>
+                        </div>
+
+                        {/* Take Profit */}
+                        <div>
+                          {trade.takeProfit ? (
+                            <span className={cn(
+                              "font-mono",
+                              theme === 'dark' ? "text-trading-up-dark" : "text-trading-up-light"
+                            )}>
+                              {formatPrice(trade.symbol, trade.takeProfit)}
+                            </span>
+                          ) : (
+                            <span className={cn(
+                              theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
+                            )}>
+                              -
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Stop Loss */}
+                        <div>
+                          {trade.stopLoss ? (
+                            <span className={cn(
+                              "font-mono",
+                              theme === 'dark' ? "text-trading-down-dark" : "text-trading-down-light"
+                            )}>
+                              {formatPrice(trade.symbol, trade.stopLoss)}
+                            </span>
+                          ) : (
+                            <span className={cn(
+                              theme === 'dark' ? "text-dark-text-muted" : "text-light-text-muted"
+                            )}>
+                              -
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Duration */}
+                        <div>
+                          <span className={cn(
+                            theme === 'dark' ? "text-dark-text-secondary" : "text-light-text-secondary"
+                          )}>
+                            {formatDuration(trade.timestamp)}
+                          </span>
+                        </div>
+
+                        {/* Reason */}
+                        <div>
+                          <span className={cn(
+                            "px-2 py-1 rounded text-xs whitespace-nowrap inline-block max-w-[85px] overflow-hidden text-ellipsis",
+                            closeReason === 'Take Profit'
+                              ? theme === 'dark'
+                                ? "bg-green-500/10 text-trading-up-dark"
+                                : "bg-green-500/10 text-trading-up-light"
+                              : closeReason === 'Stop Loss'
+                                ? theme === 'dark'
+                                  ? "bg-red-500/10 text-trading-down-dark"
+                                  : "bg-red-500/10 text-trading-down-light"
+                                : closeReason === 'Expired'
+                                  ? theme === 'dark'
+                                    ? "bg-yellow-500/10 text-yellow-400"
+                                    : "bg-yellow-500/10 text-yellow-600"
+                                  : theme === 'dark'
+                                    ? "bg-gray-500/10 text-dark-text-secondary"
+                                    : "bg-gray-500/10 text-light-text-secondary"
+                          )}>
+                            {closeReason}
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </>
       )}
 
       {/* Empty State */}

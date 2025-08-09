@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Overview } from './pages/Overview';
 import { Trades } from './pages/Trades';
 import { Analytics } from './pages/Analytics';
@@ -21,7 +21,7 @@ function App() {
             ? "bg-dark-bg/90 min-h-screen" 
             : "bg-light-bg min-h-screen"
         }>
-          <BrowserRouter basename="/printur">
+          <Router>
             <Sidebar />
             <TopBar />
             
@@ -37,7 +37,7 @@ function App() {
                 </Routes>
               </ErrorBoundary>
             </main>
-          </BrowserRouter>
+          </Router>
         </div>
       </div>
     </ErrorBoundary>
